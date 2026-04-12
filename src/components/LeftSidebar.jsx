@@ -60,6 +60,21 @@ const FONT_CATEGORIES = [
       { name: 'Source Sans 3', preview: 'Source Sans' },
     ],
   },
+  {
+    label: '🌙 Arabic & Urdu',
+    fonts: [
+      { name: 'Noto Nastaliq Urdu', preview: 'نستعلیق اردو' },
+      { name: 'Noto Naskh Arabic', preview: 'نسخ عربي' },
+      { name: 'Noto Kufi Arabic', preview: 'كوفي عربي' },
+      { name: 'Amiri', preview: 'أميري كلاسيك' },
+      { name: 'Scheherazade New', preview: 'شهرزاد' },
+      { name: 'Lateef', preview: 'لطيف اردو' },
+      { name: 'Reem Kufi', preview: 'ريم كوفي' },
+      { name: 'Cairo', preview: 'القاهرة' },
+      { name: 'Tajawal', preview: 'تجوال عصري' },
+      { name: 'Almarai', preview: 'المراعي' },
+    ],
+  },
 ]
 
 const PRESET_COLORS = [
@@ -286,7 +301,7 @@ export default function LeftSidebar() {
 
             {/* Font categories */}
             <div style={s.section}>
-              <div style={s.sectionTitle}>25 Premium Fonts</div>
+              <div style={s.sectionTitle}>35 Premium Fonts</div>
               {FONT_CATEGORIES.map((cat, ci) => (
                 <div key={ci} style={{ marginBottom: 6 }}>
                   <div style={s.catHeader(openCategory === ci)} onClick={() => setOpenCategory(openCategory === ci ? -1 : ci)}>
@@ -295,16 +310,19 @@ export default function LeftSidebar() {
                   </div>
                   {openCategory === ci && (
                     <div style={{ paddingLeft: 2 }}>
-                      {cat.fonts.map((f) => (
-                        <button key={f.name} style={s.fontBtn(f.name)}
-                          onClick={() => addText(f.name)}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.borderHover }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = theme.bg; e.currentTarget.style.borderColor = theme.border }}
-                        >
-                          <span>{f.preview}</span>
-                          <span style={{ fontSize: 9, color: theme.textMuted, fontFamily: 'Inter, sans-serif' }}>+</span>
-                        </button>
-                      ))}
+                      {cat.fonts.map((f) => {
+                        const isRTL = cat.label.includes('Arabic') || cat.label.includes('Urdu')
+                        return (
+                          <button key={f.name} style={{ ...s.fontBtn(f.name), direction: isRTL ? 'rtl' : 'ltr', textAlign: isRTL ? 'right' : 'left' }}
+                            onClick={() => addText(f.name)}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.borderHover }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = theme.bg; e.currentTarget.style.borderColor = theme.border }}
+                          >
+                            <span style={{ fontSize: isRTL ? 15 : 13 }}>{f.preview}</span>
+                            <span style={{ fontSize: 9, color: theme.textMuted, fontFamily: 'Inter, sans-serif', direction: 'ltr' }}>+</span>
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                 </div>

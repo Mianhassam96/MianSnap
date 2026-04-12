@@ -37,17 +37,12 @@ export default function TopBar() {
     logo: {
       display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, userSelect: 'none',
     },
-    logoIcon: {
-      width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 16, boxShadow: '0 3px 12px rgba(124,58,237,0.45)',
-    },
     logoText: {
-      fontSize: 19, fontWeight: 800, letterSpacing: '-0.5px',
+      fontSize: 22, fontWeight: 800, letterSpacing: '-1px',
       background: 'linear-gradient(135deg,#7c3aed 0%,#6d28d9 40%,#4f46e5 100%)',
       WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
       fontFamily: "'Montserrat', 'Inter', sans-serif",
+      lineHeight: 1,
     },
     badge: {
       fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
@@ -94,7 +89,6 @@ export default function TopBar() {
   return (
     <div style={s.bar}>
       <div style={s.logo}>
-        <div style={s.logoIcon}>⚡</div>
         <span style={s.logoText}>MianSnap</span>
       </div>
       <div style={s.badge}>BETA</div>
