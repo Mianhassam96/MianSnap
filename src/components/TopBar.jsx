@@ -35,15 +35,24 @@ export default function TopBar() {
       boxShadow: theme.shadowSm,
     },
     logo: {
-      fontSize: 19, fontWeight: 800, letterSpacing: '-0.5px',
+      display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, userSelect: 'none',
+    },
+    logoIcon: {
+      width: 32, height: 32, borderRadius: 9, flexShrink: 0,
       background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 16, boxShadow: '0 3px 12px rgba(124,58,237,0.45)',
+    },
+    logoText: {
+      fontSize: 19, fontWeight: 800, letterSpacing: '-0.5px',
+      background: 'linear-gradient(135deg,#7c3aed 0%,#6d28d9 40%,#4f46e5 100%)',
       WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-      flexShrink: 0, userSelect: 'none',
+      fontFamily: "'Montserrat', 'Inter', sans-serif",
     },
     badge: {
       fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-      background: theme.accentGlow, color: theme.accent,
-      border: `1px solid ${theme.borderHover}`, letterSpacing: 0.5,
+      background: 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(79,70,229,0.15))',
+      color: theme.accent, border: `1px solid ${theme.borderHover}`, letterSpacing: 0.5,
     },
     divider: { width: 1, height: 22, background: theme.border, margin: '0 4px', flexShrink: 0 },
     nameWrap: { display: 'flex', alignItems: 'center', gap: 6 },
@@ -84,7 +93,10 @@ export default function TopBar() {
 
   return (
     <div style={s.bar}>
-      <div style={s.logo}>MianSnap</div>
+      <div style={s.logo}>
+        <div style={s.logoIcon}>⚡</div>
+        <span style={s.logoText}>MianSnap</span>
+      </div>
       <div style={s.badge}>BETA</div>
       <div style={s.divider} />
       <div style={s.nameWrap}>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { fabric } from 'fabric'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
@@ -14,30 +14,115 @@ const TOOLS = [
   { id: 'safezone', icon: '📐', label: 'Zones' },
 ]
 
-const FONTS = ['Impact', 'Arial Black', 'Georgia', 'Segoe UI', 'Verdana', 'Courier New']
+const FONT_CATEGORIES = [
+  {
+    label: '🔥 Impact / Bold',
+    fonts: [
+      { name: 'Bebas Neue', preview: 'BEBAS NEUE' },
+      { name: 'Anton', preview: 'ANTON' },
+      { name: 'Black Han Sans', preview: 'BLACK HAN' },
+      { name: 'Bangers', preview: 'Bangers!' },
+      { name: 'Teko', preview: 'TEKO BOLD' },
+      { name: 'Oswald', preview: 'OSWALD' },
+      { name: 'Barlow Condensed', preview: 'BARLOW' },
+      { name: 'Russo One', preview: 'RUSSO ONE' },
+    ],
+  },
+  {
+    label: '✨ Display / Creative',
+    fonts: [
+      { name: 'Righteous', preview: 'Righteous' },
+      { name: 'Permanent Marker', preview: 'Marker Style' },
+      { name: 'Pacifico', preview: 'Pacifico' },
+      { name: 'Fredoka One', preview: 'Fredoka One' },
+      { name: 'Boogaloo', preview: 'Boogaloo' },
+      { name: 'Abril Fatface', preview: 'Abril Fatface' },
+    ],
+  },
+  {
+    label: '💎 Premium / Elegant',
+    fonts: [
+      { name: 'Playfair Display', preview: 'Playfair Display' },
+      { name: 'Cinzel', preview: 'CINZEL' },
+      { name: 'Merriweather', preview: 'Merriweather' },
+      { name: 'Raleway', preview: 'Raleway' },
+      { name: 'Montserrat', preview: 'Montserrat' },
+    ],
+  },
+  {
+    label: '⚡ Modern / Clean',
+    fonts: [
+      { name: 'Poppins', preview: 'Poppins' },
+      { name: 'Nunito', preview: 'Nunito' },
+      { name: 'Exo 2', preview: 'Exo 2' },
+      { name: 'Lato', preview: 'Lato' },
+      { name: 'Roboto Condensed', preview: 'Roboto Condensed' },
+      { name: 'Source Sans 3', preview: 'Source Sans' },
+    ],
+  },
+]
+
+const PRESET_COLORS = [
+  '#ffffff', '#000000', '#ffff00', '#ff3300', '#00ffcc',
+  '#ff00ff', '#4488ff', '#ff8800', '#00ff44', '#ff4488',
+  '#7c3aed', '#facc15', '#f87171', '#4ade80', '#60a5fa',
+]
 
 export default function LeftSidebar() {
   const { theme, activeLeftPanel, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
-  const [aiStatus, setAiStatus] = React.useState('')
+  const [aiStatus, setAiStatus] = useState('')
+  const [textColor, setTextColor] = useState('#ffffff')
+  const [strokeColor, setStrokeColor] = useState('#000000')
+  const [fontSize, setFontSize] = useState(64)
+  const [openCategory, setOpenCategory] = useState(0)
 
-  function addText(style = {}) {
+  function addText(fontName) {
     if (!fabricCanvas) return
     const text = new fabric.IText('Your Text Here', {
       left: fabricCanvas.width / 2,
       top: fabricCanvas.height / 2,
       originX: 'center', originY: 'center',
-      fontFamily: style.font || 'Impact',
-      fontSize: style.size || 64,
-      fill: '#ffffff',
-      stroke: '#000000',
-      strokeWidth: 2,
+      fontFamily: fontName,
+      fontSize,
+      fill: textColor,
+      stroke: strokeColor,
+      strokeWidth: strokeColor === 'transparent' ? 0 : 2,
       shadow: { color: 'rgba(0,0,0,0.8)', blur: 12, offsetX: 2, offsetY: 2 },
     })
     fabricCanvas.add(text)
     fabricCanvas.setActiveObject(text)
     fabricCanvas.renderAll()
-    applySmartTypography(text, fabricCanvas)
+  }
+
+  function updateSelectedTextColor(color) {
+    setTextColor(color)
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
+      obj.set('fill', color)
+      fabricCanvas.renderAll()
+    }
+  }
+
+  function updateSelectedStrokeColor(color) {
+    setStrokeColor(color)
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
+      obj.set({ stroke: color, strokeWidth: 2 })
+      fabricCanvas.renderAll()
+    }
+  }
+
+  function updateFontSize(size) {
+    setFontSize(size)
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
+      obj.set('fontSize', size)
+      fabricCanvas.renderAll()
+    }
   }
 
   function addShape(type) {
@@ -52,20 +137,13 @@ export default function LeftSidebar() {
       arrow: new fabric.Triangle({ left: cx - 30, top: cy - 40, width: 60, height: 80, fill: '#facc15', angle: 90 }),
     }
     const shape = shapeMap[type]
-    if (shape) {
-      fabricCanvas.add(shape)
-      fabricCanvas.setActiveObject(shape)
-      fabricCanvas.renderAll()
-    }
+    if (shape) { fabricCanvas.add(shape); fabricCanvas.setActiveObject(shape); fabricCanvas.renderAll() }
   }
 
   async function handleBgRemoval() {
     if (!fabricCanvas) return
     const active = fabricCanvas.getActiveObject()
-    if (!active || active.type !== 'image') {
-      alert('Select an image layer on the canvas first')
-      return
-    }
+    if (!active || active.type !== 'image') { alert('Select an image layer on the canvas first'); return }
     const dataUrl = active.toDataURL()
     try {
       const result = await removeBackground(dataUrl, (msg) => setAiStatus(msg))
@@ -77,14 +155,12 @@ export default function LeftSidebar() {
         fabricCanvas.renderAll()
         setAiStatus('')
       })
-    } catch {
-      setAiStatus('AI model failed. Check connection.')
-    }
+    } catch { setAiStatus('AI model failed. Check connection.') }
   }
 
   const s = {
     sidebar: {
-      width: 224, background: theme.bgSecondary, borderRight: `1px solid ${theme.border}`,
+      width: 240, background: theme.bgSecondary, borderRight: `1px solid ${theme.border}`,
       display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden',
       boxShadow: theme.isDark ? 'none' : '2px 0 12px rgba(100,80,200,0.06)',
     },
@@ -98,26 +174,39 @@ export default function LeftSidebar() {
       fontWeight: active ? 600 : 400,
     }),
     content: { flex: 1, overflowY: 'auto', padding: 12 },
-    sectionTitle: {
-      fontSize: 10, color: theme.textMuted, textTransform: 'uppercase',
-      letterSpacing: 1, marginBottom: 8, fontWeight: 600,
+    sectionTitle: { fontSize: 10, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontWeight: 600 },
+    section: { marginBottom: 14 },
+    label: { fontSize: 10, color: theme.textMuted, marginBottom: 4, display: 'block' },
+    row: { display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 },
+    colorSwatch: (color, active) => ({
+      width: 22, height: 22, borderRadius: 4, background: color, cursor: 'pointer', flexShrink: 0,
+      border: active ? `2px solid ${theme.accent}` : `1px solid ${theme.border}`,
+      boxShadow: active ? `0 0 0 2px ${theme.accentGlow}` : 'none',
+      transition: 'transform 0.1s',
+    }),
+    colorInput: {
+      width: 32, height: 28, borderRadius: 5, border: `1px solid ${theme.border}`,
+      cursor: 'pointer', padding: 2, background: theme.bgTertiary,
     },
-    section: { marginBottom: 16 },
-    textBtn: (variant) => ({
-      width: '100%', padding: '9px 12px', borderRadius: 7,
-      border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.text,
-      fontSize: variant === 'h1' ? 14 : variant === 'h2' ? 12 : 11,
-      fontWeight: variant === 'h1' ? 700 : variant === 'h2' ? 600 : 400,
-      cursor: 'pointer', textAlign: 'left', marginBottom: 5,
-      transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 8,
+    sizeInput: {
+      flex: 1, background: theme.bgTertiary, border: `1px solid ${theme.border}`,
+      color: theme.text, borderRadius: 5, padding: '4px 8px', fontSize: 12, outline: 'none',
+    },
+    sizeRange: { flex: 2, accentColor: theme.accent },
+    catHeader: (open) => ({
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '7px 10px', borderRadius: 6, cursor: 'pointer', marginBottom: 4,
+      background: open ? theme.accentGlow : theme.bgTertiary,
+      border: `1px solid ${open ? theme.borderHover : theme.border}`,
+      color: open ? theme.accent : theme.textSecondary,
+      fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
     }),
     fontBtn: (font) => ({
-      width: '100%', padding: '7px 12px', borderRadius: 6,
-      border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.text,
-      fontSize: 12, fontFamily: font, cursor: 'pointer',
-      textAlign: 'left', marginBottom: 4, transition: 'all 0.15s',
+      width: '100%', padding: '8px 10px', borderRadius: 6,
+      border: `1px solid ${theme.border}`, background: theme.bg,
+      color: theme.text, fontSize: 13, fontFamily: font,
+      cursor: 'pointer', textAlign: 'left', marginBottom: 3,
+      transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }),
     grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 },
     shapeBtn: {
@@ -128,15 +217,14 @@ export default function LeftSidebar() {
     aiBtn: {
       width: '100%', padding: '9px 12px', borderRadius: 7, border: 'none',
       background: `linear-gradient(135deg,${theme.accent},${theme.accentSecondary})`,
-      color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-      marginTop: 8, transition: 'opacity 0.15s',
+      color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 4,
     },
     aiStatus: { fontSize: 10, color: theme.accent, padding: '4px 0', textAlign: 'center' },
   }
 
-  const hoverStyle = (e, enter) => {
-    e.currentTarget.style.background = enter ? theme.accentGlow : theme.bgTertiary
-    e.currentTarget.style.borderColor = enter ? theme.borderHover : theme.border
+  const hover = (e, on) => {
+    e.currentTarget.style.background = on ? theme.accentGlow : theme.bgTertiary
+    e.currentTarget.style.borderColor = on ? theme.borderHover : theme.border
   }
 
   return (
@@ -151,36 +239,79 @@ export default function LeftSidebar() {
       </div>
 
       <div style={s.content}>
+
+        {/* ── TEXT PANEL ── */}
         {activeLeftPanel === 'text' && (
           <>
+            {/* Color controls */}
             <div style={s.section}>
-              <div style={s.sectionTitle}>Add Text</div>
-              {[
-                { label: '+ Headline', size: 80, font: 'Impact', variant: 'h1' },
-                { label: '+ Subheading', size: 48, font: 'Arial Black', variant: 'h2' },
-                { label: '+ Body Text', size: 28, font: 'Segoe UI', variant: 'body' },
-              ].map((t) => (
-                <button key={t.label} style={s.textBtn(t.variant)}
-                  onClick={() => addText({ size: t.size, font: t.font })}
-                  onMouseEnter={(e) => hoverStyle(e, true)}
-                  onMouseLeave={(e) => hoverStyle(e, false)}
-                >
-                  <span style={{ fontSize: t.variant === 'h1' ? 16 : t.variant === 'h2' ? 13 : 11, fontFamily: t.font }}>A</span>
-                  {t.label}
-                </button>
+              <div style={s.sectionTitle}>Text Color</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                {PRESET_COLORS.map((c) => (
+                  <div key={c} style={s.colorSwatch(c, textColor === c)}
+                    onClick={() => updateSelectedTextColor(c)}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                  />
+                ))}
+                <input type="color" style={s.colorInput} value={textColor}
+                  onChange={(e) => updateSelectedTextColor(e.target.value)} title="Custom color" />
+              </div>
+
+              <div style={s.sectionTitle}>Stroke Color</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                {['transparent', '#000000', '#ffffff', '#ff3300', '#ffff00', '#7c3aed', '#00ffcc', '#ff00ff'].map((c) => (
+                  <div key={c} style={{
+                    ...s.colorSwatch(c === 'transparent' ? theme.bgTertiary : c, strokeColor === c),
+                    backgroundImage: c === 'transparent' ? 'repeating-linear-gradient(45deg,#ccc 0,#ccc 2px,transparent 0,transparent 50%)' : 'none',
+                    backgroundSize: '6px 6px',
+                  }}
+                    onClick={() => updateSelectedStrokeColor(c)}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                  />
+                ))}
+                <input type="color" style={s.colorInput} value={strokeColor === 'transparent' ? '#000000' : strokeColor}
+                  onChange={(e) => updateSelectedStrokeColor(e.target.value)} title="Custom stroke" />
+              </div>
+
+              <div style={s.sectionTitle}>Font Size</div>
+              <div style={s.row}>
+                <input type="range" style={s.sizeRange} min={12} max={200} value={fontSize}
+                  onChange={(e) => updateFontSize(+e.target.value)} />
+                <input type="number" style={{ ...s.sizeInput, width: 52 }} min={12} max={400}
+                  value={fontSize} onChange={(e) => updateFontSize(+e.target.value)} />
+              </div>
+            </div>
+
+            {/* Font categories */}
+            <div style={s.section}>
+              <div style={s.sectionTitle}>25 Premium Fonts</div>
+              {FONT_CATEGORIES.map((cat, ci) => (
+                <div key={ci} style={{ marginBottom: 6 }}>
+                  <div style={s.catHeader(openCategory === ci)} onClick={() => setOpenCategory(openCategory === ci ? -1 : ci)}>
+                    <span>{cat.label}</span>
+                    <span>{openCategory === ci ? '▲' : '▼'}</span>
+                  </div>
+                  {openCategory === ci && (
+                    <div style={{ paddingLeft: 2 }}>
+                      {cat.fonts.map((f) => (
+                        <button key={f.name} style={s.fontBtn(f.name)}
+                          onClick={() => addText(f.name)}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.borderHover }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = theme.bg; e.currentTarget.style.borderColor = theme.border }}
+                        >
+                          <span>{f.preview}</span>
+                          <span style={{ fontSize: 9, color: theme.textMuted, fontFamily: 'Inter, sans-serif' }}>+</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
-            <div style={s.section}>
-              <div style={s.sectionTitle}>Font Styles</div>
-              {FONTS.map((f) => (
-                <button key={f} style={s.fontBtn(f)} onClick={() => addText({ font: f })}
-                  onMouseEnter={(e) => hoverStyle(e, true)}
-                  onMouseLeave={(e) => hoverStyle(e, false)}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
+
+            {/* AI */}
             <div style={s.section}>
               <div style={s.sectionTitle}>AI Tools</div>
               <button style={s.aiBtn} onClick={handleBgRemoval}>🤖 Remove Background (AI)</button>
@@ -189,6 +320,7 @@ export default function LeftSidebar() {
           </>
         )}
 
+        {/* ── SHAPES PANEL ── */}
         {activeLeftPanel === 'shapes' && (
           <div style={s.section}>
             <div style={s.sectionTitle}>Shapes</div>
