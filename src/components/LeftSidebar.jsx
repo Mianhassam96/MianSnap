@@ -5,12 +5,13 @@ import useCanvasStore from '../store/useCanvasStore'
 import { applySmartTypography } from '../utils/smartTypography'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
+import { removeBackground } from '../utils/bgRemoval'
 
 const TOOLS = [
   { id: 'text', icon: '𝐓', label: 'Text' },
   { id: 'shapes', icon: '◻', label: 'Shapes' },
-  { id: 'presets', icon: '🎨', label: 'Presets' },
-  { id: 'safezone', icon: '📐', label: 'Safe Zone' },
+  { id: 'presets', icon: '🎨', label: 'Packs' },
+  { id: 'safezone', icon: '📐', label: 'Zones' },
 ]
 
 const FONTS = ['Impact', 'Arial Black', 'Georgia', 'Segoe UI', 'Verdana', 'Courier New']
@@ -18,6 +19,7 @@ const FONTS = ['Impact', 'Arial Black', 'Georgia', 'Segoe UI', 'Verdana', 'Couri
 export default function LeftSidebar() {
   const { theme, activeLeftPanel, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
+  const [aiStatus, setAiStatus] = React.useState('')
 
   function addText(style = {}) {
     if (!fabricCanvas) return
@@ -42,16 +44,14 @@ export default function LeftSidebar() {
     if (!fabricCanvas) return
     const cx = fabricCanvas.width / 2
     const cy = fabricCanvas.height / 2
-    let shape
-
     const shapeMap = {
-      rect: new fabric.Rect({ left: cx - 80, top: cy - 40, width: 160, height: 80, fill: 'rgba(124,58,237,0.7)', rx: 8, ry: 8 }),
-      circle: new fabric.Circle({ left: cx - 50, top: cy - 50, radius: 50, fill: 'rgba(79,70,229,0.7)' }),
+      rect: new fabric.Rect({ left: cx - 80, top: cy - 40, width: 160, height: 80, fill: 'rgba(124,58,237,0.75)', rx: 8, ry: 8 }),
+      circle: new fabric.Circle({ left: cx - 50, top: cy - 50, radius: 50, fill: 'rgba(79,70,229,0.75)' }),
       triangle: new fabric.Triangle({ left: cx - 40, top: cy - 40, width: 80, height: 80, fill: '#f87171' }),
-      line: new fabric.Line([cx - 80, cy, cx + 80, cy], { stroke: '#ffffff', strokeWidth: 4 }),
+      line: new fabric.Line([cx - 80, cy, cx + 80, cy], { stroke: '#7c3aed', strokeWidth: 5 }),
       arrow: new fabric.Triangle({ left: cx - 30, top: cy - 40, width: 60, height: 80, fill: '#facc15', angle: 90 }),
     }
-    shape = shapeMap[type]
+    const shape = shapeMap[type]
     if (shape) {
       fabricCanvas.add(shape)
       fabricCanvas.setActiveObject(shape)
@@ -59,43 +59,92 @@ export default function LeftSidebar() {
     }
   }
 
+  async function handleBgRemoval() {
+    if (!fabricCanvas) return
+    const active = fabricCanvas.getActiveObject()
+    if (!active || active.type !== 'image') {
+      alert('Select an image layer on the canvas first')
+      return
+    }
+    const dataUrl = active.toDataURL()
+    try {
+      const result = await removeBackground(dataUrl, (msg) => setAiStatus(msg))
+      fabric.Image.fromURL(result, (img) => {
+        img.set({ left: active.left, top: active.top, scaleX: active.scaleX, scaleY: active.scaleY })
+        fabricCanvas.remove(active)
+        fabricCanvas.add(img)
+        fabricCanvas.setActiveObject(img)
+        fabricCanvas.renderAll()
+        setAiStatus('')
+      })
+    } catch {
+      setAiStatus('AI model failed. Check connection.')
+    }
+  }
+
   const s = {
     sidebar: {
-      width: 220, background: theme.bgSecondary, borderRight: `1px solid ${theme.border}`,
+      width: 224, background: theme.bgSecondary, borderRight: `1px solid ${theme.border}`,
       display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden',
+      boxShadow: theme.isDark ? 'none' : '2px 0 12px rgba(100,80,200,0.06)',
     },
-    tabs: { display: 'flex', borderBottom: `1px solid ${theme.border}`, flexShrink: 0 },
-    tab: {
+    tabs: { display: 'flex', borderBottom: `1px solid ${theme.border}`, flexShrink: 0, background: theme.bgTertiary },
+    tab: (active) => ({
       flex: 1, padding: '10px 4px', fontSize: 10, textAlign: 'center',
-      cursor: 'pointer', color: theme.textMuted, border: 'none', background: 'none',
-      borderBottom: '2px solid transparent', transition: 'all 0.15s', lineHeight: 1.3,
-    },
-    tabActive: { color: theme.accent, borderBottom: `2px solid ${theme.accent}` },
+      cursor: 'pointer', border: 'none', lineHeight: 1.4, transition: 'all 0.15s',
+      background: active ? theme.bgSecondary : 'transparent',
+      color: active ? theme.accent : theme.textMuted,
+      borderBottom: `2px solid ${active ? theme.accent : 'transparent'}`,
+      fontWeight: active ? 600 : 400,
+    }),
     content: { flex: 1, overflowY: 'auto', padding: 12 },
-    section: { marginBottom: 16 },
-    sectionTitle: { fontSize: 10, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-    btn: {
-      width: '100%', padding: '8px 12px', borderRadius: 6, border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.textSecondary, fontSize: 12,
-      cursor: 'pointer', textAlign: 'left', marginBottom: 4, transition: 'all 0.15s',
+    sectionTitle: {
+      fontSize: 10, color: theme.textMuted, textTransform: 'uppercase',
+      letterSpacing: 1, marginBottom: 8, fontWeight: 600,
     },
+    section: { marginBottom: 16 },
+    textBtn: (variant) => ({
+      width: '100%', padding: '9px 12px', borderRadius: 7,
+      border: `1px solid ${theme.border}`,
+      background: theme.bgTertiary, color: theme.text,
+      fontSize: variant === 'h1' ? 14 : variant === 'h2' ? 12 : 11,
+      fontWeight: variant === 'h1' ? 700 : variant === 'h2' ? 600 : 400,
+      cursor: 'pointer', textAlign: 'left', marginBottom: 5,
+      transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 8,
+    }),
+    fontBtn: (font) => ({
+      width: '100%', padding: '7px 12px', borderRadius: 6,
+      border: `1px solid ${theme.border}`,
+      background: theme.bgTertiary, color: theme.text,
+      fontSize: 12, fontFamily: font, cursor: 'pointer',
+      textAlign: 'left', marginBottom: 4, transition: 'all 0.15s',
+    }),
     grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 },
     shapeBtn: {
-      padding: '12px 8px', borderRadius: 6, border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.text, fontSize: 18,
+      padding: '14px 8px', borderRadius: 8, border: `1px solid ${theme.border}`,
+      background: theme.bgTertiary, color: theme.text, fontSize: 20,
       cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s',
     },
+    aiBtn: {
+      width: '100%', padding: '9px 12px', borderRadius: 7, border: 'none',
+      background: `linear-gradient(135deg,${theme.accent},${theme.accentSecondary})`,
+      color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+      marginTop: 8, transition: 'opacity 0.15s',
+    },
+    aiStatus: { fontSize: 10, color: theme.accent, padding: '4px 0', textAlign: 'center' },
+  }
+
+  const hoverStyle = (e, enter) => {
+    e.currentTarget.style.background = enter ? theme.accentGlow : theme.bgTertiary
+    e.currentTarget.style.borderColor = enter ? theme.borderHover : theme.border
   }
 
   return (
     <div style={s.sidebar}>
       <div style={s.tabs}>
         {TOOLS.map((t) => (
-          <button key={t.id}
-            style={{ ...s.tab, ...(activeLeftPanel === t.id ? s.tabActive : {}) }}
-            onClick={() => setActiveLeftPanel(t.id)}
-          >
-            <div style={{ fontSize: 14 }}>{t.icon}</div>
+          <button key={t.id} style={s.tab(activeLeftPanel === t.id)} onClick={() => setActiveLeftPanel(t.id)}>
+            <div style={{ fontSize: 15, marginBottom: 2 }}>{t.icon}</div>
             <div>{t.label}</div>
           </button>
         ))}
@@ -106,17 +155,36 @@ export default function LeftSidebar() {
           <>
             <div style={s.section}>
               <div style={s.sectionTitle}>Add Text</div>
-              <button style={s.btn} onClick={() => addText({ size: 80, font: 'Impact' })}>＋ Headline (Impact)</button>
-              <button style={s.btn} onClick={() => addText({ size: 48, font: 'Arial Black' })}>＋ Subheading</button>
-              <button style={s.btn} onClick={() => addText({ size: 28, font: 'Segoe UI' })}>＋ Body Text</button>
+              {[
+                { label: '+ Headline', size: 80, font: 'Impact', variant: 'h1' },
+                { label: '+ Subheading', size: 48, font: 'Arial Black', variant: 'h2' },
+                { label: '+ Body Text', size: 28, font: 'Segoe UI', variant: 'body' },
+              ].map((t) => (
+                <button key={t.label} style={s.textBtn(t.variant)}
+                  onClick={() => addText({ size: t.size, font: t.font })}
+                  onMouseEnter={(e) => hoverStyle(e, true)}
+                  onMouseLeave={(e) => hoverStyle(e, false)}
+                >
+                  <span style={{ fontSize: t.variant === 'h1' ? 16 : t.variant === 'h2' ? 13 : 11, fontFamily: t.font }}>A</span>
+                  {t.label}
+                </button>
+              ))}
             </div>
             <div style={s.section}>
-              <div style={s.sectionTitle}>Font Presets</div>
+              <div style={s.sectionTitle}>Font Styles</div>
               {FONTS.map((f) => (
-                <button key={f} style={{ ...s.btn, fontFamily: f }} onClick={() => addText({ font: f })}>
+                <button key={f} style={s.fontBtn(f)} onClick={() => addText({ font: f })}
+                  onMouseEnter={(e) => hoverStyle(e, true)}
+                  onMouseLeave={(e) => hoverStyle(e, false)}
+                >
                   {f}
                 </button>
               ))}
+            </div>
+            <div style={s.section}>
+              <div style={s.sectionTitle}>AI Tools</div>
+              <button style={s.aiBtn} onClick={handleBgRemoval}>🤖 Remove Background (AI)</button>
+              {aiStatus && <div style={s.aiStatus}>{aiStatus}</div>}
             </div>
           </>
         )}
@@ -132,7 +200,10 @@ export default function LeftSidebar() {
                 { type: 'line', icon: '—', label: 'Line' },
                 { type: 'arrow', icon: '▶', label: 'Arrow' },
               ].map((sh) => (
-                <button key={sh.type} style={s.shapeBtn} onClick={() => addShape(sh.type)}>
+                <button key={sh.type} style={s.shapeBtn} onClick={() => addShape(sh.type)}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.accent }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = theme.bgTertiary; e.currentTarget.style.borderColor = theme.border }}
+                >
                   <div>{sh.icon}</div>
                   <div style={{ fontSize: 10, marginTop: 4, color: theme.textMuted }}>{sh.label}</div>
                 </button>

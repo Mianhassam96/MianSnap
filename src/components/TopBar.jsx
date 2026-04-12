@@ -13,7 +13,7 @@ export default function TopBar() {
     if (!fabricCanvas) return
     const multiplier = exportQuality === '1080p' ? 1.5 : 1
     const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
-    const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: 0.92, multiplier })
+    const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: 0.93, multiplier })
     const a = document.createElement('a')
     a.href = dataUrl
     a.download = `miansnap-${Date.now()}.${exportFormat}`
@@ -23,64 +23,84 @@ export default function TopBar() {
   async function handleSave() {
     if (!fabricCanvas) return
     await saveCurrentProject(fabricCanvas.toJSON(), projectName)
-    alert('Project saved!')
+    alert('Project saved to browser storage!')
   }
 
   const s = {
     bar: {
-      display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px',
-      height: 52, background: theme.bgSecondary, borderBottom: `1px solid ${theme.border}`,
+      display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px',
+      height: 54, background: theme.bgSecondary,
+      borderBottom: `1px solid ${theme.border}`,
       flexShrink: 0, zIndex: 100,
+      boxShadow: theme.shadowSm,
     },
     logo: {
-      fontSize: 18, fontWeight: 800, letterSpacing: '-0.5px',
+      fontSize: 19, fontWeight: 800, letterSpacing: '-0.5px',
       background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
       WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-      flexShrink: 0,
+      flexShrink: 0, userSelect: 'none',
     },
-    divider: { width: 1, height: 24, background: theme.border, margin: '0 4px' },
+    badge: {
+      fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+      background: theme.accentGlow, color: theme.accent,
+      border: `1px solid ${theme.borderHover}`, letterSpacing: 0.5,
+    },
+    divider: { width: 1, height: 22, background: theme.border, margin: '0 4px', flexShrink: 0 },
+    nameWrap: { display: 'flex', alignItems: 'center', gap: 6 },
     nameInput: {
-      background: 'transparent', border: 'none', outline: 'none',
-      color: theme.text, fontSize: 13, fontWeight: 500, width: 180,
-      borderBottom: editing ? `1px solid ${theme.accent}` : '1px solid transparent',
-      padding: '2px 4px', transition: 'border-color 0.2s',
+      background: editing ? theme.bgTertiary : 'transparent',
+      border: `1px solid ${editing ? theme.accent : 'transparent'}`,
+      outline: 'none', color: theme.text, fontSize: 13, fontWeight: 500,
+      width: 170, borderRadius: 5, padding: '4px 8px', transition: 'all 0.2s',
     },
     spacer: { flex: 1 },
-    btn: {
-      padding: '6px 14px', borderRadius: 6, border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.textSecondary, fontSize: 12,
-      cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
-    },
-    exportBtn: {
-      padding: '7px 18px', borderRadius: 6, border: 'none',
-      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-      color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-      boxShadow: '0 2px 12px rgba(124,58,237,0.4)',
-    },
     select: {
       background: theme.bgTertiary, border: `1px solid ${theme.border}`,
-      color: theme.textSecondary, borderRadius: 6, padding: '6px 8px',
-      fontSize: 12, cursor: 'pointer',
+      color: theme.textSecondary, borderRadius: 6, padding: '5px 8px',
+      fontSize: 12, cursor: 'pointer', outline: 'none',
+      transition: 'border-color 0.15s',
+    },
+    saveBtn: {
+      padding: '6px 14px', borderRadius: 6, border: `1px solid ${theme.border}`,
+      background: theme.bgTertiary, color: theme.textSecondary, fontSize: 12,
+      cursor: 'pointer', transition: 'all 0.15s', fontWeight: 500,
+      display: 'flex', alignItems: 'center', gap: 5,
+    },
+    exportBtn: {
+      padding: '7px 20px', borderRadius: 7, border: 'none',
+      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+      color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+      boxShadow: '0 2px 12px rgba(124,58,237,0.35)',
+      transition: 'transform 0.1s, box-shadow 0.15s',
+      display: 'flex', alignItems: 'center', gap: 6,
     },
     themeBtn: {
-      width: 34, height: 34, borderRadius: 8, border: `1px solid ${theme.border}`,
+      width: 36, height: 36, borderRadius: 8, border: `1px solid ${theme.border}`,
       background: theme.bgTertiary, cursor: 'pointer', fontSize: 16,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'all 0.15s', flexShrink: 0,
     },
   }
 
   return (
     <div style={s.bar}>
       <div style={s.logo}>MianSnap</div>
+      <div style={s.badge}>BETA</div>
       <div style={s.divider} />
-      <input
-        style={s.nameInput}
-        value={projectName}
-        onChange={(e) => setProjectName(e.target.value)}
-        onFocus={() => setEditing(true)}
-        onBlur={() => setEditing(false)}
-      />
+      <div style={s.nameWrap}>
+        <span style={{ fontSize: 14 }}>📄</span>
+        <input
+          style={s.nameInput}
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          onFocus={() => setEditing(true)}
+          onBlur={() => setEditing(false)}
+          placeholder="Project name..."
+        />
+      </div>
+
       <div style={s.spacer} />
+
       <select style={s.select} value={exportQuality} onChange={(e) => setExportQuality(e.target.value)}>
         <option value="720p">720p</option>
         <option value="1080p">1080p</option>
@@ -89,12 +109,23 @@ export default function TopBar() {
         <option value="jpg">JPG</option>
         <option value="png">PNG</option>
       </select>
-      <button style={s.btn} onClick={handleSave} disabled={isSaving}>
-        {isSaving ? '💾 Saving...' : '💾 Save'}
+
+      <button style={s.saveBtn} onClick={handleSave} disabled={isSaving}>
+        {isSaving ? '⏳' : '💾'} {isSaving ? 'Saving...' : 'Save'}
       </button>
-      <button style={s.exportBtn} onClick={handleExport}>⬇ Export</button>
+
+      <button
+        style={s.exportBtn}
+        onClick={handleExport}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,58,237,0.5)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(124,58,237,0.35)' }}
+      >
+        ⬇ Export
+      </button>
+
       <div style={s.divider} />
-      <button style={s.themeBtn} onClick={toggleTheme} title="Toggle theme">
+
+      <button style={s.themeBtn} onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
         {isDark ? '☀️' : '🌙'}
       </button>
     </div>

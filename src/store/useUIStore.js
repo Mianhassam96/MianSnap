@@ -2,8 +2,8 @@ import { create } from 'zustand'
 import { darkTheme, lightTheme } from '../theme/theme'
 
 const useUIStore = create((set, get) => ({
-  isDark: true,
-  theme: darkTheme,
+  isDark: false,
+  theme: lightTheme,
   activeLeftPanel: 'text',   // text | shapes | presets | branding
   activeRightPanel: 'layers', // layers | properties
   showSafeZone: false,

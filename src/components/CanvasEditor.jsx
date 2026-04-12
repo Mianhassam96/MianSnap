@@ -20,7 +20,7 @@ export default function CanvasEditor() {
     const canvas = new fabric.Canvas(canvasRef.current, {
       width: CANVAS_W,
       height: CANVAS_H,
-      backgroundColor: '#0a0a0f',
+      backgroundColor: theme.isDark ? '#0a0a0f' : '#ffffff',
       preserveObjectStacking: true,
     })
     setFabricCanvas(canvas)
