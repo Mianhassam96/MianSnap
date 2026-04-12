@@ -1,5 +1,5 @@
 /**
- * Lazy-loaded background removal using @xenova/transformers.
+ * Lazy-loaded background removal using @xenova/transformers via CDN.
  * Model is only downloaded when user triggers the feature.
  */
 let pipeline = null
@@ -7,7 +7,10 @@ let pipeline = null
 export async function removeBackground(imageDataUrl, onProgress) {
   if (!pipeline) {
     onProgress?.('Loading AI model (first time only)...')
-    const { pipeline: createPipeline, env } = await import('@xenova/transformers')
+    const { pipeline: createPipeline, env } = await import(
+      /* @vite-ignore */
+      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js'
+    )
     env.allowLocalModels = false
     pipeline = await createPipeline('image-segmentation', 'Xenova/segformer-b0-finetuned-ade-512-512', {
       progress_callback: (p) => {
