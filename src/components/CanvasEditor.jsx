@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 import { fabric } from 'fabric'
-import useStore from '../store/useStore'
+import useCanvasStore from '../store/useCanvasStore'
+import useVideoStore from '../store/useVideoStore'
+import useUIStore from '../store/useUIStore'
 import { SAFE_ZONES } from './SafeZoneOverlay'
 
 const CANVAS_W = 1280
@@ -9,24 +11,22 @@ const CANVAS_H = 720
 export default function CanvasEditor() {
   const canvasRef = useRef(null)
   const overlayRef = useRef(null)
-  const { setFabricCanvas, fabricCanvas, selectedFrame, showSafeZone, activePlatform } = useStore()
+  const { setFabricCanvas, fabricCanvas } = useCanvasStore()
+  const { selectedFrame } = useVideoStore()
+  const { showSafeZone, activePlatform, theme } = useUIStore()
 
-  // Init Fabric canvas
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return
-
     const canvas = new fabric.Canvas(canvasRef.current, {
       width: CANVAS_W,
       height: CANVAS_H,
       backgroundColor: '#0a0a0f',
       preserveObjectStacking: true,
     })
-
     setFabricCanvas(canvas)
     return () => { canvas.dispose(); setFabricCanvas(null) }
   }, [])
 
-  // Load selected frame as background
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
     fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
@@ -36,15 +36,12 @@ export default function CanvasEditor() {
     })
   }, [selectedFrame, fabricCanvas])
 
-  // Draw safe zone overlay on HTML canvas (not Fabric)
   useEffect(() => {
     const overlay = overlayRef.current
     if (!overlay) return
     const ctx = overlay.getContext('2d')
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
-
     if (!showSafeZone) return
-
     const zones = SAFE_ZONES[activePlatform]?.zones || []
     zones.forEach((z) => {
       ctx.fillStyle = z.color
@@ -52,22 +49,21 @@ export default function CanvasEditor() {
       ctx.strokeStyle = z.color.replace(/[\d.]+\)$/, '0.9)')
       ctx.lineWidth = 2
       ctx.strokeRect(z.x * CANVAS_W, z.y * CANVAS_H, z.w * CANVAS_W, z.h * CANVAS_H)
-
-      ctx.fillStyle = 'rgba(255,255,255,0.7)'
-      ctx.font = '14px Segoe UI'
+      ctx.fillStyle = 'rgba(255,255,255,0.8)'
+      ctx.font = 'bold 14px Segoe UI'
       ctx.fillText(z.label, z.x * CANVAS_W + 8, z.y * CANVAS_H + 18)
     })
   }, [showSafeZone, activePlatform])
 
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
+    <div style={{
+      position: 'relative', width: '100%', aspectRatio: '16/9',
+      borderRadius: 8, overflow: 'hidden',
+      boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${theme.border}`,
+    }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-      <canvas
-        ref={overlayRef}
-        width={CANVAS_W}
-        height={CANVAS_H}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-      />
+      <canvas ref={overlayRef} width={CANVAS_W} height={CANVAS_H}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
     </div>
   )
 }
