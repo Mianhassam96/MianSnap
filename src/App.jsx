@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import useStore from './store/useStore'
 import CanvasEditor from './components/CanvasEditor'
 import VideoFramePicker from './components/VideoFramePicker'
@@ -61,15 +61,6 @@ const styles = {
 
 export default function App() {
   const { activePanel, setActivePanel, selectedFrame } = useStore()
-
-  // Load Fabric.js from CDN
-  useEffect(() => {
-    if (window.fabric) return
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js'
-    script.onload = () => console.log('Fabric.js loaded')
-    document.head.appendChild(script)
-  }, [])
 
   return (
     <div style={styles.app}>

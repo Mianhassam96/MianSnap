@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { fabric } from 'fabric'
 import useStore from '../store/useStore'
 import { removeBackground } from '../utils/bgRemoval'
 
@@ -52,7 +53,7 @@ export default function Toolbar() {
 
   function addText() {
     if (!fabricCanvas) return
-    const text = new window.fabric.IText('Double-click to edit', {
+    const text = new fabric.IText('Double-click to edit', {
       left: fabricCanvas.width / 2,
       top: fabricCanvas.height / 2,
       originX: 'center',
@@ -75,11 +76,11 @@ export default function Toolbar() {
     const cy = fabricCanvas.height / 2
 
     if (type === 'rect') {
-      shape = new window.fabric.Rect({ left: cx - 80, top: cy - 40, width: 160, height: 80, fill: 'rgba(124,58,237,0.7)', rx: 8, ry: 8 })
+      shape = new fabric.Rect({ left: cx - 80, top: cy - 40, width: 160, height: 80, fill: 'rgba(124,58,237,0.7)', rx: 8, ry: 8 })
     } else if (type === 'circle') {
-      shape = new window.fabric.Circle({ left: cx - 50, top: cy - 50, radius: 50, fill: 'rgba(79,70,229,0.7)' })
+      shape = new fabric.Circle({ left: cx - 50, top: cy - 50, radius: 50, fill: 'rgba(79,70,229,0.7)' })
     } else if (type === 'arrow') {
-      shape = new window.fabric.Triangle({ left: cx - 30, top: cy - 40, width: 60, height: 80, fill: '#ff3300', angle: 90 })
+      shape = new fabric.Triangle({ left: cx - 30, top: cy - 40, width: 60, height: 80, fill: '#ff3300', angle: 90 })
     }
 
     if (shape) {
@@ -121,7 +122,7 @@ export default function Toolbar() {
     const dataUrl = active.toDataURL()
     try {
       const result = await removeBackground(dataUrl, (msg) => setAiStatus(msg))
-      window.fabric.Image.fromURL(result, (img) => {
+      fabric.Image.fromURL(result, (img) => {
         img.set({ left: active.left, top: active.top, scaleX: active.scaleX, scaleY: active.scaleY })
         fabricCanvas.remove(active)
         fabricCanvas.add(img)

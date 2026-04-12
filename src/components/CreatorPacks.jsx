@@ -1,4 +1,5 @@
 import React from 'react'
+import { fabric } from 'fabric'
 import useStore from '../store/useStore'
 
 const PACKS = [
@@ -84,24 +85,20 @@ export default function CreatorPacks() {
   function applyPack(pack) {
     if (!fabricCanvas) return
 
-    // Set background
     fabricCanvas.setBackgroundColor(null, () => {})
 
     if (selectedFrame) {
-      // Load frame image as background
-      window.fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
+      fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
         img.scaleToWidth(fabricCanvas.width)
         img.scaleToHeight(fabricCanvas.height)
         fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
       })
     }
 
-    // Remove existing text objects
     const existing = fabricCanvas.getObjects().filter((o) => o._packText)
     existing.forEach((o) => fabricCanvas.remove(o))
 
-    // Add styled headline text
-    const text = new window.fabric.IText('YOUR TITLE HERE', {
+    const text = new fabric.IText('YOUR TITLE HERE', {
       left: fabricCanvas.width / 2,
       top: fabricCanvas.height * 0.75,
       originX: 'center',
@@ -111,7 +108,7 @@ export default function CreatorPacks() {
       fill: pack.textColor,
       stroke: pack.stroke,
       strokeWidth: 3,
-      shadow: new window.fabric.Shadow(pack.shadow),
+      shadow: new fabric.Shadow(pack.shadow),
       _packText: true,
     })
 

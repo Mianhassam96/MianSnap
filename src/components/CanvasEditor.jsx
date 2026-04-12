@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { fabric } from 'fabric'
 import useStore from '../store/useStore'
 import { SAFE_ZONES } from './SafeZoneOverlay'
 
@@ -14,7 +15,7 @@ export default function CanvasEditor() {
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return
 
-    const canvas = new window.fabric.Canvas(canvasRef.current, {
+    const canvas = new fabric.Canvas(canvasRef.current, {
       width: CANVAS_W,
       height: CANVAS_H,
       backgroundColor: '#0a0a0f',
@@ -28,7 +29,7 @@ export default function CanvasEditor() {
   // Load selected frame as background
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
-    window.fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
+    fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
       img.scaleToWidth(CANVAS_W)
       img.scaleToHeight(CANVAS_H)
       fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
