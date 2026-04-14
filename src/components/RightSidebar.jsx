@@ -137,7 +137,12 @@ export default function RightSidebar() {
             {layers.map((layer) => (
               <div key={layer.id} style={s.layerItem(selectedId === layer.id)} onClick={() => selectLayer(layer)}>
                 <span style={s.layerIcon}>{typeIcon(layer.type)}</span>
-                <span style={s.layerName}>{layer.name}</span>
+                <span
+                  contentEditable suppressContentEditableWarning
+                  onBlur={(e) => { layer.obj._customName = e.currentTarget.textContent }}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ ...s.layerName, outline: 'none', cursor: 'text' }}
+                >{layer.name}</span>
                 <button style={s.iconBtn} onClick={(e) => { e.stopPropagation(); handleToggleVisibility(layer) }}
                   title="Toggle visibility">{layer.visible ? '👁' : '🚫'}</button>
                 <button style={s.iconBtn} onClick={(e) => { e.stopPropagation(); handleToggleLock(layer) }}

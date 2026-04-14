@@ -3,7 +3,7 @@ import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import useProjectStore from '../store/useProjectStore'
 
-export default function TopBar() {
+export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap }) {
   const { theme, isDark, toggleTheme } = useUIStore()
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
@@ -88,7 +88,7 @@ export default function TopBar() {
 
   return (
     <div style={s.bar}>
-      <div style={s.logo}>
+      <div style={{ ...s.logo, cursor: 'pointer' }} onClick={onShowLanding} title="Back to home">
         <span style={s.logoText}>MianSnap</span>
       </div>
       <div style={s.badge}>BETA</div>
@@ -130,6 +130,12 @@ export default function TopBar() {
       </button>
 
       <div style={s.divider} />
+
+      <button style={{ ...s.themeBtn, fontSize: 12, color: snapEnabled ? theme.accent : theme.textMuted,
+        borderColor: snapEnabled ? theme.accent : theme.border }}
+        onClick={onToggleSnap} title="Toggle snap to grid">
+        ⊞
+      </button>
 
       <button style={s.themeBtn} onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
         {isDark ? '☀️' : '🌙'}

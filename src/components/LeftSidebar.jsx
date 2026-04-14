@@ -5,12 +5,15 @@ import useCanvasStore from '../store/useCanvasStore'
 import { applySmartTypography } from '../utils/smartTypography'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
+import AssetManager from './AssetManager'
 import { removeBackground } from '../utils/bgRemoval'
+import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 
 const TOOLS = [
   { id: 'text', icon: '𝐓', label: 'Text' },
   { id: 'shapes', icon: '◻', label: 'Shapes' },
   { id: 'presets', icon: '🎨', label: 'Packs' },
+  { id: 'assets', icon: '📁', label: 'Assets' },
   { id: 'safezone', icon: '📐', label: 'Zones' },
 ]
 
@@ -333,6 +336,18 @@ export default function LeftSidebar() {
             <div style={s.section}>
               <div style={s.sectionTitle}>AI Tools</div>
               <button style={s.aiBtn} onClick={handleBgRemoval}>🤖 Remove Background (AI)</button>
+              <button style={{ ...s.aiBtn, marginTop: 6, background: `linear-gradient(135deg,#0ea5e9,#6366f1)` }}
+                onClick={() => faceAutoFocus(fabricCanvas)}>
+                🎯 Face Auto-Focus
+              </button>
+              <button style={{ ...s.aiBtn, marginTop: 6, background: `linear-gradient(135deg,#f59e0b,#ef4444)` }}
+                onClick={() => amplifyEmotion(fabricCanvas)}>
+                😎 Emotion Amplifier
+              </button>
+              <button style={{ ...s.aiBtn, marginTop: 6, background: theme.bgTertiary, color: theme.textSecondary, border: `1px solid ${theme.border}` }}
+                onClick={() => resetFilters(fabricCanvas)}>
+                ↺ Reset Filters
+              </button>
               {aiStatus && <div style={s.aiStatus}>{aiStatus}</div>}
             </div>
           </>
@@ -363,6 +378,7 @@ export default function LeftSidebar() {
         )}
 
         {activeLeftPanel === 'presets' && <CreatorPacks />}
+        {activeLeftPanel === 'assets' && <AssetManager />}
         {activeLeftPanel === 'safezone' && <SafeZoneOverlay />}
       </div>
     </div>
