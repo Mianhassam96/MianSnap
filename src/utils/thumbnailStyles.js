@@ -81,6 +81,57 @@ const STYLES = {
     textPos: { x: 0.5, y: 0.82 },
     vignette: false,
   },
+  horror: {
+    label: '👻 Horror / Scary',
+    emoji: '👻',
+    bg: 'linear-gradient(135deg,#0a0000,#1a0000)',
+    filters: [
+      { type: 'Contrast', value: 0.35 },
+      { type: 'Saturation', value: -0.5 },
+      { type: 'Brightness', value: -0.1 },
+    ],
+    text: { content: 'SOMETHING IS WRONG...', font: 'Permanent Marker', size: 60, fill: '#ff0000', stroke: '#000000', strokeWidth: 3, shadow: { color: '#ff0000', blur: 40, offsetX: 0, offsetY: 0 } },
+    textPos: { x: 0.5, y: 0.85 },
+    vignette: true,
+  },
+  tutorial: {
+    label: '📚 Tutorial / How-To',
+    emoji: '📚',
+    bg: 'linear-gradient(135deg,#001433,#000d22)',
+    filters: [
+      { type: 'Brightness', value: 0.08 },
+      { type: 'Contrast', value: 0.1 },
+      { type: 'Saturation', value: 0.15 },
+    ],
+    text: { content: 'HOW TO DO THIS', font: 'Poppins', size: 72, fill: '#ffffff', stroke: '#0ea5e9', strokeWidth: 2, shadow: { color: '#0ea5e9', blur: 20, offsetX: 0, offsetY: 0 } },
+    textPos: { x: 0.5, y: 0.12 },
+    vignette: false,
+  },
+  money: {
+    label: '💰 Money / Finance',
+    emoji: '💰',
+    bg: 'linear-gradient(135deg,#0a1a00,#001a00)',
+    filters: [
+      { type: 'Saturation', value: 0.2 },
+      { type: 'Contrast', value: 0.15 },
+      { type: 'Brightness', value: 0.05 },
+    ],
+    text: { content: '$10,000 IN 30 DAYS', font: 'Montserrat', size: 70, fill: '#00ff88', stroke: '#000000', strokeWidth: 3, shadow: { color: '#00ff88', blur: 25, offsetX: 0, offsetY: 0 } },
+    textPos: { x: 0.5, y: 0.8 },
+    vignette: false,
+  },
+  minimal: {
+    label: '🤍 Clean Minimal',
+    emoji: '🤍',
+    bg: 'linear-gradient(135deg,#111,#1a1a1a)',
+    filters: [
+      { type: 'Contrast', value: 0.1 },
+      { type: 'Brightness', value: 0.05 },
+    ],
+    text: { content: 'WATCH THIS', font: 'Raleway', size: 68, fill: '#ffffff', stroke: 'transparent', strokeWidth: 0, shadow: { color: 'rgba(0,0,0,0.5)', blur: 8, offsetX: 0, offsetY: 2 } },
+    textPos: { x: 0.5, y: 0.85 },
+    vignette: false,
+  },
 }
 
 export function applyThumbnailStyle(fabricCanvas, styleKey) {

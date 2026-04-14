@@ -1,6 +1,7 @@
 /**
- * "Make it Viral" — one-click magic
- * Combines: emotion amplifier + contrast boost + face zoom + glow text + smart typography
+ * "Make it Viral" — one-click autonomous thumbnail enhancement
+ * Applies: contrast boost, saturation, face zoom hint, glow text,
+ * smart typography, subject spotlight, vignette
  */
 import { fabric } from '../lib/fabric'
 import { faceAutoFocus } from './faceDetect'
@@ -11,63 +12,91 @@ export async function makeItViral(fabricCanvas) {
 
   const steps = []
 
-  // 1. Boost background image filters
+  // 1. Boost background image — contrast + saturation + slight brightness
   const bg = fabricCanvas.backgroundImage
   if (bg && bg.filters !== undefined) {
     bg.filters = [
-      new fabric.Image.filters.Contrast({ contrast: 0.2 }),
-      new fabric.Image.filters.Brightness({ brightness: 0.06 }),
-      new fabric.Image.filters.Saturation({ saturation: 0.25 }),
+      new fabric.Image.filters.Contrast({ contrast: 0.25 }),
+      new fabric.Image.filters.Brightness({ brightness: 0.05 }),
+      new fabric.Image.filters.Saturation({ saturation: 0.3 }),
     ]
     bg.applyFilters()
-    steps.push('✓ Boosted contrast & saturation')
+    steps.push('✓ Contrast & saturation boosted')
   }
 
-  // 2. Face auto-focus
+  // 2. Face auto-focus (rule of thirds positioning)
   try {
     faceAutoFocus(fabricCanvas)
-    steps.push('✓ Face auto-focused (rule of thirds)')
+    steps.push('✓ Face auto-focused')
   } catch (_) {}
 
-  // 3. Apply smart typography to all text objects
+  // 3. Smart typography on all text objects
   const textObjs = fabricCanvas.getObjects().filter(
     (o) => o.type === 'i-text' || o.type === 'textbox'
   )
   textObjs.forEach((t) => {
     applySmartTypography(t, fabricCanvas)
-    // Boost font size if too small
-    if (t.fontSize < 48) {
-      t.set('fontSize', 64)
+    if (t.fontSize < 56) {
+      t.set('fontSize', 72)
       steps.push('✓ Text size boosted for mobile')
     }
-    // Add glow
+    // Strong glow + shadow for readability
     t.set('shadow', new fabric.Shadow({
-      color: 'rgba(0,0,0,0.9)', blur: 20, offsetX: 2, offsetY: 2,
+      color: 'rgba(0,0,0,0.95)', blur: 24, offsetX: 2, offsetY: 3,
     }))
+    // Ensure stroke for contrast
+    if (!t.stroke || t.stroke === 'transparent') {
+      t.set({ stroke: '#000000', strokeWidth: 2 })
+    }
   })
-  if (textObjs.length > 0) steps.push('✓ Smart typography applied')
+  if (textObjs.length > 0) steps.push('✓ Text glow & readability enhanced')
 
-  // 4. Add glow overlay on subject (subtle radial highlight)
-  const existingGlow = fabricCanvas.getObjects().find((o) => o._viralGlow)
-  if (!existingGlow) {
-    const glow = new fabric.Ellipse({
-      left: fabricCanvas.width * 0.5,
-      top: fabricCanvas.height * 0.4,
-      rx: fabricCanvas.width * 0.25,
-      ry: fabricCanvas.height * 0.3,
-      originX: 'center', originY: 'center',
-      fill: 'rgba(255,255,255,0.06)',
-      stroke: 'rgba(255,255,255,0.12)',
-      strokeWidth: 2,
-      selectable: false, evented: false,
-      _viralGlow: true,
-    })
-    fabricCanvas.add(glow)
-    fabricCanvas.sendToBack(glow)
-    steps.push('✓ Subject glow added')
-  }
+  // 4. Remove old viral overlays
+  fabricCanvas.getObjects()
+    .filter((o) => o._viralGlow || o._viralVignette)
+    .forEach((o) => fabricCanvas.remove(o))
+
+  // 5. Subject spotlight — radial glow in center
+  const spotlight = new fabric.Ellipse({
+    left: fabricCanvas.width * 0.5,
+    top: fabricCanvas.height * 0.42,
+    rx: fabricCanvas.width * 0.28,
+    ry: fabricCanvas.height * 0.32,
+    originX: 'center', originY: 'center',
+    fill: 'rgba(255,255,255,0.07)',
+    stroke: 'rgba(255,255,255,0.14)',
+    strokeWidth: 2,
+    selectable: false, evented: false,
+    _viralGlow: true,
+  })
+  fabricCanvas.add(spotlight)
+  fabricCanvas.sendToBack(spotlight)
+  steps.push('✓ Subject spotlight added')
+
+  // 6. Vignette — dark edges draw eye to center
+  const vignette = new fabric.Rect({
+    left: 0, top: 0,
+    width: fabricCanvas.width, height: fabricCanvas.height,
+    fill: new fabric.Gradient({
+      type: 'radial',
+      coords: {
+        r1: 0, r2: fabricCanvas.width * 0.7,
+        x1: fabricCanvas.width / 2, y1: fabricCanvas.height / 2,
+        x2: fabricCanvas.width / 2, y2: fabricCanvas.height / 2,
+      },
+      colorStops: [
+        { offset: 0, color: 'rgba(0,0,0,0)' },
+        { offset: 0.6, color: 'rgba(0,0,0,0)' },
+        { offset: 1, color: 'rgba(0,0,0,0.55)' },
+      ],
+    }),
+    selectable: false, evented: false,
+    _viralVignette: true,
+  })
+  fabricCanvas.add(vignette)
+  fabricCanvas.sendToBack(vignette)
+  steps.push('✓ Vignette applied')
 
   fabricCanvas.renderAll()
   return { steps }
 }
-

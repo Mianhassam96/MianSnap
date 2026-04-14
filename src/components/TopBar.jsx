@@ -3,7 +3,7 @@ import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import useProjectStore from '../store/useProjectStore'
 
-export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap }) {
+export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
   const { theme, isDark, toggleTheme } = useUIStore()
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
@@ -150,6 +150,14 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap }) {
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
       >
         {isSaving ? '⏳' : '💾'} {isSaving ? 'Saving...' : 'Save'}
+      </button>
+
+      {/* Projects */}
+      <button style={s.saveBtn} onClick={onShowProjects}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+      >
+        📂 Projects
       </button>
 
       {/* Export */}

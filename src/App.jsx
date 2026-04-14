@@ -8,21 +8,33 @@ import RightSidebar from './components/RightSidebar'
 import CanvasEditor from './components/CanvasEditor'
 import BottomPanel from './components/BottomPanel'
 import LandingPage from './components/LandingPage'
-import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
+import SmartStart from './components/SmartStart'
+import ProjectsPanel from './components/ProjectsPanel'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
+
+const SMART_START_KEY = 'miansnap_smart_start_done'
 
 export default function App() {
   const { theme } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
   const { projectName } = useProjectStore()
   const [showLanding, setShowLanding] = useState(true)
-  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showSmartStart, setShowSmartStart] = useState(false)
+  const [showProjects, setShowProjects] = useState(false)
   const [snapEnabled, setSnapEnabled] = useState(false)
 
   function enterEditor() {
     setShowLanding(false)
-    if (shouldShowOnboarding()) setShowOnboarding(true)
+    // Show Smart Start on first visit
+    if (!localStorage.getItem(SMART_START_KEY)) {
+      setShowSmartStart(true)
+    }
+  }
+
+  function handleSmartStartDone() {
+    localStorage.setItem(SMART_START_KEY, '1')
+    setShowSmartStart(false)
   }
 
   useEffect(() => {
@@ -34,11 +46,9 @@ export default function App() {
   }, [fabricCanvas])
 
   if (showLanding) {
-    // Allow body to scroll for landing page
     document.body.style.overflow = 'auto'
     return <LandingPage onEnter={enterEditor} />
   }
-  // Lock scroll for editor
   document.body.style.overflow = 'hidden'
 
   return (
@@ -46,12 +56,14 @@ export default function App() {
       display: 'flex', flexDirection: 'column', height: '100vh',
       background: theme.bg, color: theme.text,
       fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-      overflow: 'hidden', transition: 'background 0.25s, color 0.25s',
+      overflow: 'hidden',
     }}>
-      {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
+      {showSmartStart && <SmartStart onDone={handleSmartStartDone} />}
+      {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
 
       <TopBar
         onShowLanding={() => setShowLanding(true)}
+        onShowProjects={() => setShowProjects(true)}
         snapEnabled={snapEnabled}
         onToggleSnap={() => setSnapEnabled(v => !v)}
       />

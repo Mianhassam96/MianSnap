@@ -21,7 +21,8 @@ export async function saveProject(project) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
-    const req = store.add(project)
+    // If project has an id, update it; otherwise insert new
+    const req = project.id ? store.put(project) : store.add(project)
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
   })
