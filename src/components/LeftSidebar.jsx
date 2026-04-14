@@ -6,13 +6,15 @@ import { applySmartTypography } from '../utils/smartTypography'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
+import OneClickStyles from './OneClickStyles'
+import ABGenerator from './ABGenerator'
 import { removeBackground } from '../utils/bgRemoval'
 import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 
 const TOOLS = [
   { id: 'text', icon: '𝐓', label: 'Text' },
   { id: 'shapes', icon: '◻', label: 'Shapes' },
-  { id: 'presets', icon: '🎨', label: 'Packs' },
+  { id: 'styles', icon: '✨', label: 'Styles' },
   { id: 'assets', icon: '📁', label: 'Assets' },
   { id: 'safezone', icon: '📐', label: 'Zones' },
 ]
@@ -377,7 +379,13 @@ export default function LeftSidebar() {
           </div>
         )}
 
-        {activeLeftPanel === 'presets' && <CreatorPacks />}
+        {activeLeftPanel === 'styles' && (
+          <>
+            <OneClickStyles />
+            <div style={{ marginTop: 16 }}><ABGenerator /></div>
+            <div style={{ marginTop: 16 }}><CreatorPacks /></div>
+          </>
+        )}
         {activeLeftPanel === 'assets' && <AssetManager />}
         {activeLeftPanel === 'safezone' && <SafeZoneOverlay />}
       </div>
