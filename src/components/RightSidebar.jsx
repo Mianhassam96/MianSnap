@@ -3,6 +3,8 @@ import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import useLayerStore from '../store/useLayerStore'
 import ViralScore from './ViralScore'
+import MobilePreview from './MobilePreview'
+import BeforeAfter from './BeforeAfter'
 
 export default function RightSidebar() {
   const { theme, activeRightPanel, setActiveRightPanel } = useUIStore()
@@ -115,12 +117,12 @@ export default function RightSidebar() {
   return (
     <div style={s.sidebar}>
       <div style={s.tabs}>
-        {['layers', 'properties', 'score'].map((p) => (
+        {['layers', 'properties', 'score', 'preview', 'compare'].map((p) => (
           <button key={p}
             style={{ ...s.tab, ...(activeRightPanel === p ? s.tabActive : {}) }}
             onClick={() => setActiveRightPanel(p)}
           >
-            {p === 'layers' ? '🗂 Layers' : p === 'properties' ? '⚙ Props' : '⚡ Score'}
+            {p === 'layers' ? '🗂' : p === 'properties' ? '⚙' : p === 'score' ? '⚡' : p === 'preview' ? '📱' : '↔'}
           </button>
         ))}
       </div>
@@ -213,6 +215,8 @@ export default function RightSidebar() {
         )}
 
         {activeRightPanel === 'score' && <ViralScore />}
+        {activeRightPanel === 'preview' && <MobilePreview />}
+        {activeRightPanel === 'compare' && <BeforeAfter />}
       </div>
     </div>
   )

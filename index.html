@@ -7,6 +7,12 @@
     <meta name="theme-color" content="#7c3aed" />
     <meta property="og:title" content="MianSnap — Viral Thumbnail Intelligence Engine" />
     <meta property="og:description" content="Browser-based thumbnail studio. No uploads. Full privacy. Built for creators." />
+    <meta property="og:image" content="https://mianhassam96.github.io/MianSnap/favicon.svg" />
+    <meta property="og:url" content="https://mianhassam96.github.io/MianSnap/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MianSnap — Viral Thumbnail Intelligence Engine" />
+    <meta name="twitter:description" content="Browser-based thumbnail studio. No uploads. Full privacy." />
     <title>MianSnap — Viral Thumbnail Intelligence Engine</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,6 +34,13 @@
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 10px; }
       ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+      .fade-in { animation: fadeIn 0.25s ease; }
+      .slide-in { animation: slideIn 0.2s ease; }
+      button { font-family: inherit; }
+      input, select, textarea { font-family: inherit; }
     </style>
   </head>
   <body>

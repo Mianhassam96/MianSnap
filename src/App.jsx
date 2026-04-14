@@ -8,6 +8,7 @@ import RightSidebar from './components/RightSidebar'
 import CanvasEditor from './components/CanvasEditor'
 import BottomPanel from './components/BottomPanel'
 import LandingPage from './components/LandingPage'
+import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 
@@ -16,9 +17,14 @@ export default function App() {
   const { fabricCanvas } = useCanvasStore()
   const { projectName } = useProjectStore()
   const [showLanding, setShowLanding] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [snapEnabled, setSnapEnabled] = useState(false)
 
-  // Auto-save + alignment guides once canvas is ready
+  function enterEditor() {
+    setShowLanding(false)
+    if (shouldShowOnboarding()) setShowOnboarding(true)
+  }
+
   useEffect(() => {
     if (!fabricCanvas) return
     const cleanup = setupAutoSave(fabricCanvas, () => projectName)
@@ -28,7 +34,7 @@ export default function App() {
   }, [fabricCanvas])
 
   if (showLanding) {
-    return <LandingPage onEnter={() => setShowLanding(false)} />
+    return <LandingPage onEnter={enterEditor} />
   }
 
   return (
@@ -38,12 +44,17 @@ export default function App() {
       fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
       overflow: 'hidden', transition: 'background 0.25s, color 0.25s',
     }}>
-      <TopBar onShowLanding={() => setShowLanding(true)} snapEnabled={snapEnabled} onToggleSnap={() => setSnapEnabled(v => !v)} />
+      {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
+
+      <TopBar
+        onShowLanding={() => setShowLanding(true)}
+        snapEnabled={snapEnabled}
+        onToggleSnap={() => setSnapEnabled(v => !v)}
+      />
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <LeftSidebar />
 
-        {/* Center */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
           <div style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -8,6 +8,8 @@ import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
 import OneClickStyles from './OneClickStyles'
 import ABGenerator from './ABGenerator'
+import MakeItViral from './MakeItViral'
+import SmartTextSuggestions from './SmartTextSuggestions'
 import { removeBackground } from '../utils/bgRemoval'
 import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 
@@ -381,7 +383,9 @@ export default function LeftSidebar() {
 
         {activeLeftPanel === 'styles' && (
           <>
-            <OneClickStyles />
+            <MakeItViral />
+            <div style={{ marginTop: 4 }}><OneClickStyles /></div>
+            <div style={{ marginTop: 16 }}><SmartTextSuggestions /></div>
             <div style={{ marginTop: 16 }}><ABGenerator /></div>
             <div style={{ marginTop: 16 }}><CreatorPacks /></div>
           </>
