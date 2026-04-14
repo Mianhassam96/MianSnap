@@ -107,16 +107,41 @@ export default function LandingPage({ onEnter }) {
     cardTitle: { fontSize: 15, fontWeight: 700, marginBottom: 8, color: theme.text },
     cardDesc: { fontSize: 13, color: theme.textSecondary, lineHeight: 1.5 },
     footer: {
-      textAlign: 'center', padding: '32px 24px',
       borderTop: `1px solid ${theme.border}`,
-      color: theme.textMuted, fontSize: 12,
       background: theme.bgSecondary,
+      padding: '32px 40px 24px',
     },
+    footerInner: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: 24,
+      maxWidth: 1100,
+      margin: '0 auto',
+      paddingBottom: 24,
+      borderBottom: `1px solid ${theme.border}`,
+    },
+    footerBrand: { display: 'flex', flexDirection: 'column', gap: 6 },
     footerLogo: {
-      fontSize: 16, fontWeight: 800,
+      fontSize: 20, fontWeight: 800,
       background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
       WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-      fontFamily: "'Montserrat', sans-serif", marginBottom: 8,
+      fontFamily: "'Montserrat', sans-serif",
+    },
+    footerTagline: { fontSize: 13, color: theme.textMuted },
+    footerLinks: {
+      display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center',
+    },
+    footerLink: {
+      fontSize: 13, color: theme.textMuted, textDecoration: 'none',
+      fontWeight: 500, transition: 'color 0.15s',
+    },
+    footerBottom: {
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexWrap: 'wrap', gap: 8,
+      maxWidth: 1100, margin: '20px auto 0',
+      fontSize: 12, color: theme.textSecondary,
     },
   }
 
@@ -187,11 +212,34 @@ export default function LandingPage({ onEnter }) {
 
       {/* Footer */}
       <footer style={s.footer}>
-        <div style={s.footerLogo}>MianSnap</div>
-        <div>Built by <strong>Mianhassam96</strong> · Open source · Free forever</div>
-        <div style={{ marginTop: 6 }}>
-          <a href="https://github.com/Mianhassam96/MianSnap" target="_blank" rel="noreferrer"
-            style={{ color: theme.accent, textDecoration: 'none' }}>GitHub ↗</a>
+        <div style={s.footerInner}>
+          {/* Brand */}
+          <div style={s.footerBrand}>
+            <div style={s.footerLogo}>MianSnap</div>
+            <div style={s.footerTagline}>Create viral thumbnails in seconds</div>
+          </div>
+
+          {/* Links */}
+          <div style={s.footerLinks}>
+            {[
+              { label: 'MultiMian', href: 'https://multimian.com/' },
+              { label: 'GitHub', href: 'https://github.com/Mianhassam96/' },
+              { label: 'LinkedIn', href: 'https://www.linkedin.com/in/mianhassam96/' },
+            ].map((link) => (
+              <a key={link.label} href={link.href} target="_blank" rel="noreferrer" style={s.footerLink}
+                onMouseEnter={(e) => { e.currentTarget.style.color = theme.accent }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted }}
+              >
+                {link.label} ↗
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div style={s.footerBottom}>
+          <span>© 2026 MultiMian. All rights reserved.</span>
+          <span style={{ color: theme.textMuted }}>Made with ❤️ for creators</span>
         </div>
       </footer>
     </div>
