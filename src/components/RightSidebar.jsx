@@ -8,7 +8,7 @@ import BeforeAfter from './BeforeAfter'
 
 export default function RightSidebar() {
   const { theme, activeRightPanel, setActiveRightPanel } = useUIStore()
-  const { fabricCanvas } = useCanvasStore()
+  const { fabricCanvas, viralScore } = useCanvasStore()
   const { layers, setLayers, selectedId, setSelectedId, toggleVisibility, toggleLock } = useLayerStore()
   const [activeObj, setActiveObj] = useState(null)
 
@@ -121,8 +121,24 @@ export default function RightSidebar() {
           <button key={p}
             style={{ ...s.tab, ...(activeRightPanel === p ? s.tabActive : {}) }}
             onClick={() => setActiveRightPanel(p)}
+            title={p === 'score' ? 'Viral Score' : p === 'preview' ? 'Live Preview' : p === 'compare' ? 'Before/After' : p}
           >
-            {p === 'layers' ? '🗂' : p === 'properties' ? '⚙' : p === 'score' ? '⚡' : p === 'preview' ? '📱' : '↔'}
+            {p === 'layers' ? '🗂' : p === 'properties' ? '⚙' : p === 'score'
+              ? (
+                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  ⚡
+                  {viralScore && (
+                    <span style={{
+                      position: 'absolute', top: -6, right: -10,
+                      background: viralScore.score >= 75 ? theme.success : viralScore.score >= 50 ? theme.warning : theme.danger,
+                      color: '#fff', fontSize: 7, fontWeight: 800,
+                      padding: '1px 3px', borderRadius: 3, lineHeight: 1,
+                      minWidth: 14, textAlign: 'center',
+                    }}>{viralScore.score}</span>
+                  )}
+                </span>
+              )
+              : p === 'preview' ? '📱' : '↔'}
           </button>
         ))}
       </div>
