@@ -34,8 +34,12 @@ export default function App() {
   }, [fabricCanvas])
 
   if (showLanding) {
+    // Allow body to scroll for landing page
+    document.body.style.overflow = 'auto'
     return <LandingPage onEnter={enterEditor} />
   }
+  // Lock scroll for editor
+  document.body.style.overflow = 'hidden'
 
   return (
     <div style={{
