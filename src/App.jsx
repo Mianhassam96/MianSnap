@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import useUIStore from './store/useUIStore'
 import useCanvasStore from './store/useCanvasStore'
 import useProjectStore from './store/useProjectStore'
+import useVideoStore from './store/useVideoStore'
 import TopBar from './components/TopBar'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
@@ -10,17 +11,18 @@ import BottomPanel from './components/BottomPanel'
 import LandingPage from './components/LandingPage'
 import SmartStart from './components/SmartStart'
 import ProjectsPanel from './components/ProjectsPanel'
+import CanvasEmptyState from './components/CanvasEmptyState'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
-
-const SMART_START_KEY = 'miansnap_smart_start_done'
+import { fabric } from './lib/fabric'
 
 export default function App() {
   const { theme, setActiveRightPanel } = useUIStore()
   const { fabricCanvas, setViralScore } = useCanvasStore()
   const { projectName } = useProjectStore()
+  const { setVideoFile } = useVideoStore()
   const [showLanding, setShowLanding] = useState(true)
   const [showSmartStart, setShowSmartStart] = useState(false)
   const [showProjects, setShowProjects] = useState(false)
@@ -30,12 +32,12 @@ export default function App() {
 
   function enterEditor() {
     setShowLanding(false)
-    if (!localStorage.getItem(SMART_START_KEY)) setShowSmartStart(true)
+    setShowSmartStart(true) // always show on entry
   }
 
   function handleSmartStartDone() {
-    localStorage.setItem(SMART_START_KEY, '1')
     setShowSmartStart(false)
+    setActiveRightPanel('score') // default to score tab
   }
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function App() {
     setupAlignmentGuides(fabricCanvas)
     setupSnapToGrid(fabricCanvas, snapEnabled)
 
-    // Auto-score when canvas changes
+    // Live score on every canvas change
     const autoScore = () => {
       const score = calculateViralScore(fabricCanvas)
       if (score) setViralScore(score)
@@ -71,6 +73,29 @@ export default function App() {
     setViralRunning(false)
     setViralDone(true)
     setTimeout(() => setViralDone(false), 3000)
+  }
+
+  function handleUploadVideo() {
+    const input = document.createElement('input')
+    input.type = 'file'; input.accept = 'video/*'
+    input.onchange = (e) => { const f = e.target.files[0]; if (f) setVideoFile(f) }
+    input.click()
+  }
+
+  function handleUploadImage() {
+    const input = document.createElement('input')
+    input.type = 'file'; input.accept = 'image/*'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file || !fabricCanvas) return
+      const url = URL.createObjectURL(file)
+      fabric.Image.fromURL(url, (img) => {
+        img.scaleToWidth(fabricCanvas.width)
+        img.scaleToHeight(fabricCanvas.height)
+        fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
+      })
+    }
+    input.click()
   }
 
   if (showLanding) {
@@ -110,36 +135,51 @@ export default function App() {
               : 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 70%)',
             position: 'relative',
           }}>
+            {/* Empty state guide */}
+            <CanvasEmptyState
+              onUploadVideo={handleUploadVideo}
+              onUploadImage={handleUploadImage}
+            />
+
             <div style={{ width: '100%', maxWidth: 920 }}>
               <CanvasEditor />
             </div>
 
-            {/* Floating "Make Viral" button */}
+            {/* Floating Make Viral FAB */}
             <button
               onClick={handleMakeViral}
               disabled={viralRunning}
-              title="One-click AI enhancement"
+              title="One-click AI enhancement — contrast, glow, face focus, vignette"
               style={{
                 position: 'absolute', bottom: 24, right: 24,
-                padding: '10px 20px', borderRadius: 10, border: 'none',
+                padding: '11px 22px', borderRadius: 10, border: 'none',
                 background: viralDone
                   ? 'linear-gradient(135deg,#16a34a,#15803d)'
                   : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-                backgroundSize: '200% auto',
                 color: '#fff', fontSize: 13, fontWeight: 700,
                 cursor: viralRunning ? 'wait' : 'pointer',
                 boxShadow: viralDone
                   ? '0 4px 20px rgba(22,163,74,0.5)'
-                  : '0 4px 24px rgba(239,68,68,0.45)',
+                  : '0 6px 28px rgba(239,68,68,0.5)',
                 transition: 'transform 0.15s, box-shadow 0.15s, background 0.3s',
                 display: 'flex', alignItems: 'center', gap: 7,
                 zIndex: 10,
-                animation: viralRunning ? 'pulse 1s infinite' : 'none',
+                letterSpacing: '-0.2px',
               }}
-              onMouseEnter={(e) => { if (!viralRunning) { e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(239,68,68,0.6)' } }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 4px 24px rgba(239,68,68,0.45)' }}
+              onMouseEnter={(e) => {
+                if (!viralRunning) {
+                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.04)'
+                  e.currentTarget.style.boxShadow = '0 10px 36px rgba(239,68,68,0.65)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)'
+                e.currentTarget.style.boxShadow = viralDone
+                  ? '0 4px 20px rgba(22,163,74,0.5)'
+                  : '0 6px 28px rgba(239,68,68,0.5)'
+              }}
             >
-              {viralRunning ? '⏳ Working...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}
+              {viralRunning ? '⏳ Enhancing...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}
             </button>
           </div>
 
