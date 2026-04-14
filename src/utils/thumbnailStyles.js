@@ -2,7 +2,7 @@
  * One-Click Thumbnail Styles
  * Each style applies: color grading, text, glow, contrast boost
  */
-import { fabric } from 'fabric'
+import { fabric } from '../lib/fabric'
 
 const STYLES = {
   dramatic: {
@@ -135,3 +135,4 @@ export function applyThumbnailStyle(fabricCanvas, styleKey) {
 }
 
 export { STYLES }
+

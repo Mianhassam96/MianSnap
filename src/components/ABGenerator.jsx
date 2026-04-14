@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { fabric } from 'fabric'
+import { fabric } from '../lib/fabric'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 
@@ -131,3 +131,4 @@ export default function ABGenerator() {
     </div>
   )
 }
+

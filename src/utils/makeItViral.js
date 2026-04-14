@@ -2,7 +2,7 @@
  * "Make it Viral" — one-click magic
  * Combines: emotion amplifier + contrast boost + face zoom + glow text + smart typography
  */
-import { fabric } from 'fabric'
+import { fabric } from '../lib/fabric'
 import { faceAutoFocus } from './faceDetect'
 import { applySmartTypography } from './smartTypography'
 
@@ -70,3 +70,4 @@ export async function makeItViral(fabricCanvas) {
   fabricCanvas.renderAll()
   return { steps }
 }
+

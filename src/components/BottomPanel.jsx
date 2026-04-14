@@ -4,7 +4,7 @@ import useVideoStore from '../store/useVideoStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { extractFrames, captureFrame, stepFrame } from '../utils/frameExtractor'
 import { getSuggestedFrames } from '../utils/frameSuggestions'
-import { fabric } from 'fabric'
+import { fabric } from '../lib/fabric'
 
 export default function BottomPanel() {
   const { theme } = useUIStore()
@@ -397,3 +397,4 @@ export default function BottomPanel() {
     </div>
   )
 }
+

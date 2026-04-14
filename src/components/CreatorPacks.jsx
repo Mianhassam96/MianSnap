@@ -1,5 +1,5 @@
 import React from 'react'
-import { fabric } from 'fabric'
+import { fabric } from '../lib/fabric'
 import useCanvasStore from '../store/useCanvasStore'
 import useVideoStore from '../store/useVideoStore'
 import useUIStore from '../store/useUIStore'
@@ -67,3 +67,4 @@ export default function CreatorPacks() {
     </div>
   )
 }
+

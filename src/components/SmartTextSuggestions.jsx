@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { fabric } from 'fabric'
+import { fabric } from '../lib/fabric'
 import useCanvasStore from '../store/useCanvasStore'
 import useUIStore from '../store/useUIStore'
 
@@ -124,3 +124,4 @@ export default function SmartTextSuggestions() {
     </div>
   )
 }
+
