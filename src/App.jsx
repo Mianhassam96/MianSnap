@@ -12,6 +12,7 @@ import LandingPage from './components/LandingPage'
 import SmartStart from './components/SmartStart'
 import ProjectsPanel from './components/ProjectsPanel'
 import CanvasEmptyState from './components/CanvasEmptyState'
+import ShortcutBar from './components/ShortcutBar'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
@@ -144,6 +145,9 @@ export default function App() {
             <div style={{ width: '100%', maxWidth: 920 }}>
               <CanvasEditor />
             </div>
+
+            {/* Keyboard shortcut hint */}
+            <ShortcutBar />
 
             {/* Floating Make Viral FAB */}
             <button

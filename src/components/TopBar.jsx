@@ -5,9 +5,18 @@ import useProjectStore from '../store/useProjectStore'
 
 export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
   const { theme, isDark, toggleTheme } = useUIStore()
-  const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat } = useCanvasStore()
+  const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
   const [editing, setEditing] = useState(false)
+
+  // Access history via canvas store ref — history lives in CanvasEditor
+  // We trigger undo/redo by dispatching synthetic keyboard events
+  function triggerUndo() {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }))
+  }
+  function triggerRedo() {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, bubbles: true }))
+  }
 
   function handleExport() {
     if (!fabricCanvas) return
@@ -126,6 +135,24 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       </div>
 
       <div style={s.spacer} />
+
+      {/* Undo / Redo */}
+      <button
+        style={{ ...s.iconBtn, opacity: canUndo ? 1 : 0.35, cursor: canUndo ? 'pointer' : 'not-allowed' }}
+        onClick={triggerUndo} disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+        onMouseEnter={(e) => { if (canUndo) { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow } }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+      >↩</button>
+      <button
+        style={{ ...s.iconBtn, opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'not-allowed' }}
+        onClick={triggerRedo} disabled={!canRedo}
+        title="Redo (Ctrl+Y)"
+        onMouseEnter={(e) => { if (canRedo) { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow } }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+      >↪</button>
+
+      <div style={s.divider} />
 
       {/* Quality + Format */}
       <select style={s.select} value={exportQuality} onChange={(e) => setExportQuality(e.target.value)}

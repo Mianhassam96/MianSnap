@@ -4,6 +4,8 @@ import useCanvasStore from '../store/useCanvasStore'
 import useVideoStore from '../store/useVideoStore'
 import useUIStore from '../store/useUIStore'
 import { SAFE_ZONES } from './SafeZoneOverlay'
+import { createHistory } from '../utils/canvasHistory'
+import { setupKeyboardShortcuts } from '../utils/keyboardShortcuts'
 
 const CANVAS_W = 1280
 const CANVAS_H = 720
@@ -11,10 +13,12 @@ const CANVAS_H = 720
 export default function CanvasEditor() {
   const canvasRef = useRef(null)
   const overlayRef = useRef(null)
-  const { setFabricCanvas, fabricCanvas } = useCanvasStore()
+  const historyRef = useRef(null)
+  const { setFabricCanvas, fabricCanvas, setUndoRedo } = useCanvasStore()
   const { selectedFrame } = useVideoStore()
   const { showSafeZone, activePlatform, theme } = useUIStore()
 
+  // Init canvas
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return
     const canvas = new fabric.Canvas(canvasRef.current, {
@@ -27,6 +31,33 @@ export default function CanvasEditor() {
     return () => { canvas.dispose(); setFabricCanvas(null) }
   }, [])
 
+  // Set up history + keyboard shortcuts once canvas is ready
+  useEffect(() => {
+    if (!fabricCanvas) return
+
+    // History
+    const history = createHistory(fabricCanvas)
+    historyRef.current = history
+
+    // Sync undo/redo availability to store after every change
+    const syncState = () => setUndoRedo(history.canUndo(), history.canRedo())
+    fabricCanvas.on('object:added',    syncState)
+    fabricCanvas.on('object:removed',  syncState)
+    fabricCanvas.on('object:modified', syncState)
+
+    // Keyboard shortcuts — pass history so Ctrl+Z/Y work
+    const cleanupKeys = setupKeyboardShortcuts(fabricCanvas, history)
+
+    return () => {
+      history.destroy()
+      cleanupKeys()
+      fabricCanvas.off('object:added',    syncState)
+      fabricCanvas.off('object:removed',  syncState)
+      fabricCanvas.off('object:modified', syncState)
+    }
+  }, [fabricCanvas])
+
+  // Load selected video frame as background
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
     fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
@@ -36,6 +67,7 @@ export default function CanvasEditor() {
     })
   }, [selectedFrame, fabricCanvas])
 
+  // Safe zone overlay
   useEffect(() => {
     const overlay = overlayRef.current
     if (!overlay) return
@@ -67,4 +99,3 @@ export default function CanvasEditor() {
     </div>
   )
 }
-
