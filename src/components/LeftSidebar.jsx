@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { fabric } from '../lib/fabric'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
-import { applySmartTypography } from '../utils/smartTypography'
+import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
@@ -10,15 +10,15 @@ import OneClickStyles from './OneClickStyles'
 import ABGenerator from './ABGenerator'
 import MakeItViral from './MakeItViral'
 import SmartTextSuggestions from './SmartTextSuggestions'
-import { removeBackground } from '../utils/bgRemoval'
-import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
+import BackgroundPanel from './BackgroundPanel'
 
 const TOOLS = [
-  { id: 'text', icon: '𝐓', label: 'Text' },
-  { id: 'shapes', icon: '◻', label: 'Shapes' },
-  { id: 'styles', icon: '✨', label: 'Styles' },
-  { id: 'assets', icon: '📁', label: 'Assets' },
-  { id: 'safezone', icon: '📐', label: 'Zones' },
+  { id: 'text',    icon: '𝐓',  label: 'Text' },
+  { id: 'shapes',  icon: '◻',  label: 'Shapes' },
+  { id: 'bg',      icon: '🖼',  label: 'BG' },
+  { id: 'styles',  icon: '✨',  label: 'Styles' },
+  { id: 'assets',  icon: '📁',  label: 'Assets' },
+  { id: 'safezone',icon: '📐',  label: 'Zones' },
 ]
 
 const FONT_CATEGORIES = [
@@ -93,7 +93,6 @@ const PRESET_COLORS = [
 export default function LeftSidebar() {
   const { theme, activeLeftPanel, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
-  const [aiStatus, setAiStatus] = useState('')
   const [textColor, setTextColor] = useState('#ffffff')
   const [strokeColor, setStrokeColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(64)
@@ -160,24 +159,6 @@ export default function LeftSidebar() {
     }
     const shape = shapeMap[type]
     if (shape) { fabricCanvas.add(shape); fabricCanvas.setActiveObject(shape); fabricCanvas.renderAll() }
-  }
-
-  async function handleBgRemoval() {
-    if (!fabricCanvas) return
-    const active = fabricCanvas.getActiveObject()
-    if (!active || active.type !== 'image') { alert('Select an image layer on the canvas first'); return }
-    const dataUrl = active.toDataURL()
-    try {
-      const result = await removeBackground(dataUrl, (msg) => setAiStatus(msg))
-      fabric.Image.fromURL(result, (img) => {
-        img.set({ left: active.left, top: active.top, scaleX: active.scaleX, scaleY: active.scaleY })
-        fabricCanvas.remove(active)
-        fabricCanvas.add(img)
-        fabricCanvas.setActiveObject(img)
-        fabricCanvas.renderAll()
-        setAiStatus('')
-      })
-    } catch { setAiStatus('AI model failed. Check connection.') }
   }
 
   const s = {
@@ -339,8 +320,7 @@ export default function LeftSidebar() {
             {/* AI */}
             <div style={s.section}>
               <div style={s.sectionTitle}>AI Tools</div>
-              <button style={s.aiBtn} onClick={handleBgRemoval}>🤖 Remove Background (AI)</button>
-              <button style={{ ...s.aiBtn, marginTop: 6, background: `linear-gradient(135deg,#0ea5e9,#6366f1)` }}
+              <button style={{ ...s.aiBtn, background: `linear-gradient(135deg,#0ea5e9,#6366f1)` }}
                 onClick={() => faceAutoFocus(fabricCanvas)}>
                 🎯 Face Auto-Focus
               </button>
@@ -352,7 +332,6 @@ export default function LeftSidebar() {
                 onClick={() => resetFilters(fabricCanvas)}>
                 ↺ Reset Filters
               </button>
-              {aiStatus && <div style={s.aiStatus}>{aiStatus}</div>}
             </div>
           </>
         )}
@@ -381,6 +360,7 @@ export default function LeftSidebar() {
           </div>
         )}
 
+        {activeLeftPanel === 'bg' && <BackgroundPanel />}
         {activeLeftPanel === 'styles' && (
           <>
             <MakeItViral />
