@@ -5,17 +5,9 @@ export default defineConfig({
   base: '/MianSnap/',
   plugins: [react()],
   optimizeDeps: {
-    exclude: ['@xenova/transformers', 'fabric']
+    exclude: ['@xenova/transformers']
   },
   build: {
-    chunkSizeWarningLimit: 2000,
-    rollupOptions: {
-      external: ['fabric'],
-      output: {
-        globals: {
-          fabric: 'fabric'
-        }
-      }
-    }
+    chunkSizeWarningLimit: 2000
   }
 })

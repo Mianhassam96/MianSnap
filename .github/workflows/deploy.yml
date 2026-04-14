@@ -12,23 +12,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
+      - name: Install
+        run: npm install
 
       - name: Build
-        run: npx --yes vite build
+        run: npx vite build
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
-      - name: Deploy to gh-pages
+      - name: List dist
+        run: ls -la dist/
+
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
