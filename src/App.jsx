@@ -16,6 +16,8 @@ import ShortcutBar from './components/ShortcutBar'
 import Toast from './components/Toast'
 import CanvasHint from './components/CanvasHint'
 import ContextToolbar from './components/ContextToolbar'
+import NextStepNudge from './components/NextStepNudge'
+import { prefs } from './utils/prefs'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
@@ -74,12 +76,19 @@ export default function App() {
     // Flash animation — canvas glow burst
     setViralFlash(true)
     setTimeout(() => setViralFlash(false), 600)
-    await makeItViral(fabricCanvas)
+    const result = await makeItViral(fabricCanvas)
     const score = calculateViralScore(fabricCanvas)
     if (score) { setViralScore(score); setActiveRightPanel('score') }
     setViralRunning(false)
     setViralDone(true)
-    window.showToast?.('⚡ Viral enhancements applied!', 'success')
+    // Show specific steps as individual toasts
+    if (result?.steps?.length) {
+      result.steps.forEach((step, i) => {
+        setTimeout(() => window.showToast?.(step, 'success', 2500), i * 350)
+      })
+    } else {
+      window.showToast?.('⚡ Viral enhancements applied!', 'success')
+    }
     setTimeout(() => setViralDone(false), 3000)
   }
 
@@ -170,6 +179,9 @@ export default function App() {
             {/* Keyboard shortcut hint */}
             <ShortcutBar />
 
+            {/* Next step nudge — appears after first canvas action */}
+            <NextStepNudge onMakeViral={handleMakeViral} />
+
             {/* Live score badge — top center above canvas */}
             {viralScore && (
               <div
@@ -208,7 +220,7 @@ export default function App() {
             <button
               onClick={handleMakeViral}
               disabled={viralRunning}
-              title="Try this — auto-optimize contrast, glow, face focus & text in one click"
+              title="Make this thumbnail viral in 1 click — contrast, glow, face focus & text"
               style={{
                 position: 'absolute', bottom: 24, right: 24,
                 padding: '12px 24px', borderRadius: 10, border: 'none',

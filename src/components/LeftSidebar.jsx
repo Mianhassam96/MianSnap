@@ -3,6 +3,7 @@ import { fabric } from '../lib/fabric'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
+import { prefs } from '../utils/prefs'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
@@ -100,6 +101,7 @@ export default function LeftSidebar() {
 
   function addText(fontName) {
     if (!fabricCanvas) return
+    prefs.setLastFont(fontName) // remember last used font
     const text = new fabric.IText('Your Text Here', {
       left: fabricCanvas.width / 2,
       top: fabricCanvas.height / 2,

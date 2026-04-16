@@ -2,10 +2,17 @@ import React from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { applyThumbnailStyle, STYLES } from '../utils/thumbnailStyles'
+import { prefs } from '../utils/prefs'
 
 export default function OneClickStyles() {
   const { theme } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
+
+  function handleApply(key) {
+    applyThumbnailStyle(fabricCanvas, key)
+    prefs.setLastTemplate(key)
+    window.showToast?.(`${STYLES[key].label} applied`, 'success')
+  }
 
   const s = {
     wrap: { display: 'flex', flexDirection: 'column', gap: 6 },
@@ -36,7 +43,7 @@ export default function OneClickStyles() {
       <div style={s.desc}>Instantly apply color grading, text and effects.</div>
       {Object.entries(STYLES).map(([key, style]) => (
         <button key={key} style={s.btn(key)}
-          onClick={() => applyThumbnailStyle(fabricCanvas, key)}
+          onClick={() => handleApply(key)}
           onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)' }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
         >

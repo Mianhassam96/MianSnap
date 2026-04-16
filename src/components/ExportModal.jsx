@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 
-export default function ExportModal({ onClose, dataUrl, filename, quality, format }) {
+export default function ExportModal({ onClose, onCreateAnother, dataUrl, filename, quality, format }) {
   const { theme } = useUIStore()
   const [copied, setCopied] = useState(false)
 
@@ -120,11 +120,11 @@ export default function ExportModal({ onClose, dataUrl, filename, quality, forma
           >
             ⬇ Download Again
           </button>
-          <button style={s.secondBtn} onClick={onClose}
+          <button style={s.secondBtn} onClick={onCreateAnother || onClose}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
           >
-            Create Variation
+            🔄 Create Another
           </button>
           <button style={s.secondBtn} onClick={onClose}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}

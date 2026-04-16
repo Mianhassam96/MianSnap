@@ -31,6 +31,20 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
     setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat })
   }
 
+  function handleCreateAnother() {
+    // Clear canvas and trigger new session
+    if (fabricCanvas) {
+      fabricCanvas.clear()
+      fabricCanvas.setBackgroundImage(null, fabricCanvas.renderAll.bind(fabricCanvas))
+      fabricCanvas.setBackgroundColor(
+        fabricCanvas.backgroundColor || '#ffffff',
+        fabricCanvas.renderAll.bind(fabricCanvas)
+      )
+    }
+    setExportData(null)
+    window.showToast?.('Canvas cleared — start a new thumbnail!', 'info')
+  }
+
   async function handleSave() {
     if (!fabricCanvas) return
     await saveCurrentProject(fabricCanvas.toJSON(), projectName)
@@ -116,6 +130,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
         <ExportModal
           {...exportData}
           onClose={() => setExportData(null)}
+          onCreateAnother={handleCreateAnother}
         />
       )}
       {/* Logo */}
