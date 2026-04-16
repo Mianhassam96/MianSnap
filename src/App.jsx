@@ -14,6 +14,8 @@ import ProjectsPanel from './components/ProjectsPanel'
 import CanvasEmptyState from './components/CanvasEmptyState'
 import ShortcutBar from './components/ShortcutBar'
 import Toast from './components/Toast'
+import CanvasHint from './components/CanvasHint'
+import ContextToolbar from './components/ContextToolbar'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
@@ -30,6 +32,7 @@ export default function App() {
   const [snapEnabled, setSnapEnabled] = useState(false)
   const [viralRunning, setViralRunning] = useState(false)
   const [viralDone, setViralDone] = useState(false)
+  const [viralFlash, setViralFlash] = useState(false)
 
   function enterEditor() {
     setShowLanding(false)
@@ -68,6 +71,9 @@ export default function App() {
     if (!fabricCanvas || viralRunning) return
     setViralRunning(true)
     setViralDone(false)
+    // Flash animation — canvas glow burst
+    setViralFlash(true)
+    setTimeout(() => setViralFlash(false), 600)
     await makeItViral(fabricCanvas)
     const score = calculateViralScore(fabricCanvas)
     if (score) { setViralScore(score); setActiveRightPanel('score') }
@@ -144,8 +150,21 @@ export default function App() {
               onUploadImage={handleUploadImage}
             />
 
-            <div style={{ width: '100%', maxWidth: 920 }}>
+            <div style={{ width: '100%', maxWidth: 920, position: 'relative' }}>
               <CanvasEditor />
+              {/* Contextual toolbar — appears above selected image */}
+              <ContextToolbar />
+              {/* Canvas onboarding hint — fades after 5s */}
+              <CanvasHint />
+              {/* Make Viral flash overlay */}
+              {viralFlash && (
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: 8,
+                  background: 'radial-gradient(ellipse at center, rgba(124,58,237,0.35) 0%, rgba(239,68,68,0.2) 50%, transparent 70%)',
+                  pointerEvents: 'none', zIndex: 20,
+                  animation: 'viralFlash 0.6s ease-out forwards',
+                }} />
+              )}
             </div>
 
             {/* Keyboard shortcut hint */}
@@ -189,7 +208,7 @@ export default function App() {
             <button
               onClick={handleMakeViral}
               disabled={viralRunning}
-              title="One-click AI enhancement — contrast, glow, face focus, vignette"
+              title="Try this — auto-optimize contrast, glow, face focus & text in one click"
               style={{
                 position: 'absolute', bottom: 24, right: 24,
                 padding: '12px 24px', borderRadius: 10, border: 'none',
@@ -227,6 +246,11 @@ export default function App() {
               @keyframes viralPulse {
                 0%, 100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
                 50% { box-shadow: 0 6px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(239,68,68,0.15); }
+              }
+              @keyframes viralFlash {
+                0%   { opacity: 1; transform: scale(1); }
+                40%  { opacity: 0.9; transform: scale(1.01); }
+                100% { opacity: 0; transform: scale(1); }
               }
             `}</style>
           </div>
