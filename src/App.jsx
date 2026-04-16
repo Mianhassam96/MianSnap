@@ -24,7 +24,7 @@ import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
 import { fabric } from './lib/fabric'
 export default function App() {
-  const { theme, setActiveRightPanel } = useUIStore()
+  const { theme, setActiveRightPanel, focusMode, toggleFocusMode } = useUIStore()
   const { fabricCanvas, setViralScore, viralScore } = useCanvasStore()
   const { projectName } = useProjectStore()
   const { setVideoFile } = useVideoStore()
@@ -140,7 +140,7 @@ export default function App() {
       />
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <LeftSidebar />
+        {!focusMode && <LeftSidebar />}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
           {/* Canvas area */}
@@ -267,10 +267,10 @@ export default function App() {
             `}</style>
           </div>
 
-          <BottomPanel />
+          {!focusMode && <BottomPanel />}
         </div>
 
-        <RightSidebar />
+        {!focusMode && <RightSidebar />}
       </div>
     </div>
   )

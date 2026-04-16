@@ -123,7 +123,6 @@ export function setupKeyboardShortcuts(fabricCanvas, history) {
       fabricCanvas.requestRenderAll()
       return
     }
-
     // ── Arrow nudge ──────────────────────────────────────────────
     if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(key) && !isTyping(e)) {
       const obj = fabricCanvas.getActiveObject()

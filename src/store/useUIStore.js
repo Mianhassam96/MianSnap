@@ -4,11 +4,12 @@ import { darkTheme, lightTheme } from '../theme/theme'
 const useUIStore = create((set, get) => ({
   isDark: false,
   theme: lightTheme,
-  activeLeftPanel: 'text',   // text | shapes | presets | branding
-  activeRightPanel: 'layers', // layers | properties
+  activeLeftPanel: 'text',
+  activeRightPanel: 'layers',
   showSafeZone: false,
   activePlatform: 'youtube',
   showBottomPanel: true,
+  focusMode: false,
 
   toggleTheme: () => set((s) => ({
     isDark: !s.isDark,
@@ -19,6 +20,7 @@ const useUIStore = create((set, get) => ({
   toggleSafeZone: () => set((s) => ({ showSafeZone: !s.showSafeZone })),
   setActivePlatform: (p) => set({ activePlatform: p }),
   toggleBottomPanel: () => set((s) => ({ showBottomPanel: !s.showBottomPanel })),
+  toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
 }))
 
 export default useUIStore

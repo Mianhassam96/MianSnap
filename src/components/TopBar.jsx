@@ -5,7 +5,7 @@ import useProjectStore from '../store/useProjectStore'
 import ExportModal from './ExportModal'
 
 export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
-  const { theme, isDark, toggleTheme } = useUIStore()
+  const { theme, isDark, toggleTheme, focusMode, toggleFocusMode } = useUIStore()
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
   const [editing, setEditing] = useState(false)
@@ -235,6 +235,23 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = snapEnabled ? theme.accent : theme.border }}
       >
         ⊞
+      </button>
+
+      {/* Focus mode toggle */}
+      <button
+        style={{
+          ...s.iconBtn,
+          color: focusMode ? theme.accent : theme.textMuted,
+          borderColor: focusMode ? theme.accent : theme.border,
+          background: focusMode ? theme.accentGlow : theme.bgTertiary,
+          fontSize: 13,
+        }}
+        onClick={toggleFocusMode}
+        title={focusMode ? 'Exit Focus Mode (show panels)' : 'Focus Mode — hide panels'}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = focusMode ? theme.accent : theme.border; e.currentTarget.style.background = focusMode ? theme.accentGlow : theme.bgTertiary }}
+      >
+        {focusMode ? '⊡' : '⊞'}
       </button>
 
       {/* Theme toggle */}
