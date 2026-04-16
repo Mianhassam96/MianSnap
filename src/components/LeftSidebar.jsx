@@ -13,14 +13,17 @@ import MakeItViral from './MakeItViral'
 import SmartTextSuggestions from './SmartTextSuggestions'
 import BackgroundPanel from './BackgroundPanel'
 import QuickMode from './QuickMode'
+import ShapesPanel from './ShapesPanel'
+import FiltersPanel from './FiltersPanel'
+import ColorSystem from './ColorSystem'
 
 const TOOLS = [
   { id: 'text',    icon: '𝐓',  label: 'Text' },
   { id: 'shapes',  icon: '◻',  label: 'Shapes' },
+  { id: 'filters', icon: '✨',  label: 'Filters' },
   { id: 'bg',      icon: '🖼',  label: 'BG' },
-  { id: 'styles',  icon: '✨',  label: 'Styles' },
+  { id: 'styles',  icon: '⚡',  label: 'Styles' },
   { id: 'assets',  icon: '📁',  label: 'Assets' },
-  { id: 'safezone',icon: '📐',  label: 'Zones' },
 ]
 
 const FONT_CATEGORIES = [
@@ -249,38 +252,17 @@ export default function LeftSidebar() {
         {/* ── TEXT PANEL ── */}
         {activeLeftPanel === 'text' && (
           <>
-            {/* Color controls */}
             <div style={s.section}>
-              <div style={s.sectionTitle}>Text Color</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-                {PRESET_COLORS.map((c) => (
-                  <div key={c} style={s.colorSwatch(c, textColor === c)}
-                    onClick={() => updateSelectedTextColor(c)}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
-                  />
-                ))}
-                <input type="color" style={s.colorInput} value={textColor}
-                  onChange={(e) => updateSelectedTextColor(e.target.value)} title="Custom color" />
-              </div>
-
-              <div style={s.sectionTitle}>Stroke Color</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-                {['transparent', '#000000', '#ffffff', '#ff3300', '#ffff00', '#7c3aed', '#00ffcc', '#ff00ff'].map((c) => (
-                  <div key={c} style={{
-                    ...s.colorSwatch(c === 'transparent' ? theme.bgTertiary : c, strokeColor === c),
-                    backgroundImage: c === 'transparent' ? 'repeating-linear-gradient(45deg,#ccc 0,#ccc 2px,transparent 0,transparent 50%)' : 'none',
-                    backgroundSize: '6px 6px',
-                  }}
-                    onClick={() => updateSelectedStrokeColor(c)}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
-                  />
-                ))}
-                <input type="color" style={s.colorInput} value={strokeColor === 'transparent' ? '#000000' : strokeColor}
-                  onChange={(e) => updateSelectedStrokeColor(e.target.value)} title="Custom stroke" />
-              </div>
-
+              <ColorSystem
+                label="Text Color"
+                activeColor={textColor}
+                onColorSelect={updateSelectedTextColor}
+              />
+              <ColorSystem
+                label="Stroke Color"
+                activeColor={strokeColor}
+                onColorSelect={updateSelectedStrokeColor}
+              />
               <div style={s.sectionTitle}>Font Size</div>
               <div style={s.row}>
                 <input type="range" style={s.sizeRange} min={12} max={200} value={fontSize}
@@ -340,28 +322,10 @@ export default function LeftSidebar() {
         )}
 
         {/* ── SHAPES PANEL ── */}
-        {activeLeftPanel === 'shapes' && (
-          <div style={s.section}>
-            <div style={s.sectionTitle}>Shapes</div>
-            <div style={s.grid2}>
-              {[
-                { type: 'rect', icon: '▭', label: 'Box' },
-                { type: 'circle', icon: '●', label: 'Circle' },
-                { type: 'triangle', icon: '▲', label: 'Triangle' },
-                { type: 'line', icon: '—', label: 'Line' },
-                { type: 'arrow', icon: '▶', label: 'Arrow' },
-              ].map((sh) => (
-                <button key={sh.type} style={s.shapeBtn} onClick={() => addShape(sh.type)}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.accent }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = theme.bgTertiary; e.currentTarget.style.borderColor = theme.border }}
-                >
-                  <div>{sh.icon}</div>
-                  <div style={{ fontSize: 10, marginTop: 4, color: theme.textMuted }}>{sh.label}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {activeLeftPanel === 'shapes' && <ShapesPanel />}
+
+        {/* ── FILTERS PANEL ── */}
+        {activeLeftPanel === 'filters' && <FiltersPanel />}
 
         {activeLeftPanel === 'bg' && <BackgroundPanel />}
         {activeLeftPanel === 'styles' && (
@@ -375,7 +339,6 @@ export default function LeftSidebar() {
           </>
         )}
         {activeLeftPanel === 'assets' && <AssetManager />}
-        {activeLeftPanel === 'safezone' && <SafeZoneOverlay />}
       </div>
     </div>
   )

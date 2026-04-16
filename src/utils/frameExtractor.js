@@ -1,3 +1,8 @@
+/**
+ * Frame extractor — always uses native video resolution (videoWidth/videoHeight)
+ * to avoid blurry/stretched frames. Falls back to 1280x720 if not available.
+ */
+
 export async function extractFrames(videoUrl, count = 12) {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
@@ -8,17 +13,26 @@ export async function extractFrames(videoUrl, count = 12) {
     video.addEventListener('loadedmetadata', async () => {
       const duration = video.duration
       const interval = duration / count
+      // Use native resolution
+      const vw = video.videoWidth  || 1280
+      const vh = video.videoHeight || 720
       const canvas = document.createElement('canvas')
+      canvas.width  = vw
+      canvas.height = vh
       const ctx = canvas.getContext('2d')
-      canvas.width = 1280
-      canvas.height = 720
       const frames = []
 
       for (let i = 0; i < count; i++) {
         const time = interval * i + interval * 0.5
         await seekTo(video, time)
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-        frames.push({ time: parseFloat(time.toFixed(2)), dataUrl: canvas.toDataURL('image/jpeg', 0.85) })
+        ctx.clearRect(0, 0, vw, vh)
+        ctx.drawImage(video, 0, 0, vw, vh)
+        frames.push({
+          time: parseFloat(time.toFixed(2)),
+          dataUrl: canvas.toDataURL('image/jpeg', 0.92),
+          width: vw,
+          height: vh,
+        })
       }
       resolve(frames)
     })
@@ -36,11 +50,13 @@ export function seekTo(video, time) {
 }
 
 export function captureFrame(video) {
+  const vw = video.videoWidth  || 1280
+  const vh = video.videoHeight || 720
   const canvas = document.createElement('canvas')
-  canvas.width = 1280
-  canvas.height = 720
-  canvas.getContext('2d').drawImage(video, 0, 0, 1280, 720)
-  return canvas.toDataURL('image/jpeg', 0.92)
+  canvas.width  = vw
+  canvas.height = vh
+  canvas.getContext('2d').drawImage(video, 0, 0, vw, vh)
+  return canvas.toDataURL('image/jpeg', 0.95)
 }
 
 export function stepFrame(video, fps, direction) {

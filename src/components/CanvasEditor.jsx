@@ -151,12 +151,21 @@ export default function CanvasEditor() {
     return () => window.removeEventListener('keydown', onKey)
   }, [fabricCanvas, applyZoom])
 
-  // ── Load video frame as background ────────────────────────────
+  // ── Load video frame as background — cover scaling, no stretch ──
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
     fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
-      img.scaleToWidth(CANVAS_W)
-      img.scaleToHeight(CANVAS_H)
+      const cw = fabricCanvas.width
+      const ch = fabricCanvas.height
+      const iw = img.width
+      const ih = img.height
+      const scale = Math.max(cw / iw, ch / ih)
+      img.set({
+        scaleX: scale, scaleY: scale,
+        left: (cw - iw * scale) / 2,
+        top:  (ch - ih * scale) / 2,
+        originX: 'left', originY: 'top',
+      })
       fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
     })
   }, [selectedFrame, fabricCanvas])

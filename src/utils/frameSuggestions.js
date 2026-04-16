@@ -1,7 +1,8 @@
 /**
- * Smart frame suggestions — detects motion peaks and face frames
- * by analyzing pixel difference between consecutive frames
+ * Smart frame suggestions — uses native video resolution for full-res captures.
+ * Analysis canvas stays small (320x180) for speed.
  */
+import { seekTo } from './frameExtractor'
 
 export async function getSuggestedFrames(videoUrl, totalFrames = 20) {
   return new Promise((resolve, reject) => {
@@ -12,10 +13,20 @@ export async function getSuggestedFrames(videoUrl, totalFrames = 20) {
 
     video.addEventListener('loadedmetadata', async () => {
       const duration = video.duration
-      const canvas = document.createElement('canvas')
-      canvas.width = 320  // small for speed
-      canvas.height = 180
-      const ctx = canvas.getContext('2d')
+      const vw = video.videoWidth  || 1280
+      const vh = video.videoHeight || 720
+
+      // Small canvas for fast analysis
+      const analyseCanvas = document.createElement('canvas')
+      analyseCanvas.width  = 320
+      analyseCanvas.height = 180
+      const analyseCtx = analyseCanvas.getContext('2d')
+
+      // Full-res canvas for display
+      const fullCanvas = document.createElement('canvas')
+      fullCanvas.width  = vw
+      fullCanvas.height = vh
+      const fullCtx = fullCanvas.getContext('2d')
 
       const interval = duration / totalFrames
       const frames = []
@@ -24,30 +35,31 @@ export async function getSuggestedFrames(videoUrl, totalFrames = 20) {
       for (let i = 0; i < totalFrames; i++) {
         const time = interval * i + interval * 0.3
         await seekTo(video, time)
-        ctx.drawImage(video, 0, 0, 320, 180)
 
-        const imageData = ctx.getImageData(0, 0, 320, 180)
+        // Analyse at low res
+        analyseCtx.drawImage(video, 0, 0, 320, 180)
+        const imageData = analyseCtx.getImageData(0, 0, 320, 180)
         const score = scoreFrame(imageData.data, prevData)
         prevData = imageData.data.slice()
 
-        // Full-res capture for display
-        const fullCanvas = document.createElement('canvas')
-        fullCanvas.width = 1280
-        fullCanvas.height = 720
-        fullCanvas.getContext('2d').drawImage(video, 0, 0, 1280, 720)
+        // Capture at native res
+        fullCtx.clearRect(0, 0, vw, vh)
+        fullCtx.drawImage(video, 0, 0, vw, vh)
 
         frames.push({
           time: parseFloat(time.toFixed(2)),
-          dataUrl: fullCanvas.toDataURL('image/jpeg', 0.8),
+          dataUrl: fullCanvas.toDataURL('image/jpeg', 0.88),
           score,
           isBest: false,
+          width: vw,
+          height: vh,
         })
       }
 
-      // Mark top 4 as "best"
+      // Mark top 4 as best
       const sorted = [...frames].sort((a, b) => b.score - a.score)
-      const bestTimes = new Set(sorted.slice(0, 4).map((f) => f.time))
-      frames.forEach((f) => { f.isBest = bestTimes.has(f.time) })
+      const bestTimes = new Set(sorted.slice(0, 4).map(f => f.time))
+      frames.forEach(f => { f.isBest = bestTimes.has(f.time) })
 
       resolve(frames)
     })
@@ -57,41 +69,20 @@ export async function getSuggestedFrames(videoUrl, totalFrames = 20) {
   })
 }
 
-function seekTo(video, time) {
-  return new Promise((res) => {
-    video.currentTime = time
-    video.addEventListener('seeked', res, { once: true })
-  })
-}
-
 function scoreFrame(data, prevData) {
   if (!prevData) return 50
-
-  let motionScore = 0
-  let brightnessScore = 0
-  let skinScore = 0
-
+  let motion = 0, brightness = 0, skin = 0
   for (let i = 0; i < data.length; i += 16) {
-    const r = data[i], g = data[i + 1], b = data[i + 2]
-
-    // Motion: pixel difference from previous frame
-    if (prevData) {
-      const diff = Math.abs(r - prevData[i]) + Math.abs(g - prevData[i + 1]) + Math.abs(b - prevData[i + 2])
-      motionScore += diff
-    }
-
-    // Brightness variety (not too dark, not blown out)
-    const brightness = r * 0.299 + g * 0.587 + b * 0.114
-    if (brightness > 40 && brightness < 220) brightnessScore++
-
-    // Skin tone presence (face indicator)
-    if (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15) skinScore++
+    const r = data[i], g = data[i+1], b = data[i+2]
+    motion += Math.abs(r - prevData[i]) + Math.abs(g - prevData[i+1]) + Math.abs(b - prevData[i+2])
+    const lum = r * 0.299 + g * 0.587 + b * 0.114
+    if (lum > 40 && lum < 220) brightness++
+    if (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r-g) > 15) skin++
   }
-
-  const pixels = data.length / 4
-  const normalizedMotion = Math.min(motionScore / pixels / 3, 100)
-  const normalizedBrightness = (brightnessScore / (pixels / 16)) * 40
-  const normalizedSkin = Math.min((skinScore / (pixels / 16)) * 3, 30)
-
-  return Math.round(normalizedMotion * 0.4 + normalizedBrightness + normalizedSkin)
+  const px = data.length / 4
+  return Math.round(
+    Math.min(motion / px / 3, 100) * 0.4 +
+    (brightness / (px / 16)) * 40 +
+    Math.min((skin / (px / 16)) * 3, 30)
+  )
 }
