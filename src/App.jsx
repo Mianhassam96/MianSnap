@@ -26,6 +26,7 @@ import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
 import { fabric } from './lib/fabric'
+import { applyImageAsBackground, applyProImageSettings, isMobileDevice } from './utils/imageUtils'
 export default function App() {
   const { theme, setActiveRightPanel, focusMode, toggleFocusMode, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas, setViralScore, viralScore } = useCanvasStore()
@@ -110,11 +111,7 @@ export default function App() {
       const file = e.target.files[0]
       if (!file || !fabricCanvas) return
       const url = URL.createObjectURL(file)
-      fabric.Image.fromURL(url, (img) => {
-        img.scaleToWidth(fabricCanvas.width)
-        img.scaleToHeight(fabricCanvas.height)
-        fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
-      })
+      applyImageAsBackground(fabricCanvas, url, 'cover')
     }
     input.click()
   }

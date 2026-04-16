@@ -3,6 +3,7 @@ import { fabric } from '../lib/fabric'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { removeBackground } from '../utils/bgRemoval'
+import { applyImageAsBackground } from '../utils/imageUtils'
 
 // ── Preset backgrounds ──────────────────────────────────────────────
 const BG_PRESETS = [
@@ -109,11 +110,7 @@ export default function BackgroundPanel() {
       const file = e.target.files[0]
       if (!file || !fabricCanvas) return
       const url = URL.createObjectURL(file)
-      fabric.Image.fromURL(url, (img) => {
-        img.scaleToWidth(fabricCanvas.width)
-        img.scaleToHeight(fabricCanvas.height)
-        fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
-        // Reset sliders
+      applyImageAsBackground(fabricCanvas, url, 'cover', () => {
         setBlur(0); setBrightness(0); setContrast(0); setSaturation(0)
       })
     }

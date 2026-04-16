@@ -7,6 +7,7 @@ import { SAFE_ZONES } from './SafeZoneOverlay'
 import { createHistory } from '../utils/canvasHistory'
 import { setupKeyboardShortcuts } from '../utils/keyboardShortcuts'
 import ZoomControls from './ZoomControls'
+import { applyImageAsBackground, applyProImageSettings, clampToBounds, isMobileDevice } from '../utils/imageUtils'
 
 const CANVAS_W = 1280
 const CANVAS_H = 720
@@ -25,22 +26,51 @@ export default function CanvasEditor() {
   const { selectedFrame } = useVideoStore()
   const { showSafeZone, activePlatform, theme } = useUIStore()
   const [zoom, setZoom] = useState(1)
+  const [fitMode, setFitMode] = useState('cover') // 'cover' | 'contain'
 
   // ── Init canvas ────────────────────────────────────────────────
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return
+    const mobile = isMobileDevice()
     const canvas = new fabric.Canvas(canvasRef.current, {
       width: CANVAS_W,
       height: CANVAS_H,
       backgroundColor: theme.isDark ? '#0a0a0f' : '#ffffff',
       preserveObjectStacking: true,
-      // Mobile: larger touch targets + drag delay
-      targetFindTolerance: 10,
+      targetFindTolerance: mobile ? 14 : 8,
       perPixelTargetFind: false,
     })
     setFabricCanvas(canvas)
     return () => { canvas.dispose(); setFabricCanvas(null) }
   }, [])
+
+  // ── Pro image settings + clamp on all added images ─────────────
+  useEffect(() => {
+    if (!fabricCanvas) return
+    const mobile = isMobileDevice()
+
+    const onAdded = (e) => {
+      const obj = e.target
+      if (obj?.type === 'image') {
+        applyProImageSettings(obj, mobile)
+        fabricCanvas.requestRenderAll()
+      }
+    }
+
+    const onMoving = (e) => {
+      const obj = e.target
+      if (!obj) return
+      clampToBounds(obj, CANVAS_W, CANVAS_H)
+      obj.setCoords()
+    }
+
+    fabricCanvas.on('object:added', onAdded)
+    fabricCanvas.on('object:moving', onMoving)
+    return () => {
+      fabricCanvas.off('object:added', onAdded)
+      fabricCanvas.off('object:moving', onMoving)
+    }
+  }, [fabricCanvas])
 
   // ── History + keyboard shortcuts ───────────────────────────────
   useEffect(() => {
@@ -65,11 +95,8 @@ export default function CanvasEditor() {
   const applyZoom = useCallback((newZoom, point) => {
     if (!fabricCanvas) return
     newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
-    if (point) {
-      fabricCanvas.zoomToPoint(point, newZoom)
-    } else {
-      fabricCanvas.setZoom(newZoom)
-    }
+    if (point) fabricCanvas.zoomToPoint(point, newZoom)
+    else fabricCanvas.setZoom(newZoom)
     setZoom(newZoom)
   }, [fabricCanvas])
 
@@ -89,9 +116,9 @@ export default function CanvasEditor() {
       const e = opt.e
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
-      const delta = e.deltaY
       const point = new fabric.Point(e.offsetX, e.offsetY)
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fabricCanvas.getZoom() * (delta > 0 ? 0.9 : 1.1)))
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM,
+        fabricCanvas.getZoom() * (e.deltaY > 0 ? 0.9 : 1.1)))
       fabricCanvas.zoomToPoint(point, newZoom)
       setZoom(newZoom)
     }
@@ -99,13 +126,11 @@ export default function CanvasEditor() {
     return () => fabricCanvas.off('mouse:wheel', onWheel)
   }, [fabricCanvas])
 
-  // ── Space/middle-click pan ─────────────────────────────────────
+  // ── Alt/middle-click pan ───────────────────────────────────────
   useEffect(() => {
     if (!fabricCanvas) return
-
-    const onMouseDown = (opt) => {
+    const onDown  = (opt) => {
       const e = opt.e
-      // Middle click or space+drag
       if (e.button === 1 || (e.button === 0 && e.altKey)) {
         isPanning.current = true
         lastPan.current = { x: e.clientX, y: e.clientY }
@@ -114,34 +139,32 @@ export default function CanvasEditor() {
         e.preventDefault()
       }
     }
-    const onMouseMove = (opt) => {
+    const onMove  = (opt) => {
       if (!isPanning.current) return
       const e = opt.e
       const dx = e.clientX - lastPan.current.x
       const dy = e.clientY - lastPan.current.y
       lastPan.current = { x: e.clientX, y: e.clientY }
       const vpt = fabricCanvas.viewportTransform
-      vpt[4] += dx
-      vpt[5] += dy
+      vpt[4] += dx; vpt[5] += dy
       fabricCanvas.requestRenderAll()
     }
-    const onMouseUp = () => {
+    const onUp    = () => {
       isPanning.current = false
       fabricCanvas.defaultCursor = 'default'
       fabricCanvas.setCursor('default')
     }
-
-    fabricCanvas.on('mouse:down', onMouseDown)
-    fabricCanvas.on('mouse:move', onMouseMove)
-    fabricCanvas.on('mouse:up',   onMouseUp)
+    fabricCanvas.on('mouse:down', onDown)
+    fabricCanvas.on('mouse:move', onMove)
+    fabricCanvas.on('mouse:up',   onUp)
     return () => {
-      fabricCanvas.off('mouse:down', onMouseDown)
-      fabricCanvas.off('mouse:move', onMouseMove)
-      fabricCanvas.off('mouse:up',   onMouseUp)
+      fabricCanvas.off('mouse:down', onDown)
+      fabricCanvas.off('mouse:move', onMove)
+      fabricCanvas.off('mouse:up',   onUp)
     }
   }, [fabricCanvas])
 
-  // ── Keyboard zoom shortcuts ────────────────────────────────────
+  // ── Keyboard zoom ──────────────────────────────────────────────
   useEffect(() => {
     if (!fabricCanvas) return
     const onKey = (e) => {
@@ -154,24 +177,11 @@ export default function CanvasEditor() {
     return () => window.removeEventListener('keydown', onKey)
   }, [fabricCanvas, applyZoom])
 
-  // ── Load video frame as background — cover scaling, no stretch ──
+  // ── Load video frame as background ────────────────────────────
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
-    fabric.Image.fromURL(selectedFrame.dataUrl, (img) => {
-      const cw = fabricCanvas.width
-      const ch = fabricCanvas.height
-      const iw = img.width
-      const ih = img.height
-      const scale = Math.max(cw / iw, ch / ih)
-      img.set({
-        scaleX: scale, scaleY: scale,
-        left: (cw - iw * scale) / 2,
-        top:  (ch - ih * scale) / 2,
-        originX: 'left', originY: 'top',
-      })
-      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
-    })
-  }, [selectedFrame, fabricCanvas])
+    applyImageAsBackground(fabricCanvas, selectedFrame.dataUrl, fitMode)
+  }, [selectedFrame, fabricCanvas, fitMode])
 
   // ── Safe zone overlay ──────────────────────────────────────────
   useEffect(() => {
@@ -193,6 +203,12 @@ export default function CanvasEditor() {
     })
   }, [showSafeZone, activePlatform])
 
+  const fitBtnBase = {
+    padding: '3px 10px', borderRadius: 4, border: 'none',
+    fontSize: 10, fontWeight: 600, cursor: 'pointer',
+    transition: 'all 0.15s',
+  }
+
   return (
     <div ref={wrapRef} style={{
       position: 'relative', width: '100%', aspectRatio: '16/9',
@@ -204,7 +220,34 @@ export default function CanvasEditor() {
       <canvas ref={overlayRef} width={CANVAS_W} height={CANVAS_H}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 
-      {/* Zoom controls — inside canvas wrapper */}
+      {/* Fit / Fill toggle — top right of canvas */}
+      <div style={{
+        position: 'absolute', top: 8, right: 8, zIndex: 5,
+        display: 'flex', gap: 2,
+        background: 'rgba(0,0,0,0.55)', borderRadius: 6, padding: 3,
+        backdropFilter: 'blur(6px)',
+      }}>
+        <button
+          style={{
+            ...fitBtnBase,
+            background: fitMode === 'contain' ? '#7c3aed' : 'transparent',
+            color: fitMode === 'contain' ? '#fff' : 'rgba(255,255,255,0.6)',
+          }}
+          onClick={() => setFitMode('contain')}
+          title="Fit — whole image visible"
+        >Fit</button>
+        <button
+          style={{
+            ...fitBtnBase,
+            background: fitMode === 'cover' ? '#7c3aed' : 'transparent',
+            color: fitMode === 'cover' ? '#fff' : 'rgba(255,255,255,0.6)',
+          }}
+          onClick={() => setFitMode('cover')}
+          title="Fill — covers canvas, may crop"
+        >Fill</button>
+      </div>
+
+      {/* Zoom controls */}
       <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} onZoomReset={zoomReset} />
     </div>
   )

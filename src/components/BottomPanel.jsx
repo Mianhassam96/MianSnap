@@ -5,6 +5,7 @@ import useCanvasStore from '../store/useCanvasStore'
 import { extractFrames, captureFrame, stepFrame } from '../utils/frameExtractor'
 import { getSuggestedFrames } from '../utils/frameSuggestions'
 import { fabric } from '../lib/fabric'
+import { applyImageAsBackground } from '../utils/imageUtils'
 
 export default function BottomPanel() {
   const { theme } = useUIStore()
@@ -59,23 +60,7 @@ export default function BottomPanel() {
   function applyFrame(frame) {
     setSelectedFrame(frame)
     if (!fabricCanvas) return
-    fabric.Image.fromURL(frame.dataUrl, (img) => {
-      const cw = fabricCanvas.width
-      const ch = fabricCanvas.height
-      const iw = img.width
-      const ih = img.height
-      // Cover scaling — fill canvas maintaining aspect ratio, no stretch
-      const scale = Math.max(cw / iw, ch / ih)
-      img.set({
-        scaleX: scale,
-        scaleY: scale,
-        left: (cw - iw * scale) / 2,
-        top:  (ch - ih * scale) / 2,
-        originX: 'left',
-        originY: 'top',
-      })
-      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas))
-    })
+    applyImageAsBackground(fabricCanvas, frame.dataUrl, 'cover')
   }
 
   function captureCurrentFrame() {
