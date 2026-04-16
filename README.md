@@ -2,11 +2,6 @@
 
 <div align="center">
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-mianhassam96.github.io/MianSnap-7c3aed?style=for-the-badge)](https://mianhassam96.github.io/MianSnap/)
-[![GitHub Stars](https://img.shields.io/github/stars/Mianhassam96/MianSnap?style=for-the-badge&color=facc15)](https://github.com/Mianhassam96/MianSnap/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-4ade80?style=for-the-badge)](LICENSE)
-[![Built with React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5-646cff?style=for-the-badge&logo=vite)](https://vitejs.dev)
 
 **Transform any video frame into a high-converting thumbnail in seconds.**  
 100% browser-based · No uploads · No account · Free forever
