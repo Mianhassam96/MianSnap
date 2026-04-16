@@ -19,10 +19,9 @@ import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
 import { fabric } from './lib/fabric'
-
 export default function App() {
   const { theme, setActiveRightPanel } = useUIStore()
-  const { fabricCanvas, setViralScore } = useCanvasStore()
+  const { fabricCanvas, setViralScore, viralScore } = useCanvasStore()
   const { projectName } = useProjectStore()
   const { setVideoFile } = useVideoStore()
   const [showLanding, setShowLanding] = useState(true)
@@ -152,6 +151,40 @@ export default function App() {
             {/* Keyboard shortcut hint */}
             <ShortcutBar />
 
+            {/* Live score badge — top center above canvas */}
+            {viralScore && (
+              <div
+                onClick={() => setActiveRightPanel('score')}
+                title="Click to see full score breakdown"
+                style={{
+                  position: 'absolute', top: 12, left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                  background: theme.isDark ? 'rgba(13,13,24,0.92)' : 'rgba(255,255,255,0.92)',
+                  border: `1px solid ${viralScore.score >= 75 ? theme.success : viralScore.score >= 50 ? theme.warning : theme.danger}44`,
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: theme.shadowSm,
+                  zIndex: 10, transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateX(-50%) scale(1.05)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateX(-50%) scale(1)' }}
+              >
+                <span style={{ fontSize: 12 }}>
+                  {viralScore.score >= 75 ? '🔥' : viralScore.score >= 50 ? '⚡' : '⚠️'}
+                </span>
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  color: viralScore.score >= 75 ? theme.success : viralScore.score >= 50 ? theme.warning : theme.danger,
+                }}>
+                  {viralScore.score}/100
+                </span>
+                <span style={{ fontSize: 11, color: theme.textMuted }}>
+                  {viralScore.score >= 75 ? 'Viral Ready' : viralScore.score >= 50 ? 'Looking Good' : 'Needs Work'}
+                </span>
+              </div>
+            )}
+
             {/* Floating Make Viral FAB */}
             <button
               onClick={handleMakeViral}
@@ -159,35 +192,43 @@ export default function App() {
               title="One-click AI enhancement — contrast, glow, face focus, vignette"
               style={{
                 position: 'absolute', bottom: 24, right: 24,
-                padding: '11px 22px', borderRadius: 10, border: 'none',
+                padding: '12px 24px', borderRadius: 10, border: 'none',
                 background: viralDone
                   ? 'linear-gradient(135deg,#16a34a,#15803d)'
                   : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-                color: '#fff', fontSize: 13, fontWeight: 700,
+                color: '#fff', fontSize: 14, fontWeight: 800,
                 cursor: viralRunning ? 'wait' : 'pointer',
                 boxShadow: viralDone
                   ? '0 4px 20px rgba(22,163,74,0.5)'
                   : '0 6px 28px rgba(239,68,68,0.5)',
                 transition: 'transform 0.15s, box-shadow 0.15s, background 0.3s',
-                display: 'flex', alignItems: 'center', gap: 7,
-                zIndex: 10,
-                letterSpacing: '-0.2px',
+                display: 'flex', alignItems: 'center', gap: 8,
+                zIndex: 10, letterSpacing: '-0.2px',
+                // Pulse when idle to draw attention
+                animation: !viralRunning && !viralDone ? 'viralPulse 2.5s ease-in-out infinite' : 'none',
               }}
               onMouseEnter={(e) => {
+                e.currentTarget.style.animation = 'none'
                 if (!viralRunning) {
-                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.04)'
-                  e.currentTarget.style.boxShadow = '0 10px 36px rgba(239,68,68,0.65)'
+                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)'
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(239,68,68,0.7)'
                 }
               }}
               onMouseLeave={(e) => {
+                if (!viralRunning && !viralDone) e.currentTarget.style.animation = 'viralPulse 2.5s ease-in-out infinite'
                 e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                e.currentTarget.style.boxShadow = viralDone
-                  ? '0 4px 20px rgba(22,163,74,0.5)'
-                  : '0 6px 28px rgba(239,68,68,0.5)'
+                e.currentTarget.style.boxShadow = viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 6px 28px rgba(239,68,68,0.5)'
               }}
             >
               {viralRunning ? '⏳ Enhancing...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}
             </button>
+
+            <style>{`
+              @keyframes viralPulse {
+                0%, 100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
+                50% { box-shadow: 0 6px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(239,68,68,0.15); }
+              }
+            `}</style>
           </div>
 
           <BottomPanel />

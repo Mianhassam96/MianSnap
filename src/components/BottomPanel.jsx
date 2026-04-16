@@ -269,6 +269,9 @@ export default function BottomPanel() {
                 <span style={{ fontSize: 10, color: theme.textMuted, flexShrink: 0 }}>
                   {bestFrames.length} recommended · {frames.length} total
                 </span>
+                <span style={{ fontSize: 10, color: theme.accent, fontWeight: 600, flexShrink: 0 }}>
+                  👆 Click a frame to use it
+                </span>
                 <button style={s.modeBtn(mode === 'best')} onClick={() => setMode('best')}>
                   ⭐ Best
                 </button>
@@ -290,10 +293,13 @@ export default function BottomPanel() {
                 <img
                   src={f.dataUrl}
                   alt={`${f.time}s`}
-                  style={s.thumb(selectedFrame?.time === f.time, f.isBest)}
+                  style={{
+                    ...s.thumb(selectedFrame?.time === f.time, f.isBest),
+                    animation: f.isBest && selectedFrame?.time !== f.time ? 'bestPulse 2s ease-in-out infinite' : 'none',
+                  }}
                   onClick={() => applyFrame(f)}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = `0 4px 16px rgba(0,0,0,0.4)` }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.animation = 'none' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; if (f.isBest && selectedFrame?.time !== f.time) e.currentTarget.style.animation = 'bestPulse 2s ease-in-out infinite' }}
                   title={`${fmt(f.time)}${f.isBest ? ' — Recommended' : ''}`}
                 />
                 {f.isBest && <div style={s.bestBadge}>⭐ BEST</div>}
@@ -301,6 +307,12 @@ export default function BottomPanel() {
               </div>
             ))}
           </div>
+          <style>{`
+            @keyframes bestPulse {
+              0%, 100% { box-shadow: 0 0 0 0 rgba(250,204,21,0); border-color: #facc15; }
+              50% { box-shadow: 0 0 0 4px rgba(250,204,21,0.3); border-color: #f59e0b; }
+            }
+          `}</style>
         </div>
       </div>
     </div>

@@ -2,15 +2,15 @@ import React, { useState } from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import useProjectStore from '../store/useProjectStore'
+import ExportModal from './ExportModal'
 
 export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
   const { theme, isDark, toggleTheme } = useUIStore()
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
   const [editing, setEditing] = useState(false)
+  const [exportData, setExportData] = useState(null) // { dataUrl, filename, quality, format }
 
-  // Access history via canvas store ref — history lives in CanvasEditor
-  // We trigger undo/redo by dispatching synthetic keyboard events
   function triggerUndo() {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }))
   }
@@ -23,17 +23,18 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
     const multiplier = exportQuality === '1080p' ? 1.5 : 1
     const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
     const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: 0.93, multiplier })
+    const filename = `miansnap-${Date.now()}.${exportFormat}`
+    // Trigger download immediately
     const a = document.createElement('a')
-    a.href = dataUrl
-    a.download = `miansnap-${Date.now()}.${exportFormat}`
-    a.click()
-    window.showToast?.(`Exported as ${exportFormat.toUpperCase()} (${exportQuality})`, 'success')
+    a.href = dataUrl; a.download = filename; a.click()
+    // Show preview modal
+    setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat })
   }
 
   async function handleSave() {
     if (!fabricCanvas) return
     await saveCurrentProject(fabricCanvas.toJSON(), projectName)
-    window.showToast?.('Project saved to browser storage!', 'save')
+    window.showToast?.('Project saved!', 'save')
   }
 
   const s = {
@@ -111,6 +112,12 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
 
   return (
     <div style={s.bar}>
+      {exportData && (
+        <ExportModal
+          {...exportData}
+          onClose={() => setExportData(null)}
+        />
+      )}
       {/* Logo */}
       <div style={s.logo} onClick={onShowLanding} title="Back to home"
         onMouseEnter={(e) => { e.currentTarget.style.background = theme.bgTertiary }}
