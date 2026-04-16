@@ -12,6 +12,7 @@ import ABGenerator from './ABGenerator'
 import MakeItViral from './MakeItViral'
 import SmartTextSuggestions from './SmartTextSuggestions'
 import BackgroundPanel from './BackgroundPanel'
+import QuickMode from './QuickMode'
 
 const TOOLS = [
   { id: 'text',    icon: '𝐓',  label: 'Text' },
@@ -365,6 +366,7 @@ export default function LeftSidebar() {
         {activeLeftPanel === 'bg' && <BackgroundPanel />}
         {activeLeftPanel === 'styles' && (
           <>
+            <QuickMode />
             <MakeItViral />
             <div style={{ marginTop: 4 }}><OneClickStyles /></div>
             <div style={{ marginTop: 16 }}><SmartTextSuggestions /></div>

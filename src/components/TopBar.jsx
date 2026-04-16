@@ -6,7 +6,7 @@ import ExportModal from './ExportModal'
 
 export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
   const { theme, isDark, toggleTheme } = useUIStore()
-  const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo } = useCanvasStore()
+  const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
   const [editing, setEditing] = useState(false)
   const [exportData, setExportData] = useState(null) // { dataUrl, filename, quality, format }
@@ -28,7 +28,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
     const a = document.createElement('a')
     a.href = dataUrl; a.download = filename; a.click()
     // Show preview modal
-    setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat })
+    setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score })
   }
 
   function handleCreateAnother() {

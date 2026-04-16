@@ -161,6 +161,9 @@ export default function SmartStart({ onDone }) {
           >
             Skip — open blank canvas
           </button>
+          <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 6 }}>
+            💡 Tip: Try a template from the ✨ Styles tab to get started fast
+          </div>
         </div>
       </div>
     </div>
