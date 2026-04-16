@@ -1,18 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import useUIStore from '../store/useUIStore'
 import useVideoStore from '../store/useVideoStore'
 
-const STEPS = [
-  { icon: '🎬', text: 'Drop a video below to extract frames' },
-  { icon: '🖼', text: 'Or upload an image as background' },
-  { icon: '⚡', text: 'Then hit "Make Viral" to auto-enhance' },
-]
-
-export default function CanvasEmptyState({ onUploadVideo, onUploadImage }) {
+export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTemplate }) {
   const { theme } = useUIStore()
   const { videoUrl } = useVideoStore()
+  const [hovered, setHovered] = useState(null)
 
-  if (videoUrl) return null // hide once video is loaded
+  if (videoUrl) return null
 
   const s = {
     wrap: {
@@ -20,79 +15,94 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage }) {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       pointerEvents: 'none', zIndex: 2,
-      gap: 0,
     },
     inner: {
-      textAlign: 'center', maxWidth: 340,
+      textAlign: 'center', maxWidth: 360,
       pointerEvents: 'auto',
+      animation: 'fadeIn 0.4s ease',
     },
-    icon: { fontSize: 40, marginBottom: 12 },
+    emoji: { fontSize: 44, marginBottom: 14, display: 'block' },
     title: {
-      fontSize: 18, fontWeight: 800, color: theme.text,
-      marginBottom: 6, letterSpacing: '-0.5px',
+      fontSize: 20, fontWeight: 900, color: theme.text,
+      marginBottom: 8, letterSpacing: '-0.6px',
       fontFamily: "'Montserrat', sans-serif",
     },
     sub: {
       fontSize: 13, color: theme.textSecondary,
-      lineHeight: 1.6, marginBottom: 24,
+      lineHeight: 1.65, marginBottom: 28,
     },
-    btnRow: { display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 },
-    primaryBtn: {
-      padding: '10px 22px', borderRadius: 8, border: 'none',
-      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-      color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-      boxShadow: '0 3px 16px rgba(124,58,237,0.4)',
-      transition: 'transform 0.15s, box-shadow 0.15s',
+    accent: { color: theme.accent, fontWeight: 600 },
+
+    // 3 action cards
+    cards: { display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 },
+    card: (id) => ({
+      padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+      border: `1px solid ${hovered === id ? theme.accent : theme.border}`,
+      background: hovered === id ? theme.accentGlow : theme.bgSecondary,
+      transition: 'all 0.18s',
+      transform: hovered === id ? 'translateY(-3px)' : 'translateY(0)',
+      boxShadow: hovered === id ? theme.shadowLg : 'none',
+      minWidth: 100, textAlign: 'center',
+    }),
+    cardIcon: { fontSize: 24, marginBottom: 6 },
+    cardLabel: {
+      fontSize: 12, fontWeight: 700,
+      color: hovered ? theme.text : theme.textSecondary,
     },
-    secondaryBtn: {
-      padding: '10px 22px', borderRadius: 8,
-      border: `1px solid ${theme.border}`,
-      background: theme.bgSecondary, color: theme.text,
-      fontSize: 13, fontWeight: 500, cursor: 'pointer',
-      transition: 'all 0.15s',
+    cardSub: { fontSize: 10, color: theme.textMuted, marginTop: 2 },
+
+    // Divider
+    divider: {
+      display: 'flex', alignItems: 'center', gap: 10,
+      marginBottom: 16, color: theme.textMuted, fontSize: 11,
     },
-    steps: {
-      display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap',
-    },
-    step: {
-      display: 'flex', alignItems: 'center', gap: 6,
-      fontSize: 11, color: theme.textMuted,
-      background: theme.bgSecondary,
-      border: `1px solid ${theme.border}`,
-      padding: '6px 12px', borderRadius: 20,
+    line: { flex: 1, height: 1, background: theme.border },
+
+    // Template hint
+    templateHint: {
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '10px 16px', borderRadius: 10,
+      background: theme.bgSecondary, border: `1px solid ${theme.border}`,
+      cursor: 'pointer', transition: 'all 0.15s',
+      fontSize: 12, color: theme.textSecondary,
     },
   }
+
+  const CARDS = [
+    { id: 'video', icon: '🎬', label: 'Upload Video', sub: 'AI picks frames', action: onUploadVideo },
+    { id: 'image', icon: '🖼', label: 'Upload Image', sub: 'Edit directly', action: onUploadImage },
+    { id: 'template', icon: '✨', label: 'Use Template', sub: 'Gaming, Drama...', action: onUseTemplate },
+  ]
 
   return (
     <div style={s.wrap}>
       <div style={s.inner}>
-        <div style={s.icon}>🎬</div>
-        <div style={s.title}>Create your first thumbnail</div>
+        <span style={s.emoji}>🚀</span>
+        <div style={s.title}>Drop a video or start with a template</div>
         <div style={s.sub}>
-          Upload a video to extract the best frames automatically,<br />
-          or start with an image.
+          Upload a video and <span style={s.accent}>AI picks the best frames</span> automatically.<br />
+          Or jump straight in with a ready-made style.
         </div>
-        <div style={s.btnRow}>
-          <button style={s.primaryBtn} onClick={onUploadVideo}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(124,58,237,0.5)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 16px rgba(124,58,237,0.4)' }}
-          >
-            🎬 Upload Video
-          </button>
-          <button style={s.secondaryBtn} onClick={onUploadImage}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.text }}
-          >
-            🖼 Upload Image
-          </button>
-        </div>
-        <div style={s.steps}>
-          {STEPS.map((s2, i) => (
-            <div key={i} style={s.step}>
-              <span>{s2.icon}</span>
-              <span>{s2.text}</span>
+
+        <div style={s.cards}>
+          {CARDS.map(c => (
+            <div key={c.id}
+              style={s.card(c.id)}
+              onMouseEnter={() => setHovered(c.id)}
+              onMouseLeave={() => setHovered(null)}
+              onClick={c.action}
+            >
+              <div style={s.cardIcon}>{c.icon}</div>
+              <div style={s.cardLabel}>{c.label}</div>
+              <div style={s.cardSub}>{c.sub}</div>
             </div>
           ))}
+        </div>
+
+        <div style={s.divider}>
+          <div style={s.line} />
+          <span>or drag a video file anywhere</span>
+          <div style={s.line} />
         </div>
       </div>
     </div>

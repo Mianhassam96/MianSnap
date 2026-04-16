@@ -40,11 +40,13 @@ export function setupKeyboardShortcuts(fabricCanvas, history) {
     if (ctrl && !shift && key === 'z') {
       e.preventDefault()
       history?.undo()
+      window.showToast?.('↩ Reverted', 'info', 1200)
       return
     }
     if ((ctrl && shift && key === 'Z') || (ctrl && key === 'y') || (ctrl && key === 'Y')) {
       e.preventDefault()
       history?.redo()
+      window.showToast?.('↪ Redone', 'info', 1200)
       return
     }
 

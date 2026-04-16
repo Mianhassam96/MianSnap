@@ -27,7 +27,7 @@ import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
 import { fabric } from './lib/fabric'
 export default function App() {
-  const { theme, setActiveRightPanel, focusMode, toggleFocusMode } = useUIStore()
+  const { theme, setActiveRightPanel, focusMode, toggleFocusMode, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas, setViralScore, viralScore } = useCanvasStore()
   const { projectName } = useProjectStore()
   const { setVideoFile } = useVideoStore()
@@ -161,6 +161,7 @@ export default function App() {
             <CanvasEmptyState
               onUploadVideo={handleUploadVideo}
               onUploadImage={handleUploadImage}
+              onUseTemplate={() => { setActiveLeftPanel('styles') }}
             />
 
             <div style={{ width: '100%', maxWidth: 920, position: 'relative' }}>
