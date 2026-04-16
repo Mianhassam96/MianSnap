@@ -27,6 +27,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
     // Trigger download immediately
     const a = document.createElement('a')
     a.href = dataUrl; a.download = filename; a.click()
+    window.showToast?.(`✓ Saved to Downloads — ${exportFormat.toUpperCase()} ${exportQuality}`, 'success')
     // Show preview modal
     setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score })
   }

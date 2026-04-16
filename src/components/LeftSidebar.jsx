@@ -237,7 +237,7 @@ export default function LeftSidebar() {
   }
 
   return (
-    <div style={s.sidebar}>
+    <div style={s.sidebar} className="ms-left-sidebar">
       <div style={s.tabs}>
         {TOOLS.map((t) => (
           <button key={t.id} style={s.tab(activeLeftPanel === t.id)} onClick={() => setActiveLeftPanel(t.id)}>

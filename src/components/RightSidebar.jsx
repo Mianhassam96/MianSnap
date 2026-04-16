@@ -115,7 +115,7 @@ export default function RightSidebar() {
   }
 
   return (
-    <div style={s.sidebar}>
+    <div style={s.sidebar} className="ms-right-sidebar">
       <div style={s.tabs}>
         {['layers', 'properties', 'score', 'preview', 'compare'].map((p) => (
           <button key={p}

@@ -45,24 +45,41 @@
       @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
       @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
       @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+      @keyframes progressBar { from { width: 0%; } to { width: 100%; } }
       .fade-in { animation: fadeIn 0.25s ease both; }
       .slide-in { animation: slideIn 0.2s ease both; }
       .scale-in { animation: scaleIn 0.2s ease both; }
-      /* Form elements */
       button { font-family: inherit; }
       input, select, textarea { font-family: inherit; }
-      /* Landing page scrollable */
-      .landing-scroll { overflow-y: auto !important; }
-      /* Responsive footer grid */
-      @media (max-width: 768px) {
-        .footer-grid { grid-template-columns: 1fr !important; }
-        .stat-item { border-right: none !important; border-bottom: 1px solid; }
-      }
       /* Smooth transitions for theme switching */
       * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
-      /* Override transition for elements that shouldn't animate */
       canvas, img, video { transition: none !important; }
       input, select { transition: border-color 0.15s ease !important; }
+
+      /* ── RESPONSIVE ── */
+      /* Mobile: hide sidebars, show bottom tab bar */
+      @media (max-width: 768px) {
+        .ms-left-sidebar  { display: none !important; }
+        .ms-right-sidebar { display: none !important; }
+        .ms-bottom-panel  { display: none !important; }
+        .ms-mobile-tabs   { display: flex !important; }
+        .ms-canvas-area   { padding: 8px !important; }
+        .ms-topbar-name   { display: none !important; }
+        .ms-topbar-selects { display: none !important; }
+        .ms-fab { bottom: 72px !important; right: 12px !important; padding: 10px 16px !important; font-size: 12px !important; }
+        .ms-score-badge { top: 6px !important; font-size: 10px !important; padding: 3px 10px !important; }
+      }
+      @media (max-width: 480px) {
+        .ms-topbar-save { display: none !important; }
+        .ms-topbar-projects { display: none !important; }
+      }
+      /* Tablet: compact layout */
+      @media (min-width: 769px) and (max-width: 1024px) {
+        .ms-left-sidebar  { width: 200px !important; }
+        .ms-right-sidebar { width: 180px !important; }
+      }
+      /* Mobile tabs — hidden by default, shown on mobile */
+      .ms-mobile-tabs { display: none; }
     </style>
   </head>
   <body>

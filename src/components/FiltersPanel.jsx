@@ -76,8 +76,9 @@ export default function FiltersPanel() {
   const [activePreset, setActivePreset] = useState(null)
   const [fine, setFine] = useState({ contrast: 0, saturation: 0, brightness: 0, blur: 0 })
   const [colorSuggestion, setColorSuggestion] = useState(null)
-  const savedFiltersRef = useRef(null) // store filters before hover preview
+  const savedFiltersRef = useRef(null)
   const hoverTimerRef = useRef(null)
+  const renderTimerRef = useRef(null) // debounce render
 
   // ── Core filter apply ──────────────────────────────────────────
   function applyFilters(contrast, saturation, brightness, blur) {
@@ -90,7 +91,9 @@ export default function FiltersPanel() {
     if (blur > 0)         filters.push(new fabric.Image.filters.Blur({ blur: blur / 100 }))
     bg.filters = filters
     bg.applyFilters()
-    fabricCanvas.renderAll()
+    // Debounce renderAll to avoid stacking during slider drag
+    clearTimeout(renderTimerRef.current)
+    renderTimerRef.current = setTimeout(() => fabricCanvas.renderAll(), 30)
   }
 
   // ── Hover preview ──────────────────────────────────────────────

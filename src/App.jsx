@@ -17,6 +17,9 @@ import Toast from './components/Toast'
 import CanvasHint from './components/CanvasHint'
 import ContextToolbar from './components/ContextToolbar'
 import NextStepNudge from './components/NextStepNudge'
+import VideoLoadingOverlay from './components/VideoLoadingOverlay'
+import MobileTabBar from './components/MobileTabBar'
+import MobileDrawer from './components/MobileDrawer'
 import { prefs } from './utils/prefs'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
@@ -35,6 +38,7 @@ export default function App() {
   const [viralRunning, setViralRunning] = useState(false)
   const [viralDone, setViralDone] = useState(false)
   const [viralFlash, setViralFlash] = useState(false)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
 
   function enterEditor() {
     setShowLanding(false)
@@ -144,7 +148,7 @@ export default function App() {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
           {/* Canvas area */}
-          <div style={{
+          <div className="ms-canvas-area" style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '20px 24px', overflow: 'hidden',
             background: theme.canvasBg,
@@ -161,6 +165,8 @@ export default function App() {
 
             <div style={{ width: '100%', maxWidth: 920, position: 'relative' }}>
               <CanvasEditor />
+              {/* Video loading overlay */}
+              <VideoLoadingOverlay />
               {/* Contextual toolbar — appears above selected image */}
               <ContextToolbar />
               {/* Canvas onboarding hint — fades after 5s */}
@@ -185,6 +191,7 @@ export default function App() {
             {/* Live score badge — top center above canvas */}
             {viralScore && (
               <div
+                className="ms-score-badge"
                 onClick={() => setActiveRightPanel('score')}
                 title="Click to see full score breakdown"
                 style={{
@@ -218,6 +225,7 @@ export default function App() {
 
             {/* Floating Make Viral FAB */}
             <button
+              className="ms-fab"
               onClick={handleMakeViral}
               disabled={viralRunning}
               title="Make this thumbnail viral in 1 click — contrast, glow, face focus & text"
@@ -272,6 +280,10 @@ export default function App() {
 
         {!focusMode && <RightSidebar />}
       </div>
+
+      {/* Mobile bottom tab bar + drawer */}
+      <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
+      <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} />
     </div>
   )
 }
