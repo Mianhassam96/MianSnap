@@ -34,6 +34,9 @@ export default function CanvasEditor() {
       height: CANVAS_H,
       backgroundColor: theme.isDark ? '#0a0a0f' : '#ffffff',
       preserveObjectStacking: true,
+      // Mobile: larger touch targets + drag delay
+      targetFindTolerance: 10,
+      perPixelTargetFind: false,
     })
     setFabricCanvas(canvas)
     return () => { canvas.dispose(); setFabricCanvas(null) }

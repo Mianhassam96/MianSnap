@@ -80,6 +80,11 @@
       }
       /* Mobile tabs — hidden by default, shown on mobile */
       .ms-mobile-tabs { display: none; }
+      /* Mobile: larger touch targets */
+      @media (max-width: 768px) {
+        .canvas-container { touch-action: none; }
+        .canvas-container .upper-canvas { touch-action: none; }
+      }
     </style>
   </head>
   <body>
