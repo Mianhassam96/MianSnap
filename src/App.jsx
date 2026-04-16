@@ -13,6 +13,7 @@ import SmartStart from './components/SmartStart'
 import ProjectsPanel from './components/ProjectsPanel'
 import CanvasEmptyState from './components/CanvasEmptyState'
 import ShortcutBar from './components/ShortcutBar'
+import Toast from './components/Toast'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
@@ -73,6 +74,7 @@ export default function App() {
     if (score) { setViralScore(score); setActiveRightPanel('score') }
     setViralRunning(false)
     setViralDone(true)
+    window.showToast?.('⚡ Viral enhancements applied!', 'success')
     setTimeout(() => setViralDone(false), 3000)
   }
 
@@ -114,6 +116,7 @@ export default function App() {
     }}>
       {showSmartStart && <SmartStart onDone={handleSmartStartDone} />}
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
+      <Toast />
 
       <TopBar
         onShowLanding={() => setShowLanding(true)}

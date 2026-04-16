@@ -27,12 +27,13 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
     a.href = dataUrl
     a.download = `miansnap-${Date.now()}.${exportFormat}`
     a.click()
+    window.showToast?.(`Exported as ${exportFormat.toUpperCase()} (${exportQuality})`, 'success')
   }
 
   async function handleSave() {
     if (!fabricCanvas) return
     await saveCurrentProject(fabricCanvas.toJSON(), projectName)
-    alert('Project saved to browser storage!')
+    window.showToast?.('Project saved to browser storage!', 'save')
   }
 
   const s = {
