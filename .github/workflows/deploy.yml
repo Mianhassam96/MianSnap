@@ -22,7 +22,7 @@ jobs:
         run: npm install
 
       - name: Build
-        run: npm run build
+        run: npx vite build
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
