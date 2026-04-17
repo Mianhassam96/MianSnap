@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
@@ -17,12 +19,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Build
-        run: npx vite build
+        run: npm run build
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
@@ -33,3 +36,4 @@ jobs:
           publish_dir: ./dist
           force_orphan: true
           enable_jekyll: false
+          commit_message: 'deploy: ${{ github.event.head_commit.message }}'

@@ -39,16 +39,17 @@ export default function FaceOverlay() {
       ctx.shadowBlur = 8
       const r = 12
       const { x, y, w, h } = face
+      // Draw rounded rect manually (roundRect not available in all environments)
       ctx.beginPath()
       ctx.moveTo(x + r, y)
       ctx.lineTo(x + w - r, y)
-      ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+      ctx.arcTo(x + w, y, x + w, y + r, r)
       ctx.lineTo(x + w, y + h - r)
-      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
       ctx.lineTo(x + r, y + h)
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+      ctx.arcTo(x, y + h, x, y + h - r, r)
       ctx.lineTo(x, y + r)
-      ctx.quadraticCurveTo(x, y, x + r, y)
+      ctx.arcTo(x, y, x + r, y, r)
       ctx.closePath()
       ctx.stroke()
       ctx.restore()
