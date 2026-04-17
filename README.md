@@ -138,33 +138,6 @@ npm run build
 
 ---
 
-## 📁 Project Structure
-
-```
-src/
-├── components/
-│   ├── CanvasEditor.jsx      # Fabric.js canvas + zoom/pan
-│   ├── LeftSidebar.jsx       # Text, Shapes, BG, Styles, Assets, Zones
-│   ├── RightSidebar.jsx      # Layers, Properties, Score, Preview, Compare
-│   ├── BottomPanel.jsx       # Video timeline + frame strip
-│   ├── TopBar.jsx            # Export, Save, Undo/Redo, Projects
-│   ├── BackgroundPanel.jsx   # BG remove/replace/effects
-│   ├── ViralScore.jsx        # Live score dashboard
-│   ├── MakeItViral.jsx       # One-click enhancement
-│   ├── SmartStart.jsx        # Entry flow modal
-│   └── ...
-├── utils/
-│   ├── makeItViral.js        # Auto-enhancement engine
-│   ├── viralScore.js         # Score calculation
-│   ├── frameSuggestions.js   # AI frame detection
-│   ├── canvasHistory.js      # Undo/redo system
-│   ├── keyboardShortcuts.js  # All keyboard bindings
-│   └── ...
-└── store/                    # Zustand state stores
-```
-
----
-
 ## 🤝 Contributing
 
 Contributions welcome! Open an issue or submit a pull request.
