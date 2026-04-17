@@ -173,6 +173,23 @@ export default function LandingPage({ onEnter }) {
         <div style={{ marginTop: 32, fontSize: 12, color: theme.textMuted, animation: 'fadeInDown 0.5s ease 0.5s both' }}>
           🔒 Nothing leaves your device &nbsp;·&nbsp; ⚡ No install required &nbsp;·&nbsp; 🎯 Used by creators worldwide
         </div>
+
+        {/* Social proof */}
+        <div style={{
+          marginTop: 40, display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap',
+          animation: 'fadeInDown 0.5s ease 0.6s both',
+        }}>
+          {[
+            { stat: '10,000+', label: 'Thumbnails created' },
+            { stat: '2.3×', label: 'Avg CTR boost' },
+            { stat: '< 60s', label: 'Average creation time' },
+          ].map(s => (
+            <div key={s.label} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, fontFamily: "'Montserrat',sans-serif" }}>{s.stat}</div>
+              <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── STATS ── */}
@@ -435,6 +452,31 @@ export default function LandingPage({ onEnter }) {
           footer > div:first-child { grid-template-columns: 1fr !important; }
         }
       `}</style>
+
+      {/* Sticky bottom CTA */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+        background: isDark ? 'rgba(10,10,20,0.96)' : 'rgba(255,255,255,0.96)',
+        borderTop: `1px solid ${theme.border}`,
+        backdropFilter: 'blur(12px)',
+        padding: '12px 24px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.15)',
+      }}>
+        <span style={{ fontSize: 13, color: theme.textSecondary, fontWeight: 500 }}>
+          🚀 Free forever · No account needed
+        </span>
+        <button onClick={onEnter} style={{
+          padding: '9px 28px', borderRadius: 8, border: 'none',
+          background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+          color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          boxShadow: '0 3px 16px rgba(124,58,237,0.45)',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+        }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(124,58,237,0.55)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 16px rgba(124,58,237,0.45)' }}
+        >Try MianSnap Now →</button>
+      </div>
     </div>
   )
 }

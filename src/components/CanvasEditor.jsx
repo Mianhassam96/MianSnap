@@ -8,6 +8,7 @@ import { createHistory } from '../utils/canvasHistory'
 import { setupKeyboardShortcuts } from '../utils/keyboardShortcuts'
 import ZoomControls from './ZoomControls'
 import { applyImageAsBackground, applyProImageSettings, clampToBounds, isMobileDevice } from '../utils/imageUtils'
+import FaceOverlay from './FaceOverlay'
 
 const CANVAS_W = 1280
 const CANVAS_H = 720
@@ -249,6 +250,9 @@ export default function CanvasEditor() {
 
       {/* Zoom controls */}
       <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} onZoomReset={zoomReset} />
+
+      {/* Face detection visual */}
+      <FaceOverlay />
     </div>
   )
 }

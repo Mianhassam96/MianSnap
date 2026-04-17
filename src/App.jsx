@@ -20,6 +20,7 @@ import NextStepNudge from './components/NextStepNudge'
 import VideoLoadingOverlay from './components/VideoLoadingOverlay'
 import MobileTabBar from './components/MobileTabBar'
 import MobileDrawer from './components/MobileDrawer'
+import SmartWarnings from './components/SmartWarnings'
 import { prefs } from './utils/prefs'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
@@ -183,7 +184,10 @@ export default function App() {
             {/* Keyboard shortcut hint */}
             <ShortcutBar />
 
-            {/* Next step nudge — appears after first canvas action */}
+            {/* Smart warnings — inline above canvas */}
+            {!viralScore && <SmartWarnings />}
+
+            {/* Next step nudge */}
             <NextStepNudge onMakeViral={handleMakeViral} />
 
             {/* Live score badge — top center above canvas */}

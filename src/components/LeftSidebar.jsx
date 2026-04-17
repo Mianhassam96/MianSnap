@@ -4,6 +4,7 @@ import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 import { prefs } from '../utils/prefs'
+import { getSmartTextPosition } from '../utils/smartPlacement'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
@@ -105,11 +106,11 @@ export default function LeftSidebar() {
 
   function addText(fontName) {
     if (!fabricCanvas) return
-    prefs.setLastFont(fontName) // remember last used font
+    prefs.setLastFont(fontName)
+    // Smart placement — away from face region
+    const pos = getSmartTextPosition(fabricCanvas)
     const text = new fabric.IText('Your Text Here', {
-      left: fabricCanvas.width / 2,
-      top: fabricCanvas.height / 2,
-      originX: 'center', originY: 'center',
+      ...pos,
       fontFamily: fontName,
       fontSize,
       fill: textColor,
