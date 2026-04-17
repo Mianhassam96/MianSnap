@@ -46,7 +46,7 @@ Real-time 0–100 score updates as you edit:
 - Text size check (mobile-friendly?)
 - Contrast analysis
 - Subject/face detection
-- Composition scoring
+- Composition scoring 
 - Actionable feedback: *"Text too small for mobile"*
 
 ### 🎨 Background System
