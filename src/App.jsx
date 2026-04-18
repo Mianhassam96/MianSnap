@@ -182,6 +182,7 @@ export default function App() {
         background: theme.bg, color: theme.text,
         fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
         overflow: 'hidden',
+        animation: 'fadeIn 0.35s ease',
       }}>
         <Toast />
         <TopBar />

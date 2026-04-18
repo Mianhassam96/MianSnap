@@ -27,19 +27,47 @@ export default function LandingLayer({ onEnter, onDemo }) {
   const [activePlatform, setActivePlatform] = useState(0)
   const [demoSlider, setDemoSlider] = useState(50)
   const [demoAnimDone, setDemoAnimDone] = useState(false)
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false)
+  const [sliderVelocity, setSliderVelocity] = useState(0)
+  const lastSliderX = React.useRef(null)
+  const [scoreDisplay, setScoreDisplay] = useState(32)
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 40)
     const cycle = setInterval(() => setActivePlatform(p => (p + 1) % PLATFORMS.length), 2500)
     // Auto-animate before/after slider once after 1.2s
     const anim = setTimeout(() => {
-      setDemoSlider(5)
-      setTimeout(() => setDemoSlider(95), 600)
-      setTimeout(() => setDemoSlider(50), 1300)
+      setDemoSlider(5); setScoreDisplay(32)
+      setTimeout(() => { setDemoSlider(95); setScoreDisplay(87) }, 600)
+      setTimeout(() => { setDemoSlider(50); setScoreDisplay(60) }, 1300)
       setTimeout(() => setDemoAnimDone(true), 1800)
     }, 1200)
     return () => { clearTimeout(t); clearInterval(cycle); clearTimeout(anim) }
   }, [])
+
+  function handleSliderMove(clientX, rect) {
+    const newVal = Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100))
+    if (lastSliderX.current !== null) {
+      setSliderVelocity(newVal - lastSliderX.current)
+    }
+    lastSliderX.current = newVal
+    setDemoSlider(newVal)
+    // Count up score as after side is revealed
+    const afterVisible = newVal / 100
+    setScoreDisplay(Math.round(32 + (87 - 32) * afterVisible))
+  }
+
+  function handleSliderRelease() {
+    setIsDraggingSlider(false)
+    lastSliderX.current = null
+    // Inertia: drift slightly in direction of velocity then settle
+    if (Math.abs(sliderVelocity) > 1) {
+      const target = Math.max(5, Math.min(95, demoSlider + sliderVelocity * 2))
+      setDemoSlider(target)
+      setTimeout(() => setDemoSlider(prev => prev + (50 - prev) * 0.3), 150)
+    }
+    setSliderVelocity(0)
+  }
 
   function enter(demo = false) {
     setLeaving(true)
@@ -222,14 +250,20 @@ export default function LandingLayer({ onEnter, onDemo }) {
             boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
             userSelect: 'none',
           }}
+            onMouseDown={(e) => { setIsDraggingSlider(true); lastSliderX.current = null }}
             onMouseMove={(e) => {
+              if (!isDraggingSlider && demoAnimDone) return
               const rect = e.currentTarget.getBoundingClientRect()
-              setDemoSlider(Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100)))
+              handleSliderMove(e.clientX, rect)
             }}
+            onMouseUp={handleSliderRelease}
+            onMouseLeave={handleSliderRelease}
+            onTouchStart={() => { setIsDraggingSlider(true); lastSliderX.current = null }}
             onTouchMove={(e) => {
               const rect = e.currentTarget.getBoundingClientRect()
-              setDemoSlider(Math.max(5, Math.min(95, ((e.touches[0].clientX - rect.left) / rect.width) * 100)))
+              handleSliderMove(e.touches[0].clientX, rect)
             }}
+            onTouchEnd={handleSliderRelease}
           >
             {/* BEFORE layer — full width */}
             <div style={{
@@ -262,8 +296,15 @@ export default function LandingLayer({ onEnter, onDemo }) {
               </div>
               <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(74,222,128,0.15)', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)' }}>AFTER ⚡</div>
               <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(74,222,128,0.15)', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)' }}>🔥 Score: 87/100</div>
-              {/* Glow overlay */}
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+              {/* Glow overlay — pulses when after is fully shown */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.12) 0%, transparent 70%)',
+                pointerEvents: 'none',
+                opacity: demoSlider > 80 ? 1 : 0,
+                transition: 'opacity 0.4s ease',
+                animation: demoSlider > 80 ? 'pulse 2s ease-in-out infinite' : 'none',
+              }} />
             </div>
 
             {/* Divider handle */}
@@ -286,9 +327,13 @@ export default function LandingLayer({ onEnter, onDemo }) {
             }}>⇔</div>
           </div>
 
-          {/* Score context */}
+          {/* Score context — live count-up */}
           <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: theme.textMuted }}>
-            Score <strong style={{ color: '#ef4444' }}>32</strong> → <strong style={{ color: '#4ade80' }}>87</strong> · Higher score = better engagement potential
+            Score{' '}
+            <strong style={{ color: scoreDisplay < 60 ? '#ef4444' : scoreDisplay < 80 ? '#f59e0b' : '#4ade80', fontSize: 14, transition: 'color 0.3s' }}>
+              {scoreDisplay}
+            </strong>
+            /100 · Higher score = better engagement potential
           </div>
 
           {/* Feature pills */}

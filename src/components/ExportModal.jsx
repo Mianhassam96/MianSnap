@@ -109,11 +109,43 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: `1px solid ${theme.border}` }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: theme.text }}>🎉 Thumbnail Ready!</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: theme.text }}>
+              {viralScore >= 75 ? '🔥 Viral-Ready Thumbnail!' : viralScore >= 50 ? '⚡ Strong Thumbnail!' : '🎉 Thumbnail Ready!'}
+            </div>
             <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>Exported as {format.toUpperCase()} · {quality}</div>
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.textMuted, cursor: 'pointer', fontSize: 14 }}>✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {viralScore && (
+              <div style={{
+                textAlign: 'center', padding: '4px 12px', borderRadius: 8,
+                background: viralScore >= 75 ? 'rgba(74,222,128,0.12)' : viralScore >= 50 ? 'rgba(250,204,21,0.12)' : 'rgba(248,113,113,0.12)',
+                border: `1px solid ${scoreColor}44`,
+              }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: scoreColor, lineHeight: 1 }}>{viralScore}</div>
+                <div style={{ fontSize: 8, color: scoreColor, fontWeight: 600 }}>/ 100</div>
+              </div>
+            )}
+            <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.textMuted, cursor: 'pointer', fontSize: 14 }}>✕</button>
+          </div>
         </div>
+
+        {/* Outcome message */}
+        {viralScore && (
+          <div style={{
+            padding: '10px 22px',
+            background: viralScore >= 75
+              ? 'linear-gradient(135deg,rgba(74,222,128,0.1),rgba(22,163,74,0.06))'
+              : 'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(79,70,229,0.06))',
+            borderBottom: `1px solid ${scoreColor}22`,
+            fontSize: 12, color: theme.text, fontWeight: 600,
+          }}>
+            {viralScore >= 75
+              ? '🚀 This content is optimized for engagement — upload it now and watch the clicks.'
+              : viralScore >= 50
+              ? '⚡ Good thumbnail. Add bold text or a face for even higher CTR.'
+              : '💡 Try hitting Make Viral before exporting for a stronger result.'}
+          </div>
+        )}
 
         {/* Score improvement banner */}
         {improvement && (
