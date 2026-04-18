@@ -7,7 +7,7 @@ import { CANVAS_SIZES, resizeCanvas } from '../utils/canvasSizes'
 import { fabric } from '../lib/fabric'
 
 export default function TopBar() {
-  const { theme, isDark, toggleTheme } = useUIStore()
+  const { theme, isDark, toggleTheme, focusMode, toggleFocusMode, toggleBottomPanel, showBottomPanel } = useUIStore()
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore, prevScore } = useCanvasStore()
   const [exportData, setExportData] = useState(null)
   const [canvasSize, setCanvasSize] = useState('youtube')
@@ -213,9 +213,23 @@ export default function TopBar() {
       >⬇ Export</button>
 
       {/* Theme */}
-      <button style={iconBtn} onClick={toggleTheme} title={isDark ? 'Light' : 'Dark'}
+      <button style={iconBtn} onClick={toggleTheme} title={isDark ? 'Light mode' : 'Dark mode'}
         onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>
         {isDark ? '☀️' : '🌙'}
+      </button>
+
+      {/* Focus mode */}
+      <button style={{ ...iconBtn, background: focusMode ? theme.accentGlow : theme.bgTertiary, borderColor: focusMode ? theme.accent : theme.border }}
+        onClick={toggleFocusMode} title={focusMode ? 'Exit focus mode' : 'Focus mode — hide panels'}
+        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>
+        {focusMode ? '⊞' : '⊡'}
+      </button>
+
+      {/* Toggle bottom panel */}
+      <button style={{ ...iconBtn, background: showBottomPanel ? theme.accentGlow : theme.bgTertiary, borderColor: showBottomPanel ? theme.accent : theme.border }}
+        onClick={toggleBottomPanel} title={showBottomPanel ? 'Hide video panel' : 'Show video panel'}
+        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>
+        🎬
       </button>
     </div>
   )

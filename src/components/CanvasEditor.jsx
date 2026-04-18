@@ -24,7 +24,7 @@ export default function CanvasEditor() {
   const lastPan    = useRef({ x: 0, y: 0 })
   const spaceDown  = useRef(false)
 
-  const { setFabricCanvas, fabricCanvas, setUndoRedo, undoAvailable } = useCanvasStore()
+  const { setFabricCanvas, fabricCanvas, setUndoRedo } = useCanvasStore()
   const { selectedFrame } = useVideoStore()
   const { showSafeZone, activePlatform, theme } = useUIStore()
   const [zoom, setZoom] = useState(1)

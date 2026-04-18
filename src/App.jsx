@@ -28,7 +28,7 @@ import { applyImageAsBackground } from './utils/imageUtils'
 import { applyThumbnailStyle } from './utils/thumbnailStyles'
 
 export default function App() {
-  const { theme, setActiveRightPanel, setActiveLeftPanel } = useUIStore()
+  const { theme, setActiveRightPanel, setActiveLeftPanel, showBottomPanel, focusMode, toggleFocusMode } = useUIStore()
   const { fabricCanvas, setViralScore, viralScore, setPrevScore } = useCanvasStore()
   const { setVideoFile, clearVideo, videoUrl } = useVideoStore()
   const [showLanding, setShowLanding] = useState(() => shouldShowLanding())
@@ -181,7 +181,7 @@ export default function App() {
         <TopBar />
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <LeftSidebar />
+          {!focusMode && <LeftSidebar />}
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
             <div className="ms-canvas-area" style={{
@@ -296,10 +296,10 @@ export default function App() {
               `}</style>
             </div>
 
-            <BottomPanel />
+            {showBottomPanel && <BottomPanel />}
           </div>
 
-          <RightSidebar />
+          {!focusMode && <RightSidebar />}
         </div>
 
         <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
