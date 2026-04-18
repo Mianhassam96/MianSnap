@@ -80,10 +80,12 @@ export default function FiltersPanel() {
   const hoverTimerRef = useRef(null)
   const renderTimerRef = useRef(null) // debounce render
 
-  // ── Core filter apply ──────────────────────────────────────────
+  // ── Core filter apply — always REPLACES, never stacks ────────
   function applyFilters(contrast, saturation, brightness, blur) {
     const bg = fabricCanvas?.backgroundImage
     if (!bg || bg.filters === undefined) return
+    // Hard reset first — prevents stacking across multiple apply calls
+    bg.filters = []
     const filters = []
     if (contrast   !== 0) filters.push(new fabric.Image.filters.Contrast({ contrast }))
     if (saturation !== 0) filters.push(new fabric.Image.filters.Saturation({ saturation }))
@@ -91,7 +93,6 @@ export default function FiltersPanel() {
     if (blur > 0)         filters.push(new fabric.Image.filters.Blur({ blur: blur / 100 }))
     bg.filters = filters
     bg.applyFilters()
-    // Debounce renderAll to avoid stacking during slider drag
     clearTimeout(renderTimerRef.current)
     renderTimerRef.current = setTimeout(() => fabricCanvas.renderAll(), 30)
   }

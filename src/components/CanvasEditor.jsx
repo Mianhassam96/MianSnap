@@ -427,9 +427,9 @@ export default function CanvasEditor() {
       }}
     >
       <canvas ref={canvasRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', touchAction: 'none' }} />
       <canvas ref={overlayRef} width={canvasW} height={canvasH}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', touchAction: 'none' }} />
 
       {/* ── Drag-to-replace overlay ── */}
       {dragOver && (

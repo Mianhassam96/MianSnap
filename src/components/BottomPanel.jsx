@@ -12,7 +12,7 @@ export default function BottomPanel() {
   const {
     videoUrl, frames, setFrames, selectedFrame, setSelectedFrame,
     isExtracting, setIsExtracting, currentTime, setCurrentTime,
-    duration, setDuration, fps, setFps, setVideoFile,
+    duration, setDuration, fps, setFps, setVideoFile, clearFrames,
   } = useVideoStore()
   const { fabricCanvas } = useCanvasStore()
   const videoRef = useRef(null)
@@ -300,6 +300,17 @@ export default function BottomPanel() {
                 <span style={{ fontSize: 10, color: theme.accent, fontWeight: 600 }}>
                   👆 Click any frame to use it
                 </span>
+                <button
+                  onClick={() => { clearFrames(); window.showToast?.('🗑 Gallery cleared', 'info', 1500) }}
+                  style={{
+                    marginLeft: 'auto', padding: '2px 8px', borderRadius: 4, border: `1px solid ${theme.border}`,
+                    background: 'transparent', color: theme.textMuted, fontSize: 9, cursor: 'pointer',
+                    transition: 'all 0.15s', flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.danger; e.currentTarget.style.color = theme.danger }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMuted }}
+                  title="Clear all frames from memory"
+                >🗑 Clear</button>
               </>
             ) : (
               <span style={{ fontSize: 10, color: theme.textMuted }}>

@@ -154,6 +154,10 @@
         /* Bigger buttons on mobile */
         button { min-height: 36px; }
       }
+      /* Touch-action fix — prevent page scroll when interacting with canvas */
+      canvas { touch-action: none !important; }
+      .canvas-container { touch-action: none !important; }
+      .canvas-container canvas { touch-action: none !important; }
     </style>
   </head>
   <body>
