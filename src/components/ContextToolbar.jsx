@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { removeBackground } from '../utils/bgRemoval'
+import { rewriteViral } from '../utils/titleGenerator'
 import { fabric } from '../lib/fabric'
 
 export default function ContextToolbar() {
@@ -25,8 +26,18 @@ export default function ContextToolbar() {
     }
   }, [fabricCanvas])
 
-  // Only show for image objects
-  if (!activeObj || activeObj.type !== 'image') return null
+  // Show for image objects (BG tools) OR text objects (rewrite)
+  if (!activeObj || (activeObj.type !== 'image' && activeObj.type !== 'i-text' && activeObj.type !== 'textbox')) return null
+
+  const isText = activeObj.type === 'i-text' || activeObj.type === 'textbox'
+
+  function handleRewriteText() {
+    if (!isText) return
+    const rewritten = rewriteViral(activeObj.text || '')
+    activeObj.set('text', rewritten)
+    fabricCanvas.renderAll()
+    window.showToast?.('✨ Text made more viral!', 'success')
+  }
 
   async function handleRemoveBg() {
     setRunning(true)
@@ -98,23 +109,53 @@ export default function ContextToolbar() {
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 15 }}>
       <div style={s.bar}>
-        <button style={s.btn} onClick={handleRemoveBg} disabled={running}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-        >
-          ✂️ {running ? bgStatus || 'Processing...' : 'Remove BG'}
-        </button>
-        <div style={s.divider} />
-        <button style={s.btn} onClick={handleBlurBg}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-        >
-          🌫 Blur BG
-        </button>
-        <div style={s.divider} />
-        <button style={s.btn} onClick={handleReplaceBg}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-        >
-          🖼 Replace BG
-        </button>
+        {isText ? (
+          <>
+            <button style={s.btn} onClick={handleRewriteText}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >
+              🔥 Make Viral
+            </button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={() => {
+              activeObj.set({ fontWeight: activeObj.fontWeight === 'bold' ? 'normal' : 'bold' })
+              fabricCanvas.renderAll()
+            }}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >
+              𝐁 Bold
+            </button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={() => {
+              activeObj.set({ textAlign: activeObj.textAlign === 'center' ? 'left' : 'center' })
+              fabricCanvas.renderAll()
+            }}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >
+              ≡ Align
+            </button>
+          </>
+        ) : (
+          <>
+            <button style={s.btn} onClick={handleRemoveBg} disabled={running}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >
+              ✂️ {running ? bgStatus || 'Processing...' : 'Remove BG'}
+            </button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={handleBlurBg}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >
+              🌫 Blur BG
+            </button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={handleReplaceBg}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >
+              🖼 Replace BG
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

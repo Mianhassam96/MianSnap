@@ -5,6 +5,7 @@ import useCanvasStore from '../store/useCanvasStore'
 import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 import { prefs } from '../utils/prefs'
 import { getSmartTextPosition } from '../utils/smartPlacement'
+import { generateTitles, detectStyle, rewriteViral } from '../utils/titleGenerator'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
@@ -103,6 +104,9 @@ export default function LeftSidebar() {
   const [strokeColor, setStrokeColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(64)
   const [openCategory, setOpenCategory] = useState(0)
+  const [titles, setTitles] = useState([])
+  const [titleStyle, setTitleStyle] = useState('reaction')
+  const [rewriting, setRewriting] = useState(false)
 
   const SMART_DEFAULTS = [
     'YOU WON\'T BELIEVE THIS',
@@ -173,6 +177,64 @@ export default function LeftSidebar() {
       obj.set('fontSize', clamped)
       fabricCanvas.renderAll()
     }
+  }
+
+  function handleGenerateTitles() {
+    const style = detectStyle(fabricCanvas) || titleStyle
+    setTitleStyle(style)
+    setTitles(generateTitles(style, 5))
+  }
+
+  function applyTitle(title) {
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
+      obj.set('text', title)
+      fabricCanvas.renderAll()
+      window.showToast?.('Title applied!', 'success', 1500)
+    } else {
+      addText('Impact', title, 80)
+    }
+  }
+
+  function handleRewriteViral() {
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (!obj || (obj.type !== 'i-text' && obj.type !== 'textbox')) {
+      window.showToast?.('Select a text object first', 'info', 2000)
+      return
+    }
+    setRewriting(true)
+    const rewritten = rewriteViral(obj.text || '')
+    obj.set('text', rewritten)
+    fabricCanvas.renderAll()
+    window.showToast?.('✨ Text made more viral!', 'success')
+    setTimeout(() => setRewriting(false), 500)
+  }
+
+  function handleFaceEmphasis() {
+    if (!fabricCanvas) return
+    const bg = fabricCanvas.backgroundImage
+    if (!bg) { window.showToast?.('Load an image first', 'info', 2000); return }
+    // Boost brightness + contrast on background to emphasize face
+    const existing = (bg.filters || []).filter(f =>
+      f.type !== 'Brightness' && f.type !== 'Contrast' && f.type !== 'Saturation'
+    )
+    bg.filters = [
+      ...existing,
+      new fabric.Image.filters.Brightness({ brightness: 0.1 }),
+      new fabric.Image.filters.Contrast({ contrast: 0.2 }),
+      new fabric.Image.filters.Saturation({ saturation: 0.15 }),
+    ]
+    bg.applyFilters()
+    // Also zoom in slightly toward center (face area)
+    const scaleBoost = 1.08
+    bg.set({
+      scaleX: (bg.scaleX || 1) * scaleBoost,
+      scaleY: (bg.scaleY || 1) * scaleBoost,
+    })
+    fabricCanvas.renderAll()
+    window.showToast?.('🎯 Face emphasis applied!', 'success')
   }
 
   function addShape(type) {
@@ -360,9 +422,59 @@ export default function LeftSidebar() {
             {/* AI */}
             <div style={s.section}>
               <div style={s.sectionTitle}>AI Tools</div>
+
+              {/* Title Generator */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', gap: 5, marginBottom: 6 }}>
+                  <button style={{ ...s.aiBtn, flex: 1, background: 'linear-gradient(135deg,#f59e0b,#ef4444)', marginTop: 0 }}
+                    onClick={handleGenerateTitles}>
+                    ✨ Generate Titles
+                  </button>
+                  <button style={{ ...s.aiBtn, flex: 1, background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', marginTop: 0, opacity: rewriting ? 0.6 : 1 }}
+                    onClick={handleRewriteViral}>
+                    🔥 Make Viral
+                  </button>
+                </div>
+                {titles.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {['reaction','gaming','drama','news','motivational','curiosity','tutorial'].map(st => (
+                      <button key={st}
+                        style={{
+                          padding: '3px 8px', borderRadius: 5, fontSize: 9, cursor: 'pointer',
+                          border: `1px solid ${titleStyle === st ? theme.accent : theme.border}`,
+                          background: titleStyle === st ? theme.accentGlow : 'transparent',
+                          color: titleStyle === st ? theme.accent : theme.textMuted,
+                          transition: 'all 0.12s', display: 'inline-block', marginRight: 4, marginBottom: 2,
+                        }}
+                        onClick={() => { setTitleStyle(st); setTitles(generateTitles(st, 5)) }}
+                      >{st}</button>
+                    ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
+                      {titles.map((t, i) => (
+                        <button key={i}
+                          style={{
+                            width: '100%', padding: '7px 10px', borderRadius: 6,
+                            border: `1px solid ${theme.border}`, background: theme.bg,
+                            color: theme.text, fontSize: 10, cursor: 'pointer', textAlign: 'left',
+                            transition: 'all 0.12s', lineHeight: 1.4,
+                          }}
+                          onClick={() => applyTitle(t)}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.borderHover }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = theme.bg; e.currentTarget.style.borderColor = theme.border }}
+                        >{t}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button style={{ ...s.aiBtn, background: `linear-gradient(135deg,#0ea5e9,#6366f1)` }}
                 onClick={() => faceAutoFocus(fabricCanvas)}>
                 🎯 Face Auto-Focus
+              </button>
+              <button style={{ ...s.aiBtn, marginTop: 6, background: `linear-gradient(135deg,#10b981,#0ea5e9)` }}
+                onClick={handleFaceEmphasis}>
+                👤 Face Emphasis
               </button>
               <button style={{ ...s.aiBtn, marginTop: 6, background: `linear-gradient(135deg,#f59e0b,#ef4444)` }}
                 onClick={() => amplifyEmotion(fabricCanvas)}>

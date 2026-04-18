@@ -111,9 +111,24 @@ export default function MobilePreview() {
           <div style={s.thumbWrap}>
             <img src={thumbUrl} alt="Preview" style={s.thumb} />
             <div style={s.liveBadge}>● LIVE</div>
+            {/* Timestamp overlay — like YouTube */}
+            <div style={{
+              position: 'absolute', bottom: 6, right: 6,
+              background: 'rgba(0,0,0,0.85)', color: '#fff',
+              fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3,
+            }}>12:34</div>
           </div>
           <div style={s.videoTitle}>{p?.title}</div>
           <div style={s.videoMeta}>{p?.meta}</div>
+          {/* CTR confidence */}
+          <div style={{
+            marginTop: 8, padding: '6px 8px', borderRadius: 6,
+            background: theme.isDark ? 'rgba(74,222,128,0.08)' : 'rgba(22,163,74,0.06)',
+            border: `1px solid rgba(74,222,128,0.2)`,
+            fontSize: 10, color: theme.success, fontWeight: 600,
+          }}>
+            🔥 This thumbnail is optimized for high CTR
+          </div>
         </div>
       )}
     </div>
