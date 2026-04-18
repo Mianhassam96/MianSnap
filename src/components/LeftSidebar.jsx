@@ -18,6 +18,8 @@ import QuickMode from './QuickMode'
 import ShapesPanel from './ShapesPanel'
 import FiltersPanel from './FiltersPanel'
 import ColorSystem from './ColorSystem'
+import IdeaStarter from './IdeaStarter'
+import TrendingStyles from './TrendingStyles'
 
 const TOOLS = [
   { id: 'text',    icon: '𝐓',  label: 'Text' },
@@ -497,6 +499,8 @@ export default function LeftSidebar() {
         {activeLeftPanel === 'bg' && <BackgroundPanel />}
         {activeLeftPanel === 'styles' && (
           <>
+            <IdeaStarter />
+            <TrendingStyles />
             <QuickMode />
             <MakeItViral />
             <div style={{ marginTop: 4 }}><OneClickStyles /></div>
