@@ -33,7 +33,6 @@ export default function SmartWarnings() {
       if (viralScore && viralScore.score < 45) {
         w.push({ id: 'low-score', icon: '📊', msg: `Score ${viralScore.score}/100 — hit ⚡ Make Viral to boost it` })
       }
-
       // Only show top 2 most important
       setWarnings(w.slice(0, 2))
     }

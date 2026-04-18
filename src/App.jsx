@@ -80,6 +80,13 @@ export default function App() {
     }
   }, [fabricCanvas])
 
+  // Listen for makeViral event from ViralScore "Fix It" button
+  useEffect(() => {
+    const handler = () => handleMakeViral()
+    window.addEventListener('miansnap:makeViral', handler)
+    return () => window.removeEventListener('miansnap:makeViral', handler)
+  }, [fabricCanvas, viralRunning])
+
   async function handleMakeViral() {
     if (!fabricCanvas || viralRunning) return
     setViralRunning(true)
@@ -166,6 +173,7 @@ export default function App() {
               onUploadVideo={handleUploadVideo}
               onUploadImage={handleUploadImage}
               onUseTemplate={() => { setActiveLeftPanel('styles') }}
+              onQuickMode={() => { setActiveLeftPanel('styles'); window.showToast?.('⚡ Quick Mode — hit the button!', 'info') }}
             />
 
             <div style={{ width: '100%', maxWidth: 920, position: 'relative' }}>
@@ -297,6 +305,26 @@ export default function App() {
       {/* Mobile bottom tab bar + drawer */}
       <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
       <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} />
+
+      {/* Mobile floating upload button — shown only on mobile when no content */}
+      <style>{`
+        .ms-mobile-upload { display: none; }
+        @media (max-width: 768px) { .ms-mobile-upload { display: flex !important; } }
+      `}</style>
+      <button
+        className="ms-mobile-upload"
+        onClick={handleUploadVideo}
+        style={{
+          position: 'fixed', bottom: 72, left: 16, zIndex: 199,
+          alignItems: 'center', gap: 8,
+          padding: '11px 18px', borderRadius: 24, border: 'none',
+          background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+          color: '#fff', fontSize: 13, fontWeight: 700,
+          boxShadow: '0 4px 20px rgba(124,58,237,0.5)',
+        }}
+      >
+        + Upload
+      </button>
     </div>
   )
 }

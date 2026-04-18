@@ -104,19 +104,26 @@ export default function LeftSidebar() {
   const [fontSize, setFontSize] = useState(64)
   const [openCategory, setOpenCategory] = useState(0)
 
-  function addText(fontName) {
+  const SMART_DEFAULTS = [
+    'YOU WON\'T BELIEVE THIS',
+    'INSANE MOMENT',
+    'WATCH THIS',
+    'SHOCKING TRUTH',
+    'EPIC WIN',
+  ]
+
+  function addText(fontName, customContent, customSize) {
     if (!fabricCanvas) return
     prefs.setLastFont(fontName)
-    // Ensure font is loaded before adding text
     if (document.fonts && !document.fonts.check(`16px "${fontName}"`)) {
       document.fonts.load(`16px "${fontName}"`).catch(() => {})
     }
-    // Smart placement — away from face region
     const pos = getSmartTextPosition(fabricCanvas)
-    const text = new fabric.IText('Your Text Here', {
+    const content = customContent || SMART_DEFAULTS[Math.floor(Math.random() * SMART_DEFAULTS.length)]
+    const text = new fabric.IText(content, {
       ...pos,
       fontFamily: fontName,
-      fontSize: Math.max(12, Math.min(400, fontSize)),
+      fontSize: Math.max(12, Math.min(400, customSize || fontSize)),
       fill: textColor,
       stroke: strokeColor,
       strokeWidth: strokeColor === 'transparent' ? 0 : 2,
@@ -125,6 +132,16 @@ export default function LeftSidebar() {
     fabricCanvas.add(text)
     fabricCanvas.setActiveObject(text)
     fabricCanvas.renderAll()
+  }
+
+  function addQuickText(type) {
+    const configs = {
+      heading:    { content: 'YOU WON\'T BELIEVE THIS', size: 88, font: 'Impact' },
+      subheading: { content: 'Watch until the end...', size: 52, font: 'Oswald' },
+      small:      { content: 'Tap to edit', size: 32, font: 'Poppins' },
+    }
+    const c = configs[type]
+    addText(c.font, c.content, c.size)
   }
 
   function updateSelectedTextColor(color) {
@@ -262,6 +279,34 @@ export default function LeftSidebar() {
         {/* ── TEXT PANEL ── */}
         {activeLeftPanel === 'text' && (
           <>
+            {/* Quick-add text buttons */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={s.sectionTitle}>Quick Add</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { type: 'heading',    label: '+ Heading',    hint: '88px · Impact', color: theme.accent },
+                  { type: 'subheading', label: '+ Subheading', hint: '52px · Oswald',  color: theme.textSecondary },
+                  { type: 'small',      label: '+ Small Text', hint: '32px · Poppins', color: theme.textMuted },
+                ].map(({ type, label, hint, color }) => (
+                  <button key={type}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: 7,
+                      border: `1px solid ${theme.border}`,
+                      background: theme.bgTertiary, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      transition: 'all 0.15s',
+                    }}
+                    onClick={() => addQuickText(type)}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 700, color }}>{label}</span>
+                    <span style={{ fontSize: 10, color: theme.textMuted }}>{hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div style={s.section}>
               <ColorSystem
                 label="Text Color"
