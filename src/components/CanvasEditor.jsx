@@ -29,36 +29,65 @@ export default function CanvasEditor() {
   const [zoom, setZoom] = useState(1)
   const [fitMode, setFitMode] = useState('cover') // 'cover' | 'contain'
 
-  // ── Init canvas ────────────────────────────────────────────────
+  // ── Init canvas — wait for Fabric CDN to load ─────────────────
   useEffect(() => {
     if (!canvasRef.current || fabricCanvas) return
-    const mobile = isMobileDevice()
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      width: CANVAS_W,
-      height: CANVAS_H,
-      backgroundColor: theme.isDark ? '#0a0a0f' : '#ffffff',
-      preserveObjectStacking: true,
-      targetFindTolerance: mobile ? 16 : 8,
-      perPixelTargetFind: false,
-      // Mobile: larger touch targets
-      selectionBorderColor: '#7c3aed',
-      selectionLineWidth: 2,
-    })
-    setFabricCanvas(canvas)
-    return () => {
+    let cancelled = false
+
+    function init() {
+      if (cancelled || !canvasRef.current) return
+      if (!window.fabric?.Canvas) return // not ready yet, will retry via event
+      const mobile = isMobileDevice()
       try {
-        // Full memory cleanup
-        canvas.getObjects().forEach(obj => {
-          if (obj.type === 'image') {
-            obj.setSrc('', () => {})
-          }
+        const canvas = new fabric.Canvas(canvasRef.current, {
+          width: CANVAS_W,
+          height: CANVAS_H,
+          backgroundColor: theme.isDark ? '#0a0a0f' : '#ffffff',
+          preserveObjectStacking: true,
+          targetFindTolerance: mobile ? 16 : 8,
+          perPixelTargetFind: false,
+          selectionBorderColor: '#7c3aed',
+          selectionLineWidth: 2,
         })
-        canvas.clear()
-        canvas.dispose()
-      } catch (_) {}
-      setFabricCanvas(null)
+        setFabricCanvas(canvas)
+      } catch (err) {
+        console.error('[MianSnap] Canvas init failed:', err)
+        // Retry after short delay
+        setTimeout(init, 200)
+      }
     }
+
+    // If Fabric already loaded, init immediately
+    if (window.fabric?.Canvas) {
+      init()
+    } else {
+      // Wait for fabricReady event
+      window.addEventListener('fabricReady', init, { once: true })
+      // Also poll as fallback
+      const poll = setInterval(() => {
+        if (window.fabric?.Canvas) { clearInterval(poll); init() }
+      }, 100)
+      return () => { cancelled = true; clearInterval(poll); window.removeEventListener('fabricReady', init) }
+    }
+
+    return () => { cancelled = true }
   }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (fabricCanvas) {
+        try {
+          fabricCanvas.getObjects().forEach(obj => {
+            if (obj.type === 'image') obj.setSrc('', () => {})
+          })
+          fabricCanvas.clear()
+          fabricCanvas.dispose()
+        } catch (_) {}
+        setFabricCanvas(null)
+      }
+    }
+  }, [fabricCanvas])
 
   // ── Pro image settings + clamp on all added images ─────────────
   useEffect(() => {

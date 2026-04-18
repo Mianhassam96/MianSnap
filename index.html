@@ -50,14 +50,24 @@
     <!-- Primary CDN with fallback to jsDelivr -->
     <script>
       (function() {
-        var s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js';
-        s.onerror = function() {
-          var fallback = document.createElement('script');
-          fallback.src = 'https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js';
-          document.head.appendChild(fallback);
-        };
-        document.head.appendChild(s);
+        function loadFabric(src, onSuccess, onFail) {
+          var s = document.createElement('script');
+          s.src = src;
+          s.onload = onSuccess;
+          s.onerror = onFail;
+          document.head.appendChild(s);
+        }
+        loadFabric(
+          'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js',
+          function() { window.dispatchEvent(new Event('fabricReady')); },
+          function() {
+            loadFabric(
+              'https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js',
+              function() { window.dispatchEvent(new Event('fabricReady')); },
+              function() { console.error('[MianSnap] Fabric.js failed to load from both CDNs'); }
+            );
+          }
+        );
       })();
     </script>
     <style>

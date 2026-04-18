@@ -16,6 +16,10 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      const isFabricError = this.state.error?.message?.includes('Canvas') ||
+        this.state.error?.message?.includes('fabric') ||
+        this.state.error?.message?.includes('constructor')
+
       return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -23,10 +27,14 @@ export default class ErrorBoundary extends Component {
           background: '#0a0a1a', color: '#fff', fontFamily: 'Inter, sans-serif',
           gap: 16, padding: 32, textAlign: 'center',
         }}>
-          <div style={{ fontSize: 48 }}>⚠️</div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>Something went wrong</div>
+          <div style={{ fontSize: 48 }}>{isFabricError ? '⏳' : '⚠️'}</div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>
+            {isFabricError ? 'Loading editor...' : 'Something went wrong'}
+          </div>
           <div style={{ fontSize: 13, color: '#a0a0b0', maxWidth: 400, lineHeight: 1.6 }}>
-            {this.state.error?.message || 'An unexpected error occurred.'}
+            {isFabricError
+              ? 'The canvas library is still loading. Please wait a moment.'
+              : this.state.error?.message || 'An unexpected error occurred.'}
           </div>
           <button
             onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload() }}
@@ -36,7 +44,7 @@ export default class ErrorBoundary extends Component {
               color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
             }}
           >
-            Reload App
+            {isFabricError ? 'Reload' : 'Reload App'}
           </button>
         </div>
       )
