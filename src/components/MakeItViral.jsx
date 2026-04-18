@@ -59,7 +59,11 @@ export default function MakeItViral() {
 
   return (
     <div style={s.wrap}>
+      <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 6, lineHeight: 1.5 }}>
+        Boosts contrast · focuses face · adds glow + vignette · scores result
+      </div>
       <button style={s.btn} onClick={handleClick} disabled={running}
+        title="Auto-enhance: contrast boost, face focus, glow, vignette, viral score"
         onMouseEnter={(e) => { if (!running && !done) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(239,68,68,0.5)' } }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = running || done ? 'none' : '0 4px 24px rgba(239,68,68,0.4)' }}
       >

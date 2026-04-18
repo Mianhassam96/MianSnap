@@ -19,6 +19,7 @@ import SmartWarnings from './components/SmartWarnings'
 import DiscoveryHints from './components/DiscoveryHints'
 import FeedbackButton from './components/FeedbackButton'
 import LandingLayer, { shouldShowLanding } from './components/LandingLayer'
+import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides } from './utils/alignmentGuides'
@@ -32,6 +33,7 @@ export default function App() {
   const { fabricCanvas, setViralScore, viralScore, setPrevScore } = useCanvasStore()
   const { setVideoFile, clearVideo, videoUrl } = useVideoStore()
   const [showLanding, setShowLanding] = useState(() => shouldShowLanding())
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [viralRunning, setViralRunning] = useState(false)
   const [viralDone, setViralDone] = useState(false)
   const [viralFlash, setViralFlash] = useState(false)
@@ -166,9 +168,13 @@ export default function App() {
     <>
       {showLanding && (
         <LandingLayer
-          onEnter={() => setShowLanding(false)}
+          onEnter={() => { setShowLanding(false); if (shouldShowOnboarding()) setShowOnboarding(true) }}
           onDemo={handleDemo}
         />
+      )}
+
+      {showOnboarding && (
+        <Onboarding onDone={() => setShowOnboarding(false)} />
       )}
 
       <div style={{
@@ -256,6 +262,7 @@ export default function App() {
                 className="ms-fab"
                 onClick={handleMakeViral}
                 disabled={viralRunning}
+                title="Auto-enhance: boosts contrast, focuses face, adds glow + vignette, scores your thumbnail"
                 style={{
                   position: 'absolute', bottom: 20, right: 20,
                   padding: '11px 22px', borderRadius: 10, border: 'none',
@@ -266,7 +273,7 @@ export default function App() {
                   cursor: viralRunning ? 'wait' : 'pointer',
                   boxShadow: viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 6px 28px rgba(239,68,68,0.5)',
                   transition: 'transform 0.15s, box-shadow 0.15s, background 0.3s',
-                  display: 'flex', alignItems: 'center', gap: 8,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   zIndex: 10,
                   animation: !viralRunning && !viralDone ? 'viralPulse 2.5s ease-in-out infinite' : 'none',
                 }}
@@ -280,7 +287,12 @@ export default function App() {
                   e.currentTarget.style.boxShadow = viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 6px 28px rgba(239,68,68,0.5)'
                 }}
               >
-                {viralRunning ? '⏳ Enhancing...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}
+                <span>{viralRunning ? '⏳ Enhancing...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}</span>
+                {!viralRunning && !viralDone && (
+                  <span style={{ fontSize: 9, opacity: 0.85, fontWeight: 400, letterSpacing: 0.3 }}>
+                    Auto-enhance + score
+                  </span>
+                )}
               </button>
 
               <style>{`
