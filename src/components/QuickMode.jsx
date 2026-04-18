@@ -42,6 +42,8 @@ export default function QuickMode({ onExport }) {
     setRunning(false)
     setDone(true)
     window.showToast?.(`⚡ Quick Mode done! ${STYLES[styleKey]?.label} applied`, 'success')
+    // Dispatch viralDone so BeforeAfter auto-updates
+    window.dispatchEvent(new CustomEvent('miansnap:viralDone'))
     setTimeout(() => setDone(false), 4000)
   }
 

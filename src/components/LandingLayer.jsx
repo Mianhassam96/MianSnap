@@ -189,6 +189,98 @@ export default function LandingLayer({ onEnter, onDemo }) {
           >or try demo — no upload needed →</button>
         </div>
 
+        {/* ── LIVE DEMO VISUAL — Before/After + Viral Score ── */}
+        <div style={{
+          marginTop: 48, maxWidth: 720, margin: '48px auto 0',
+          animation: 'fadeInDown 0.6s ease 0.35s both',
+        }}>
+          <div style={{ fontSize: 11, color: accent, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>
+            ⚡ See it in action
+          </div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'center',
+            background: isDark ? 'rgba(10,10,20,0.6)' : 'rgba(255,255,255,0.7)',
+            border: `1px solid ${isDark ? 'rgba(124,58,237,0.3)' : 'rgba(124,58,237,0.15)'}`,
+            borderRadius: 16, padding: '20px 20px',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
+          }}>
+            {/* BEFORE */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted, letterSpacing: 1, marginBottom: 8 }}>BEFORE</div>
+              <div style={{
+                aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden',
+                background: isDark ? '#1a1a2e' : '#e8e8f0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `1px solid ${theme.border}`,
+                position: 'relative',
+              }}>
+                <div style={{ textAlign: 'center', padding: 12 }}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>🎬</div>
+                  <div style={{ fontSize: 10, color: theme.textMuted, lineHeight: 1.4 }}>Plain video frame<br/>No text · No style</div>
+                </div>
+                <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#888', fontSize: 9, padding: '2px 6px', borderRadius: 4 }}>Score: 32/100</div>
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                fontSize: 22, color: accent,
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}>→</div>
+              <div style={{
+                fontSize: 9, fontWeight: 700, color: '#fff',
+                background: grad, padding: '3px 8px', borderRadius: 10,
+                whiteSpace: 'nowrap',
+              }}>1 click</div>
+            </div>
+
+            {/* AFTER */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#4ade80', letterSpacing: 1, marginBottom: 8 }}>AFTER ⚡</div>
+              <div style={{
+                aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden',
+                background: 'linear-gradient(135deg,#1a0033,#0d0d1a)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `2px solid rgba(124,58,237,0.5)`,
+                boxShadow: '0 0 20px rgba(124,58,237,0.3)',
+                position: 'relative',
+              }}>
+                <div style={{ textAlign: 'center', padding: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#ffff00', textShadow: '0 0 12px rgba(255,255,0,0.5)', fontFamily: 'Impact, sans-serif', letterSpacing: 1, lineHeight: 1.2 }}>
+                    YOU WON'T<br/>BELIEVE THIS
+                  </div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>+ glow · contrast · face focus</div>
+                </div>
+                <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(74,222,128,0.2)', color: '#4ade80', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(74,222,128,0.4)' }}>🔥 Score: 87/100</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Viral Score showcase */}
+          <div style={{
+            marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap',
+          }}>
+            {[
+              { icon: '🧠', text: 'AI picks best frame' },
+              { icon: '⚡', text: '1-click enhancement' },
+              { icon: '📊', text: 'Live viral score' },
+              { icon: '🔒', text: '100% private' },
+            ].map(f => (
+              <div key={f.text} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 20,
+                background: isDark ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.06)',
+                border: `1px solid rgba(124,58,237,0.2)`,
+                fontSize: 11, color: theme.textSecondary,
+              }}>
+                <span>{f.icon}</span>{f.text}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Stats */}
         <div style={{ marginTop: 40, display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap', animation: 'fadeInDown 0.5s ease 0.3s both' }}>
           {[
