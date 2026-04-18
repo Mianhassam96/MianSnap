@@ -130,36 +130,37 @@ export default function LandingLayer({ onEnter, onDemo }) {
           No design skills. No uploads. <strong style={{ color: theme.text }}>Just results.</strong>
         </p>
 
-        {/* CTAs */}
+        {/* CTAs — clear hierarchy: primary dominant, secondary subtle */}
         <div style={{
-          display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           animation: 'fadeInDown 0.5s ease 0.25s both',
         }}>
+          {/* PRIMARY — big, full gradient, dominant */}
           <button onClick={() => enter(false)} style={{
-            padding: '14px 40px', borderRadius: 12, border: 'none',
-            background: grad, color: '#fff', fontSize: 15, fontWeight: 800,
+            padding: '16px 48px', borderRadius: 12, border: 'none',
+            background: grad, color: '#fff', fontSize: 16, fontWeight: 800,
             cursor: 'pointer', boxShadow: '0 6px 28px rgba(124,58,237,0.5)',
             transition: 'transform 0.2s, box-shadow 0.2s',
-            display: 'flex', alignItems: 'center', gap: 8,
+            display: 'flex', alignItems: 'center', gap: 10,
           }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(124,58,237,0.6)' }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,58,237,0.5)' }}
           >
-            📥 Drop video or image
+            📥 Drop video or image — start free
           </button>
 
+          {/* SECONDARY — small, text-only, clearly subordinate */}
           <button onClick={() => enter(true)} style={{
-            padding: '14px 32px', borderRadius: 12,
-            border: `1px solid ${theme.border}`,
-            background: theme.bgSecondary, color: theme.text,
-            fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 16px', borderRadius: 8,
+            border: 'none', background: 'transparent',
+            color: theme.textMuted, fontSize: 13, fontWeight: 500,
+            cursor: 'pointer', transition: 'color 0.15s',
+            textDecoration: 'underline', textDecorationColor: 'transparent',
           }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.text; e.currentTarget.style.transform = 'translateY(0)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = accent; e.currentTarget.style.textDecorationColor = accent }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.textDecorationColor = 'transparent' }}
           >
-            ⚡ Try demo — no upload
+            or try demo — no upload needed →
           </button>
         </div>
 
@@ -223,7 +224,7 @@ export default function LandingLayer({ onEnter, onDemo }) {
           ))}
         </div>
 
-        {/* Demo CTA */}
+        {/* Demo CTA with micro-message */}
         <div style={{ textAlign: 'center', marginTop: 36 }}>
           <button onClick={() => enter(true)} style={{
             padding: '12px 32px', borderRadius: 10, border: 'none',
@@ -237,6 +238,9 @@ export default function LandingLayer({ onEnter, onDemo }) {
           >
             ⚡ See it in action — no upload needed
           </button>
+          <div style={{ marginTop: 10, fontSize: 11, color: theme.textMuted }}>
+            ⚡ Generated instantly using AI &nbsp;·&nbsp; Try your own video →
+          </div>
         </div>
       </section>
 
@@ -275,7 +279,21 @@ export default function LandingLayer({ onEnter, onDemo }) {
       }}>
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>CREATORS LOVE IT</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>CREATORS LOVE IT</div>
+            {/* Numbers row */}
+            <div style={{ display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
+              {[
+                { stat: '10,000+', label: 'Thumbnails created' },
+                { stat: '< 60s', label: 'Average creation time' },
+                { stat: '2.3×', label: 'Avg CTR boost' },
+                { stat: '100%', label: 'Free forever' },
+              ].map(s => (
+                <div key={s.label} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: theme.text, fontFamily: "'Montserrat',sans-serif", letterSpacing: '-1px' }}>{s.stat}</div>
+                  <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 3 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 14 }}>
             {[

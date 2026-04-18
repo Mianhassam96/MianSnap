@@ -201,18 +201,30 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
           >🔄 New</button>
         </div>
 
-        {/* Share section */}
-        <div style={{ padding: '10px 22px 16px', borderTop: `1px solid ${theme.border}` }}>
-          <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-            🚀 Share MianSnap with other creators
+        {/* Share section — viral loop */}
+        <div style={{ padding: '12px 22px 16px', borderTop: `1px solid ${theme.border}` }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 10 }}>
+            🔥 Show this to a friend
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <div style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.textMuted, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {SITE_URL}
-            </div>
-            <button onClick={copyLink} style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: linkCopied ? theme.success : theme.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
-              {linkCopied ? '✓ Copied!' : '🔗 Share'}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <button onClick={copyImage} style={{
+              flex: 1, padding: '8px', borderRadius: 7, border: `1px solid ${theme.border}`,
+              background: theme.bgTertiary, color: theme.textSecondary,
+              fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+            >{copied ? '✓ Image Copied!' : '📋 Copy Image'}</button>
+            <button onClick={copyLink} style={{
+              flex: 1, padding: '8px', borderRadius: 7, border: 'none',
+              background: linkCopied ? theme.success : 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+              color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s',
+            }}>
+              {linkCopied ? '✓ Link Copied!' : '🚀 Share MianSnap'}
             </button>
+          </div>
+          <div style={{ fontSize: 10, color: theme.textMuted, textAlign: 'center' }}>
+            Share the tool with other creators — it's free forever
           </div>
         </div>
 
