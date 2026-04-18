@@ -4,7 +4,7 @@ import { darkTheme, lightTheme } from '../theme/theme'
 const useUIStore = create((set, get) => ({
   isDark: false,
   theme: lightTheme,
-  activeLeftPanel: 'video',
+  activeLeftPanel: 'text',
   activeRightPanel: 'layers',
   showSafeZone: false,
   activePlatform: 'youtube',

@@ -401,12 +401,8 @@ export default function LandingLayer({ onEnter, onDemo }) {
 }
 
 export function shouldShowLanding() {
-  // Show landing on first visit
-  try {
-    return !localStorage.getItem(SEEN_KEY)
-  } catch {
-    return true
-  }
+  // Always show landing page on every open
+  return true
 }
 
 export function resetLanding() {
