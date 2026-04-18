@@ -45,7 +45,6 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
     input.click()
   }, [fabricCanvas, setVideoFile])
 
-  // All hooks above — conditional return after
   if (videoUrl || hasImage) return null
 
   const accent = '#7c3aed'
@@ -57,11 +56,14 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer',
+        // Soft pulse border when idle, solid when dragging
+        border: dragging ? `2px dashed ${accent}` : `2px dashed transparent`,
+        borderRadius: 8,
         background: dragging
           ? (theme.isDark ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.05)')
           : 'transparent',
-        border: dragging ? `2px dashed ${accent}` : '2px dashed transparent',
-        borderRadius: 8, transition: 'all 0.2s',
+        transition: 'background 0.2s, border-color 0.2s',
+        animation: !dragging ? 'emptyPulse 3s ease-in-out infinite' : 'none',
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -74,37 +76,38 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         pointerEvents: 'none',
       }}>
 
-        {/* Icon */}
+        {/* Icon with bounce when idle */}
         <div style={{
-          fontSize: 48, marginBottom: 14,
+          fontSize: 48, marginBottom: 10,
           filter: dragging ? `drop-shadow(0 0 14px ${accent})` : 'none',
+          animation: !dragging ? 'iconBounce 2s ease-in-out infinite' : 'none',
           transition: 'filter 0.2s',
         }}>
           {dragging ? '📥' : '🎬'}
         </div>
 
-        {/* Primary instruction */}
+        {/* Primary */}
         <div style={{
-          fontSize: 22, fontWeight: 900, color: theme.text,
-          marginBottom: 6, letterSpacing: '-0.5px',
+          fontSize: 21, fontWeight: 900, color: theme.text,
+          marginBottom: 5, letterSpacing: '-0.5px',
           fontFamily: "'Montserrat',sans-serif",
         }}>
           {dragging ? 'Drop it!' : 'Drop video or image here'}
         </div>
 
-        {/* Sub instruction */}
-        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 10, lineHeight: 1.5 }}>
+        {/* Sub — CTA reinforcement */}
+        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, lineHeight: 1.5 }}>
           {dragging
             ? 'Release to load onto canvas'
-            : <>or <span style={{ color: accent, fontWeight: 600 }}>click anywhere</span> to browse</>
+            : <>or <span style={{ color: accent, fontWeight: 600 }}>click anywhere</span> to browse · or drop your own frame below</>
           }
         </div>
 
-        {/* ── MICRO GUIDANCE — what happens next ── */}
+        {/* Flow guide */}
         {!dragging && (
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            marginBottom: 28, flexWrap: 'wrap',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 6, marginBottom: 24, flexWrap: 'wrap',
           }}>
             {[
               { icon: '🧠', label: 'AI picks best frame' },
@@ -112,11 +115,8 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
               { icon: '⬇', label: 'Export instantly' },
             ].map((s, i) => (
               <React.Fragment key={s.label}>
-                <span style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  fontSize: 11, color: theme.textMuted, fontWeight: 500,
-                }}>
-                  <span>{s.icon}</span> {s.label}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.textMuted, fontWeight: 500 }}>
+                  <span>{s.icon}</span>{s.label}
                 </span>
                 {i < 2 && <span style={{ color: theme.border, fontSize: 10 }}>→</span>}
               </React.Fragment>
@@ -127,7 +127,7 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         {/* Action cards */}
         {!dragging && (
           <div
-            style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}
+            style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 14 }}
             onClick={(e) => e.stopPropagation()}
           >
             {[
@@ -137,12 +137,12 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
             ].map(c => (
               <div key={c.id}
                 style={{
-                  padding: '11px 13px', borderRadius: 10, cursor: 'pointer',
+                  padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
                   border: `1px solid ${hovered === c.id ? accent : theme.border}`,
                   background: hovered === c.id ? theme.accentGlow : theme.bgSecondary,
                   transition: 'all 0.15s',
                   transform: hovered === c.id ? 'translateY(-2px)' : 'translateY(0)',
-                  minWidth: 90, textAlign: 'center',
+                  minWidth: 88, textAlign: 'center',
                 }}
                 onMouseEnter={() => setHovered(c.id)}
                 onMouseLeave={() => setHovered(null)}
@@ -175,6 +175,18 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
           </div>
         )}
       </div>
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes emptyPulse {
+          0%,100% { border-color: transparent; }
+          50% { border-color: rgba(124,58,237,0.2); }
+        }
+        @keyframes iconBounce {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+      `}</style>
     </div>
   )
 }

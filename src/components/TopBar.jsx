@@ -96,11 +96,18 @@ export default function TopBar() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Privacy — subtle, secondary, not competing */}
-      <span style={{
-        fontSize: 10, color: theme.textMuted, fontWeight: 400,
-        opacity: 0.7, letterSpacing: 0.2,
-      }} className="ms-topbar-selects">
+      {/* Privacy — fades in on first hover, stays */}
+      <span
+        style={{
+          fontSize: 10, color: theme.textMuted, fontWeight: 400,
+          opacity: 0.55, letterSpacing: 0.2, transition: 'opacity 0.3s',
+          cursor: 'default',
+        }}
+        className="ms-topbar-selects"
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.55' }}
+        title="Everything runs in your browser — nothing is uploaded or stored"
+      >
         🔒 private · no uploads
       </span>
 
