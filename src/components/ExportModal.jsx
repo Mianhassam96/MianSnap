@@ -1,28 +1,54 @@
 import React, { useEffect, useState } from 'react'
 import useUIStore from '../store/useUIStore'
 
-const PERFORMANCE_MSGS = [
-  'This could perform 2–3× better than average thumbnails.',
+const PERF_MSGS = [
   'High contrast + bold text = higher CTR. You nailed it.',
   'Thumbnails like this get 40% more clicks on average.',
   'Strong composition detected — this is ready to go viral.',
   'Creator-level quality. Upload it and watch the clicks.',
+  'This could perform 2–3× better than average thumbnails.',
 ]
 
-export default function ExportModal({ onClose, onCreateAnother, dataUrl, filename, quality, format, viralScore }) {
+const SITE_URL = 'https://mianhassam96.github.io/MianSnap/'
+
+export default function ExportModal({ onClose, onCreateAnother, dataUrl, filename, quality, format, viralScore, prevScore }) {
   const { theme } = useUIStore()
   const [copied, setCopied] = useState(false)
-  const [perfMsg] = useState(() => PERFORMANCE_MSGS[Math.floor(Math.random() * PERFORMANCE_MSGS.length)])
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [watermark, setWatermark] = useState(false)
+  const [perfMsg] = useState(() => PERF_MSGS[Math.floor(Math.random() * PERF_MSGS.length)])
+
+  const scoreImproved = prevScore && viralScore && viralScore > prevScore
+  const improvement = scoreImproved ? viralScore - prevScore : null
 
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    const h = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
   }, [])
 
   function download() {
-    const a = document.createElement('a')
-    a.href = dataUrl; a.download = filename; a.click()
+    if (!watermark) {
+      const a = document.createElement('a')
+      a.href = dataUrl; a.download = filename; a.click()
+      return
+    }
+    // Add watermark
+    const img = new Image()
+    img.onload = () => {
+      const c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      const ctx = c.getContext('2d')
+      ctx.drawImage(img, 0, 0)
+      ctx.font = `bold ${Math.round(img.width * 0.018)}px Inter, sans-serif`
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'
+      ctx.textAlign = 'right'
+      ctx.fillText('Made with MianSnap', img.width - 14, img.height - 12)
+      const a = document.createElement('a')
+      a.href = c.toDataURL('image/jpeg', 0.93)
+      a.download = filename; a.click()
+    }
+    img.src = dataUrl
   }
 
   async function copyImage() {
@@ -30,22 +56,30 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
       const res = await fetch(dataUrl)
       const blob = await res.blob()
       await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })])
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback — copy data URL as text
       navigator.clipboard.writeText(dataUrl).catch(() => {})
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+    window.showToast?.('Image copied to clipboard!', 'success')
   }
 
-  const scoreColor = viralScore >= 75 ? theme.success : viralScore >= 50 ? theme.warning : theme.danger
+  function copyLink() {
+    navigator.clipboard.writeText(SITE_URL).catch(() => {})
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2500)
+    window.showToast?.('Link copied — share MianSnap!', 'success')
+  }
+
+  const scoreColor = !viralScore ? theme.textMuted
+    : viralScore >= 75 ? theme.success
+    : viralScore >= 50 ? theme.warning
+    : theme.danger
 
   const s = {
     overlay: {
       position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)',
+      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 2000, animation: 'fadeIn 0.2s ease',
     },
@@ -53,180 +87,117 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
       background: theme.bgSecondary, borderRadius: 18,
       border: `1px solid ${theme.border}`,
       boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
-      maxWidth: 560, width: '92%',
+      maxWidth: 540, width: '92%',
       animation: 'scaleIn 0.22s ease',
-      overflow: 'hidden',
+      overflow: 'hidden', maxHeight: '92vh', overflowY: 'auto',
     },
-    header: {
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '18px 24px', borderBottom: `1px solid ${theme.border}`,
-    },
-    titleWrap: { display: 'flex', flexDirection: 'column', gap: 2 },
-    title: { fontSize: 18, fontWeight: 800, color: theme.text },
-    subtitle: { fontSize: 12, color: theme.textMuted },
-    closeBtn: {
-      width: 30, height: 30, borderRadius: 6, border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.textMuted, cursor: 'pointer',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-    },
-
-    // Emotional success banner
-    successBanner: {
-      padding: '14px 24px',
-      background: 'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(79,70,229,0.08))',
-      borderBottom: `1px solid ${theme.border}`,
-      display: 'flex', alignItems: 'center', gap: 12,
-    },
-    successIcon: { fontSize: 28, flexShrink: 0 },
-    successText: { flex: 1 },
-    successTitle: { fontSize: 13, fontWeight: 700, color: theme.text, marginBottom: 2 },
-    successMsg: { fontSize: 11, color: theme.textSecondary, lineHeight: 1.4 },
-
-    preview: {
-      padding: '16px 24px',
-      background: theme.isDark ? '#050508' : '#f0f0f8',
-      display: 'flex', justifyContent: 'center', position: 'relative',
-    },
-    img: {
-      width: '100%', maxWidth: 480, aspectRatio: '16/9',
-      objectFit: 'cover', borderRadius: 8,
-      boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-    },
-    watermark: {
-      position: 'absolute', bottom: 24, right: 32,
-      fontSize: 10, color: 'rgba(255,255,255,0.5)',
-      fontWeight: 600, letterSpacing: 0.5,
-      textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-    },
-
-    meta: {
-      display: 'flex', alignItems: 'center', gap: 8, padding: '10px 24px',
-      borderBottom: `1px solid ${theme.border}`, flexWrap: 'wrap',
-    },
-    badge: {
-      padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600,
-      background: theme.accentGlow, color: theme.accent,
-      border: `1px solid ${theme.borderHover}`,
-    },
-    scoreBadge: {
-      padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 700,
-      background: viralScore ? `${scoreColor}18` : theme.bgTertiary,
-      color: viralScore ? scoreColor : theme.textMuted,
-      border: `1px solid ${viralScore ? scoreColor + '44' : theme.border}`,
-      marginLeft: 'auto',
-    },
-
-    actions: {
-      display: 'flex', gap: 8, padding: '14px 24px', flexWrap: 'wrap',
-    },
-    downloadBtn: {
-      flex: 1, minWidth: 120, padding: '11px', borderRadius: 8, border: 'none',
-      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-      color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-      transition: 'transform 0.15s, box-shadow 0.15s',
-      boxShadow: '0 3px 16px rgba(124,58,237,0.4)',
-    },
-    secondBtn: {
-      padding: '11px 16px', borderRadius: 8,
-      border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.textSecondary,
-      fontSize: 12, fontWeight: 500, cursor: 'pointer',
+    btn: (primary) => ({
+      flex: 1, minWidth: 100, padding: '11px', borderRadius: 8,
+      border: primary ? 'none' : `1px solid ${theme.border}`,
+      background: primary ? 'linear-gradient(135deg,#7c3aed,#4f46e5)' : theme.bgTertiary,
+      color: primary ? '#fff' : theme.textSecondary,
+      fontSize: 12, fontWeight: primary ? 700 : 500, cursor: 'pointer',
       transition: 'all 0.15s', whiteSpace: 'nowrap',
-    },
-
-    // Share section
-    shareRow: {
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '10px 24px 14px',
-      borderTop: `1px solid ${theme.border}`,
-    },
-    shareLabel: { fontSize: 11, color: theme.textMuted, flexShrink: 0 },
-    shareLink: {
-      flex: 1, padding: '6px 10px', borderRadius: 6,
-      border: `1px solid ${theme.border}`,
-      background: theme.bgTertiary, color: theme.textMuted,
-      fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-    },
-    copyBtn: {
-      padding: '6px 12px', borderRadius: 6, border: 'none',
-      background: copied ? theme.success : theme.accent,
-      color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-      transition: 'background 0.2s', flexShrink: 0,
-    },
-  }
-
-  const hover = (e, on) => {
-    e.currentTarget.style.borderColor = on ? theme.accent : theme.border
-    e.currentTarget.style.color = on ? theme.accent : theme.textSecondary
+      boxShadow: primary ? '0 3px 16px rgba(124,58,237,0.4)' : 'none',
+    }),
   }
 
   return (
     <div style={s.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={s.modal}>
+
         {/* Header */}
-        <div style={s.header}>
-          <div style={s.titleWrap}>
-            <div style={s.title}>🎉 Thumbnail Ready!</div>
-            <div style={s.subtitle}>Your thumbnail has been exported</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: `1px solid ${theme.border}` }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: theme.text }}>🎉 Thumbnail Ready!</div>
+            <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>Exported as {format.toUpperCase()} · {quality}</div>
           </div>
-          <button style={s.closeBtn} onClick={onClose}>✕</button>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.textMuted, cursor: 'pointer', fontSize: 14 }}>✕</button>
         </div>
 
-        {/* Emotional success banner */}
-        <div style={s.successBanner}>
-          <div style={s.successIcon}>🚀</div>
-          <div style={s.successText}>
-            <div style={s.successTitle}>This thumbnail is ready to perform</div>
-            <div style={s.successMsg}>{perfMsg}</div>
+        {/* Score improvement banner */}
+        {improvement && (
+          <div style={{
+            padding: '10px 22px',
+            background: `linear-gradient(135deg,${theme.success}18,${theme.success}08)`,
+            borderBottom: `1px solid ${theme.success}33`,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 22 }}>📈</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: theme.success }}>Score improved +{improvement} this session!</div>
+              <div style={{ fontSize: 10, color: theme.textSecondary }}>{prevScore} → {viralScore}/100 — great work</div>
+            </div>
+          </div>
+        )}
+
+        {/* Success banner */}
+        <div style={{ padding: '12px 22px', background: 'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(79,70,229,0.06))', borderBottom: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 26 }}>🚀</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>This thumbnail is ready to perform</div>
+            <div style={{ fontSize: 11, color: theme.textSecondary }}>{perfMsg}</div>
           </div>
         </div>
 
         {/* Preview */}
-        <div style={s.preview}>
-          <img src={dataUrl} alt="Export preview" style={s.img} />
-          <div style={s.watermark}>Made with MianSnap</div>
-        </div>
-
-        {/* Meta + score */}
-        <div style={s.meta}>
-          <span style={s.badge}>{format.toUpperCase()}</span>
-          <span style={s.badge}>{quality}</span>
-          <span style={s.badge}>16:9</span>
-          {viralScore && (
-            <span style={s.scoreBadge}>
-              {viralScore >= 75 ? '🔥' : viralScore >= 50 ? '⚡' : '⚠️'} {viralScore}/100
-            </span>
+        <div style={{ padding: '14px 22px', background: theme.isDark ? '#050508' : '#f0f0f8', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+          <img src={dataUrl} alt="Export preview" style={{ width: '100%', maxWidth: 460, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }} />
+          {watermark && (
+            <div style={{ position: 'absolute', bottom: 22, right: 30, fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: 0.5, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+              Made with MianSnap
+            </div>
           )}
         </div>
 
-        {/* Actions */}
-        <div style={s.actions}>
-          <button style={s.downloadBtn} onClick={download}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(124,58,237,0.5)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 16px rgba(124,58,237,0.4)' }}
-          >
-            ⬇ Download Again
-          </button>
-          <button style={s.secondBtn} onClick={onCreateAnother || onClose}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-          >
-            🔄 Create Another
-          </button>
-          <button style={s.secondBtn} onClick={onClose}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-          >
-            Close
-          </button>
+        {/* Meta row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 22px', borderBottom: `1px solid ${theme.border}`, flexWrap: 'wrap' }}>
+          {[format.toUpperCase(), quality, '16:9'].map(b => (
+            <span key={b} style={{ padding: '3px 9px', borderRadius: 5, fontSize: 10, fontWeight: 600, background: theme.accentGlow, color: theme.accent, border: `1px solid ${theme.borderHover}` }}>{b}</span>
+          ))}
+          {viralScore && (
+            <span style={{ padding: '3px 9px', borderRadius: 5, fontSize: 11, fontWeight: 700, background: scoreColor + '18', color: scoreColor, border: `1px solid ${scoreColor}44`, marginLeft: 'auto' }}>
+              {viralScore >= 75 ? '🔥' : viralScore >= 50 ? '⚡' : '⚠️'} {viralScore}/100
+            </span>
+          )}
+          {/* Watermark toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: theme.textMuted, cursor: 'pointer', marginLeft: 4 }}>
+            <input type="checkbox" checked={watermark} onChange={e => setWatermark(e.target.checked)} style={{ accentColor: theme.accent }} />
+            Watermark
+          </label>
         </div>
 
-        {/* Share / copy hook */}
-        <div style={s.shareRow}>
-          <span style={s.shareLabel}>Share:</span>
-          <div style={s.shareLink}>Made with MianSnap — mianhassam96.github.io/MianSnap/</div>
-          <button style={s.copyBtn} onClick={copyImage}>
-            {copied ? '✓ Copied!' : '📋 Copy'}
-          </button>
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 8, padding: '12px 22px', flexWrap: 'wrap' }}>
+          <button style={s.btn(true)} onClick={download}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(124,58,237,0.5)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 16px rgba(124,58,237,0.4)' }}
+          >⬇ Download</button>
+          <button style={s.btn(false)} onClick={copyImage}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+          >{copied ? '✓ Copied!' : '📋 Copy Image'}</button>
+          <button style={s.btn(false)} onClick={onCreateAnother || onClose}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+          >🔄 New</button>
         </div>
+
+        {/* Share section */}
+        <div style={{ padding: '10px 22px 16px', borderTop: `1px solid ${theme.border}` }}>
+          <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+            🚀 Share MianSnap with other creators
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.textMuted, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {SITE_URL}
+            </div>
+            <button onClick={copyLink} style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: linkCopied ? theme.success : theme.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+              {linkCopied ? '✓ Copied!' : '🔗 Share'}
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   )

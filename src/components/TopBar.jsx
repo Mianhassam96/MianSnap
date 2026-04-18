@@ -6,7 +6,7 @@ import ExportModal from './ExportModal'
 
 export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
   const { theme, isDark, toggleTheme, focusMode, toggleFocusMode } = useUIStore()
-  const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore } = useCanvasStore()
+  const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore, prevScore, sessionBest } = useCanvasStore()
   const { projectName, setProjectName, saveCurrentProject, isSaving } = useProjectStore()
   const [editing, setEditing] = useState(false)
   const [exportData, setExportData] = useState(null) // { dataUrl, filename, quality, format }
@@ -130,6 +130,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       {exportData && (
         <ExportModal
           {...exportData}
+          prevScore={prevScore?.score}
           onClose={() => setExportData(null)}
           onCreateAnother={handleCreateAnother}
         />
@@ -214,6 +215,24 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       >
         📂 Projects
       </button>
+
+      {/* Session best badge */}
+      {sessionBest && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          padding: '4px 10px', borderRadius: 6,
+          background: sessionBest.score >= 75 ? `${theme.success}18` : theme.accentGlow,
+          border: `1px solid ${sessionBest.score >= 75 ? theme.success + '44' : theme.borderHover}`,
+          fontSize: 11, fontWeight: 700,
+          color: sessionBest.score >= 75 ? theme.success : theme.accent,
+          flexShrink: 0,
+        }} title="Best score this session">
+          ⭐ {sessionBest.score}
+          {prevScore && sessionBest.score > (prevScore.score ?? 0) && (
+            <span style={{ fontSize: 9, color: theme.success }}>+{sessionBest.score - (prevScore.score ?? 0)}</span>
+          )}
+        </div>
+      )}
 
       {/* Export */}
       <button style={s.exportBtn} onClick={handleExport}

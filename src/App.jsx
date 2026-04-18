@@ -30,7 +30,7 @@ import { calculateViralScore } from './utils/viralScore'
 import { applyImageAsBackground, isMobileDevice } from './utils/imageUtils'
 export default function App() {
   const { theme, setActiveRightPanel, focusMode, toggleFocusMode, setActiveLeftPanel } = useUIStore()
-  const { fabricCanvas, setViralScore, viralScore } = useCanvasStore()
+  const { fabricCanvas, setViralScore, viralScore, setPrevScore, prevScore, sessionBest } = useCanvasStore()
   const { projectName } = useProjectStore()
   const { setVideoFile } = useVideoStore()
   const [showLanding, setShowLanding] = useState(true)
@@ -91,7 +91,8 @@ export default function App() {
     if (!fabricCanvas || viralRunning) return
     setViralRunning(true)
     setViralDone(false)
-    // Flash animation — canvas glow burst
+    // Save score before enhancement
+    if (viralScore) setPrevScore(viralScore)
     setViralFlash(true)
     setTimeout(() => setViralFlash(false), 600)
     const result = await makeItViral(fabricCanvas)
@@ -99,7 +100,8 @@ export default function App() {
     if (score) { setViralScore(score); setActiveRightPanel('score') }
     setViralRunning(false)
     setViralDone(true)
-    // Show specific steps as individual toasts
+    // Fire event for BeforeAfter auto-flash
+    window.dispatchEvent(new CustomEvent('miansnap:viralDone'))
     if (result?.steps?.length) {
       result.steps.forEach((step, i) => {
         setTimeout(() => window.showToast?.(step, 'success', 2500), i * 350)
