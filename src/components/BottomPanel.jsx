@@ -17,6 +17,7 @@ export default function BottomPanel() {
   const videoRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [autoRan, setAutoRan] = useState(false)
+  const [snapFlash, setSnapFlash] = useState(null) // index of frame being snapped
 
   useEffect(() => {
     const video = videoRef.current
@@ -39,7 +40,7 @@ export default function BottomPanel() {
     setFrames(suggested)
     setIsExtracting(false)
     const best = suggested.find(f => f.isBest) || suggested[0]
-    if (best && fabricCanvas) applyFrame(best)
+    if (best && fabricCanvas) applyFrame(best, 0)
   }
 
   async function handleExtractAll() {
@@ -50,10 +51,17 @@ export default function BottomPanel() {
     setIsExtracting(false)
   }
 
-  function applyFrame(frame) {
+  function applyFrame(frame, idx) {
     setSelectedFrame(frame)
     if (!fabricCanvas) return
-    applyImageAsBackground(fabricCanvas, frame.dataUrl, 'cover')
+    // Flash animation on the frame thumbnail
+    if (idx !== undefined) {
+      setSnapFlash(idx)
+      setTimeout(() => setSnapFlash(null), 500)
+    }
+    applyImageAsBackground(fabricCanvas, frame.dataUrl, 'cover', () => {
+      window.showToast?.('🖼 Frame applied to canvas', 'success', 1200)
+    })
   }
 
   function captureCurrentFrame() {
@@ -81,19 +89,23 @@ export default function BottomPanel() {
     stepFrame(video, fps, dir)
   }
 
-  // ── Keyboard seeking ──────────────────────────────────────────
+  // ── Keyboard seeking + Space play/pause ──────────────────────
   useEffect(() => {
     if (!videoUrl) return
     const onKey = (e) => {
       const video = videoRef.current
       if (!video) return
-      // Don't hijack when typing in inputs
       const tag = document.activeElement?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const obj = window.__fabricCanvas?.getActiveObject?.()
       if (obj && (obj.type === 'i-text' || obj.type === 'textbox') && obj.isEditing) return
 
-      if (e.key === 'ArrowRight') {
+      if (e.code === 'Space') {
+        // Only handle Space for video if bottom panel is visible
+        e.preventDefault()
+        if (video.paused) { video.play(); setPlaying(true) }
+        else { video.pause(); setPlaying(false) }
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault()
         video.currentTime = Math.min(video.duration, video.currentTime + (e.shiftKey ? 5 : 1))
       } else if (e.key === 'ArrowLeft') {
@@ -180,7 +192,7 @@ export default function BottomPanel() {
         </button>
         {videoUrl && (
           <span style={{ fontSize: 9, color: theme.textMuted, flexShrink: 0 }}>
-            ← → seek · Shift+← → ±5s
+            Space play/pause · ← → seek · Shift+← → ±5s
           </span>
         )}
       </div>
@@ -246,7 +258,20 @@ export default function BottomPanel() {
             overflowX: 'auto', alignItems: 'center',
           }}>
             {frames.map((f, i) => (
-              <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
+              <div key={i} style={{
+                position: 'relative', flexShrink: 0,
+                transition: 'transform 0.15s',
+                transform: snapFlash === i ? 'scale(0.92)' : 'scale(1)',
+              }}>
+                {/* Snap flash overlay */}
+                {snapFlash === i && (
+                  <div style={{
+                    position: 'absolute', inset: 0, zIndex: 5, borderRadius: 6,
+                    background: 'rgba(124,58,237,0.55)',
+                    animation: 'scaleIn 0.15s ease',
+                    pointerEvents: 'none',
+                  }} />
+                )}
                 <img
                   src={f.dataUrl}
                   alt={fmt(f.time)}
@@ -258,12 +283,12 @@ export default function BottomPanel() {
                     cursor: 'pointer',
                     display: 'block',
                     border: `2px solid ${selectedFrame?.time === f.time ? theme.accent : f.isBest ? '#facc15' : theme.border}`,
-                    boxShadow: selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none',
+                    boxShadow: selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}, 0 0 12px rgba(124,58,237,0.4)` : 'none',
                     transition: 'border-color 0.15s, transform 0.12s',
                   }}
-                  onClick={() => applyFrame(f)}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                  onClick={() => applyFrame(f, i)}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = `0 4px 16px rgba(0,0,0,0.4)` }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none' }}
                   title={`${fmt(f.time)}${f.isBest ? ' — Recommended' : ''}`}
                 />
                 {f.isBest && (
