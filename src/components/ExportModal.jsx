@@ -11,7 +11,7 @@ const PERF_MSGS = [
 
 const SITE_URL = 'https://mianhassam96.github.io/MianSnap/'
 
-export default function ExportModal({ onClose, onCreateAnother, dataUrl, filename, quality, format, viralScore, prevScore }) {
+export default function ExportModal({ onClose, onCreateAnother, dataUrl, filename, quality, format, viralScore, prevScore, timeToResult }) {
   const { theme } = useUIStore()
   const [copied, setCopied] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
@@ -128,6 +128,24 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
               <div style={{ fontSize: 12, fontWeight: 700, color: theme.success }}>Score improved +{improvement} this session!</div>
               <div style={{ fontSize: 10, color: theme.textSecondary }}>{prevScore} → {viralScore}/100 — great work</div>
             </div>
+          </div>
+        )}
+
+        {/* Time to result badge */}
+        {timeToResult && timeToResult < 120 && (
+          <div style={{
+            padding: '8px 22px',
+            background: 'linear-gradient(135deg,rgba(14,165,233,0.1),rgba(99,102,241,0.08))',
+            borderBottom: `1px solid rgba(14,165,233,0.2)`,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span style={{ fontSize: 16 }}>⚡</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>
+              Created in {timeToResult}s
+            </span>
+            <span style={{ fontSize: 11, color: theme.textSecondary }}>
+              {timeToResult < 15 ? '— lightning fast!' : timeToResult < 30 ? '— great speed!' : ''}
+            </span>
           </div>
         )}
 

@@ -4,6 +4,8 @@ import useCanvasStore from '../store/useCanvasStore'
 import useProjectStore from '../store/useProjectStore'
 import ExportModal from './ExportModal'
 
+import { trackExport, getTimeToResult } from '../utils/analytics'
+
 export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onShowProjects }) {
   const { theme, isDark, toggleTheme, focusMode, toggleFocusMode } = useUIStore()
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore, prevScore, sessionBest } = useCanvasStore()
@@ -29,8 +31,9 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       const filename = `miansnap-${Date.now()}.${exportFormat === 'png' ? 'png' : 'jpg'}`
       const a = document.createElement('a')
       a.href = dataUrl; a.download = filename; a.click()
-      window.showToast?.(`✓ Exported ${exportFormat.toUpperCase()} ${exportQuality}`, 'success')
-      setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score })
+      const timeToResult = trackExport()
+      window.showToast?.(`✓ Exported ${exportFormat.toUpperCase()} ${exportQuality}${timeToResult ? ` · ⚡ ${timeToResult}s` : ''}`, 'success')
+      setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score, timeToResult })
     } catch (err) {
       window.showToast?.('Export failed — try again', 'error')
       console.error('[MianSnap] Export error:', err)

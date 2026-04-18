@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import useUIStore from '../store/useUIStore'
+import { listProjects } from '../utils/projectStorage'
+import { track } from '../utils/analytics'
 
 // ── Data ─────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -45,9 +47,15 @@ export default function LandingPage({ onEnter }) {
   const { theme, isDark } = useUIStore()
   const [visible, setVisible] = useState(false)
   const [hoveredFeature, setHoveredFeature] = useState(null)
+  const [lastProject, setLastProject] = useState(null)
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50)
+    listProjects().then(all => {
+      const manual = all.filter(p => !p.isAuto)
+      if (manual.length > 0) setLastProject(manual[0])
+    }).catch(() => {})
+    track('landing_viewed')
     return () => clearTimeout(t)
   }, [])
 
@@ -167,6 +175,24 @@ export default function LandingPage({ onEnter }) {
         <div style={{ marginTop: 32, fontSize: 12, color: theme.textMuted, animation: 'fadeInDown 0.5s ease 0.5s both' }}>
           🔒 Nothing leaves your device &nbsp;·&nbsp; ⚡ No install required &nbsp;·&nbsp; 🎯 Used by creators worldwide
         </div>
+
+        {/* Continue last project */}
+        {lastProject && (
+          <div style={{ marginTop: 20, animation: 'fadeInDown 0.5s ease 0.55s both' }}>
+            <button onClick={() => { track('resume_project_clicked'); onEnter() }} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '8px 18px', borderRadius: 20,
+              border: `1px solid ${theme.border}`,
+              background: theme.bgSecondary, color: theme.textSecondary,
+              fontSize: 12, cursor: 'pointer', transition: 'all 0.15s',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+            >
+              📂 Continue: <strong style={{ color: theme.text }}>{lastProject.name.replace('[Auto] ', '').slice(0, 24)}</strong> →
+            </button>
+          </div>
+        )}
 
         <div style={{ marginTop: 40, display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', animation: 'fadeInDown 0.5s ease 0.6s both' }}>
           {[

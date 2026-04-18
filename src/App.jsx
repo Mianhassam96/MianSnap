@@ -23,6 +23,8 @@ import MobileDrawer from './components/MobileDrawer'
 import SmartWarnings from './components/SmartWarnings'
 import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import DiscoveryHints from './components/DiscoveryHints'
+import FeedbackButton from './components/FeedbackButton'
+import { installAnalytics, track, trackUpload, trackExport, getTimeToResult } from './utils/analytics'
 import { prefs } from './utils/prefs'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
@@ -46,6 +48,7 @@ export default function App() {
 
   function enterEditor() {
     setShowLanding(false)
+    track('editor_opened')
     if (shouldShowOnboarding()) {
       setShowOnboarding(true)
     } else {
@@ -57,6 +60,9 @@ export default function App() {
     setShowSmartStart(false)
     setActiveRightPanel('score') // default to score tab
   }
+
+  // Install analytics on mount
+  useEffect(() => { installAnalytics() }, [])
 
   useEffect(() => {
     if (!fabricCanvas) return
@@ -110,6 +116,7 @@ export default function App() {
     setViralDone(true)
     // Fire event for BeforeAfter auto-flash
     window.dispatchEvent(new CustomEvent('miansnap:viralDone'))
+    track('make_viral_clicked')
     if (result?.steps?.length) {
       result.steps.forEach((step, i) => {
         setTimeout(() => window.showToast?.(step, 'success', 2500), i * 350)
@@ -123,7 +130,10 @@ export default function App() {
   function handleUploadVideo() {
     const input = document.createElement('input')
     input.type = 'file'; input.accept = 'video/*'
-    input.onchange = (e) => { const f = e.target.files[0]; if (f) setVideoFile(f) }
+    input.onchange = (e) => {
+      const f = e.target.files[0]
+      if (f) { trackUpload(); setVideoFile(f) }
+    }
     input.click()
   }
 
@@ -318,6 +328,9 @@ export default function App() {
       {/* Mobile bottom tab bar + drawer */}
       <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
       <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} />
+
+      {/* Feedback button — always visible */}
+      <FeedbackButton />
 
       {/* Mobile floating upload button — shown only on mobile when no content */}
       <style>{`
