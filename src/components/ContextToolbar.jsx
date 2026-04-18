@@ -178,6 +178,27 @@ export default function ContextToolbar() {
             <button style={s.btn} onClick={handleReplaceBg}
               onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
             >🖼 Replace</button>
+            <div style={s.divider} />
+            <button style={{ ...s.btn, background: 'linear-gradient(135deg,rgba(124,58,237,0.2),rgba(79,70,229,0.2))', color: theme.accent, borderColor: theme.borderHover }}
+              onClick={() => {
+                const input = document.createElement('input')
+                input.type = 'file'; input.accept = 'image/*'
+                input.onchange = (e) => {
+                  const file = e.target.files[0]; if (!file) return
+                  const url = URL.createObjectURL(file)
+                  fabric.Image.fromURL(url, (newImg) => {
+                    newImg.set({ left: activeObj.left, top: activeObj.top, scaleX: activeObj.scaleX, scaleY: activeObj.scaleY, angle: activeObj.angle })
+                    fabricCanvas.remove(activeObj)
+                    fabricCanvas.add(newImg)
+                    fabricCanvas.setActiveObject(newImg)
+                    fabricCanvas.renderAll()
+                    window.showToast?.('🔄 Image replaced!', 'success')
+                  })
+                }
+                input.click()
+              }}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >🔄 Swap Image</button>
           </>
         )}
       </div>

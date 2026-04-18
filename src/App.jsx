@@ -8,6 +8,7 @@ import RightSidebar from './components/RightSidebar'
 import CanvasEditor from './components/CanvasEditor'
 import BottomPanel from './components/BottomPanel'
 import CanvasEmptyState from './components/CanvasEmptyState'
+import CanvasHint from './components/CanvasHint'
 import ShortcutBar from './components/ShortcutBar'
 import Toast from './components/Toast'
 import ContextToolbar from './components/ContextToolbar'
@@ -98,6 +99,18 @@ export default function App() {
     const handler = () => { clearVideo(); autoRanRef.current = false }
     window.addEventListener('miansnap:resetCanvas', handler)
     return () => window.removeEventListener('miansnap:resetCanvas', handler)
+  }, [])
+
+  useEffect(() => {
+    const handler = (e) => {
+      const file = e.detail?.file
+      if (!file) return
+      if (file.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 4000)
+      autoRanRef.current = false
+      setVideoFile(file)
+    }
+    window.addEventListener('miansnap:dropVideo', handler)
+    return () => window.removeEventListener('miansnap:dropVideo', handler)
   }, [])
 
   async function handleMakeViral() {
@@ -191,6 +204,7 @@ export default function App() {
                 <CanvasEditor />
                 <VideoLoadingOverlay />
                 <ContextToolbar />
+                <CanvasHint />
                 {viralFlash && (
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: 8,

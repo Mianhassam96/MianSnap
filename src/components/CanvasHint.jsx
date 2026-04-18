@@ -1,79 +1,78 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import useUIStore from '../store/useUIStore'
+import useCanvasStore from '../store/useCanvasStore'
 import useVideoStore from '../store/useVideoStore'
 
-const HINT_KEY = 'miansnap_canvas_hint_done'
+const SEEN_KEY = 'miansnap_hints_seen'
 
-const STEPS = [
-  { icon: '✏️', text: 'Add text from the left sidebar' },
-  { icon: '⚡', text: 'Hit "Make Viral" to auto-enhance' },
-  { icon: '⬇', text: 'Export when ready' },
-]
+function getSeenHints() {
+  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '{}') } catch { return {} }
+}
+function markSeen(id) {
+  try {
+    const seen = getSeenHints()
+    seen[id] = 1
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen))
+  } catch {}
+}
 
 export default function CanvasHint() {
   const { theme } = useUIStore()
+  const { fabricCanvas } = useCanvasStore()
   const { videoUrl } = useVideoStore()
-  const [visible, setVisible] = useState(false)
-  const [fading, setFading] = useState(false)
+  const [hint, setHint] = useState(null)
 
+  function showHint(id, icon, text) {
+    const seen = getSeenHints()
+    if (seen[id]) return
+    setHint({ id, icon, text })
+    setTimeout(() => {
+      setHint(null)
+      markSeen(id)
+    }, 3500)
+  }
+
+  // First image loaded
   useEffect(() => {
-    // Only show once, and only after a frame is loaded
-    if (localStorage.getItem(HINT_KEY)) return
     if (!videoUrl) return
-    // Small delay so it appears after frame loads
-    const show = setTimeout(() => setVisible(true), 800)
-    return () => clearTimeout(show)
+    const t = setTimeout(() => showHint('first_image', '🖼', 'Drag image anywhere to replace background · Hold Shift to add as layer'), 1200)
+    return () => clearTimeout(t)
   }, [videoUrl])
 
+  // First text added
   useEffect(() => {
-    if (!visible) return
-    // Start fade-out after 4s
-    const fade = setTimeout(() => setFading(true), 4000)
-    // Remove after fade completes
-    const hide = setTimeout(() => {
-      setVisible(false)
-      localStorage.setItem(HINT_KEY, '1')
-    }, 4700)
-    return () => { clearTimeout(fade); clearTimeout(hide) }
-  }, [visible])
+    if (!fabricCanvas) return
+    const onAdded = (e) => {
+      const obj = e.target
+      if (obj?.type === 'i-text' || obj?.type === 'textbox') {
+        showHint('first_text', '✏️', 'Double-click any text to edit it instantly')
+      } else if (obj?.type === 'image') {
+        showHint('first_layer', '🖼', 'Double-click image to swap it · Drag to reposition')
+      }
+    }
+    fabricCanvas.on('object:added', onAdded)
+    return () => fabricCanvas.off('object:added', onAdded)
+  }, [fabricCanvas])
 
-  if (!visible) return null
+  if (!hint) return null
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, zIndex: 8,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      pointerEvents: 'none',
-      opacity: fading ? 0 : 1,
-      transition: 'opacity 0.7s ease',
+      position: 'absolute', bottom: 56, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 18, pointerEvents: 'none',
+      animation: 'fadeInDown 0.25s ease',
     }}>
       <div style={{
-        background: theme.isDark ? 'rgba(10,10,20,0.88)' : 'rgba(255,255,255,0.88)',
+        background: theme.isDark ? 'rgba(13,13,24,0.93)' : 'rgba(255,255,255,0.93)',
+        border: `1px solid ${theme.borderHover}`,
+        borderRadius: 20, padding: '7px 18px',
         backdropFilter: 'blur(10px)',
-        border: `1px solid ${theme.border}`,
-        borderRadius: 14, padding: '20px 28px',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
-        display: 'flex', flexDirection: 'column', gap: 12,
-        animation: 'scaleIn 0.3s ease',
-        minWidth: 260,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        display: 'flex', alignItems: 'center', gap: 8,
+        whiteSpace: 'nowrap',
       }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: theme.accent, textAlign: 'center', letterSpacing: 1, textTransform: 'uppercase' }}>
-          Quick Start
-        </div>
-        {STEPS.map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-              background: theme.accentGlow, border: `1px solid ${theme.borderHover}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14,
-            }}>{s.icon}</div>
-            <span style={{ fontSize: 13, color: theme.text, fontWeight: 500 }}>{s.text}</span>
-          </div>
-        ))}
-        <div style={{ fontSize: 10, color: theme.textMuted, textAlign: 'center', marginTop: 4 }}>
-          Fades automatically
-        </div>
+        <span style={{ fontSize: 15 }}>{hint.icon}</span>
+        <span style={{ fontSize: 12, color: theme.text, fontWeight: 500 }}>{hint.text}</span>
       </div>
     </div>
   )

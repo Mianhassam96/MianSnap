@@ -22,14 +22,19 @@ export default function CanvasEditor() {
   const historyRef = useRef(null)
   const isPanning  = useRef(false)
   const lastPan    = useRef({ x: 0, y: 0 })
+  const spaceDown  = useRef(false)
 
-  const { setFabricCanvas, fabricCanvas, setUndoRedo } = useCanvasStore()
+  const { setFabricCanvas, fabricCanvas, setUndoRedo, undoAvailable } = useCanvasStore()
   const { selectedFrame } = useVideoStore()
   const { showSafeZone, activePlatform, theme } = useUIStore()
   const [zoom, setZoom] = useState(1)
-  const [fitMode, setFitMode] = useState('cover') // 'cover' | 'contain'
+  const [fitMode, setFitMode] = useState('cover')
   const [canvasW, setCanvasW] = useState(CANVAS_W)
   const [canvasH, setCanvasH] = useState(CANVAS_H)
+  const [dragOver, setDragOver] = useState(false)   // drag-to-replace overlay
+  const [dragShift, setDragShift] = useState(false) // shift = add as layer
+  const [bgSelected, setBgSelected] = useState(false) // background selected label
+  const [undoFlash, setUndoFlash] = useState(false)   // undo visibility flash
 
   // ── Init canvas — wait for Fabric CDN to load ─────────────────
   useEffect(() => {
@@ -190,7 +195,7 @@ export default function CanvasEditor() {
     if (!fabricCanvas) return
     const onDown  = (opt) => {
       const e = opt.e
-      if (e.button === 1 || (e.button === 0 && e.altKey)) {
+      if (e.button === 1 || (e.button === 0 && (e.altKey || spaceDown.current))) {
         isPanning.current = true
         lastPan.current = { x: e.clientX, y: e.clientY }
         fabricCanvas.defaultCursor = 'grabbing'
@@ -210,8 +215,8 @@ export default function CanvasEditor() {
     }
     const onUp    = () => {
       isPanning.current = false
-      fabricCanvas.defaultCursor = 'default'
-      fabricCanvas.setCursor('default')
+      fabricCanvas.defaultCursor = spaceDown.current ? 'grab' : 'default'
+      fabricCanvas.setCursor(spaceDown.current ? 'grab' : 'default')
     }
     fabricCanvas.on('mouse:down', onDown)
     fabricCanvas.on('mouse:move', onMove)
@@ -221,6 +226,26 @@ export default function CanvasEditor() {
       fabricCanvas.off('mouse:move', onMove)
       fabricCanvas.off('mouse:up',   onUp)
     }
+  }, [fabricCanvas])
+
+  // ── Space key pan mode ─────────────────────────────────────────
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.code === 'Space' && !e.target.matches('input,textarea,[contenteditable]')) {
+        e.preventDefault()
+        spaceDown.current = true
+        if (fabricCanvas) { fabricCanvas.defaultCursor = 'grab'; fabricCanvas.setCursor('grab') }
+      }
+    }
+    const onKeyUp = (e) => {
+      if (e.code === 'Space') {
+        spaceDown.current = false
+        if (fabricCanvas) { fabricCanvas.defaultCursor = 'default'; fabricCanvas.setCursor('default') }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp) }
   }, [fabricCanvas])
 
   // ── Keyboard zoom ──────────────────────────────────────────────
@@ -235,6 +260,70 @@ export default function CanvasEditor() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [fabricCanvas, applyZoom])
+
+  // ── Double-click: text → edit, image → replace picker ─────────
+  useEffect(() => {
+    if (!fabricCanvas) return
+    const onDblClick = (opt) => {
+      const obj = opt.target
+      if (!obj) return
+      if (obj.type === 'i-text' || obj.type === 'textbox') {
+        obj.enterEditing()
+        obj.selectAll()
+        fabricCanvas.renderAll()
+      } else if (obj.type === 'image') {
+        // Open file picker to replace image
+        const input = document.createElement('input')
+        input.type = 'file'; input.accept = 'image/*'
+        input.onchange = (e) => {
+          const file = e.target.files[0]; if (!file) return
+          const url = URL.createObjectURL(file)
+          fabric.Image.fromURL(url, (newImg) => {
+            newImg.set({ left: obj.left, top: obj.top, scaleX: obj.scaleX, scaleY: obj.scaleY, angle: obj.angle })
+            applyProImageSettings(newImg, isMobileDevice())
+            fabricCanvas.remove(obj)
+            fabricCanvas.add(newImg)
+            fabricCanvas.setActiveObject(newImg)
+            fabricCanvas.renderAll()
+            window.showToast?.('🔄 Image replaced!', 'success')
+          })
+        }
+        input.click()
+      }
+    }
+    fabricCanvas.on('mouse:dblclick', onDblClick)
+    return () => fabricCanvas.off('mouse:dblclick', onDblClick)
+  }, [fabricCanvas])
+
+  // ── Click empty canvas → select background ────────────────────
+  useEffect(() => {
+    if (!fabricCanvas) return
+    const onMouseDown = (opt) => {
+      if (!opt.target && fabricCanvas.backgroundImage) {
+        setBgSelected(true)
+        setTimeout(() => setBgSelected(false), 2000)
+      } else {
+        setBgSelected(false)
+      }
+    }
+    fabricCanvas.on('mouse:down', onMouseDown)
+    return () => fabricCanvas.off('mouse:down', onMouseDown)
+  }, [fabricCanvas])
+
+  // ── Undo flash — show hint after any modification ─────────────
+  useEffect(() => {
+    if (!fabricCanvas) return
+    const onModified = () => {
+      setUndoFlash(true)
+      setTimeout(() => setUndoFlash(false), 2500)
+    }
+    fabricCanvas.on('object:modified', onModified)
+    fabricCanvas.on('object:added',    onModified)
+    return () => {
+      fabricCanvas.off('object:modified', onModified)
+      fabricCanvas.off('object:added',    onModified)
+    }
+  }, [fabricCanvas])
 
   // ── Load video frame as background ────────────────────────────
   useEffect(() => {
@@ -278,43 +367,110 @@ export default function CanvasEditor() {
       boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${theme.border}`,
       touchAction: 'none',
       userSelect: 'none',
-    }}>
+    }}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); setDragShift(e.shiftKey) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault(); setDragOver(false)
+        const file = e.dataTransfer.files[0]
+        if (!file || !fabricCanvas) return
+        const url = URL.createObjectURL(file)
+        if (file.type.startsWith('image/')) {
+          if (e.shiftKey) {
+            // Add as layer
+            fabric.Image.fromURL(url, (img) => {
+              applyProImageSettings(img, isMobileDevice())
+              img.set({ left: fabricCanvas.width / 2, top: fabricCanvas.height / 2, originX: 'center', originY: 'center' })
+              fabricCanvas.add(img); fabricCanvas.setActiveObject(img); fabricCanvas.renderAll()
+              window.showToast?.('🖼 Added as layer', 'success')
+            })
+          } else {
+            applyImageAsBackground(fabricCanvas, url, 'cover')
+            window.showToast?.('🖼 Background replaced!', 'success')
+          }
+        } else if (file.type.startsWith('video/')) {
+          window.dispatchEvent(new CustomEvent('miansnap:dropVideo', { detail: { file } }))
+        }
+      }}
+    >
       <canvas ref={canvasRef}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
       <canvas ref={overlayRef} width={canvasW} height={canvasH}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 
-      {/* Fit / Fill toggle — top right of canvas */}
+      {/* ── Drag-to-replace overlay ── */}
+      {dragOver && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 30,
+          background: 'rgba(124,58,237,0.18)',
+          border: '3px dashed #7c3aed',
+          borderRadius: 8,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 10,
+          pointerEvents: 'none',
+          backdropFilter: 'blur(2px)',
+        }}>
+          <div style={{ fontSize: 40 }}>⬇</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+            {dragShift ? '🖼 Add as Layer' : '🔄 Replace Background'}
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+            {dragShift ? 'Release to add on top' : 'Hold Shift to add as layer instead'}
+          </div>
+        </div>
+      )}
+
+      {/* ── Background selected label ── */}
+      {bgSelected && (
+        <div style={{
+          position: 'absolute', bottom: 48, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(124,58,237,0.9)', color: '#fff',
+          fontSize: 11, fontWeight: 700, padding: '5px 14px', borderRadius: 20,
+          pointerEvents: 'none', zIndex: 20,
+          animation: 'fadeInDown 0.2s ease',
+        }}>
+          🖼 Background selected — drag to reposition
+        </div>
+      )}
+
+      {/* ── Undo flash ── */}
+      {undoFlash && (
+        <div
+          style={{
+            position: 'absolute', bottom: 48, right: 8,
+            background: theme.isDark ? 'rgba(13,13,24,0.92)' : 'rgba(255,255,255,0.92)',
+            border: `1px solid ${theme.border}`,
+            color: theme.textSecondary, fontSize: 11, fontWeight: 600,
+            padding: '4px 12px', borderRadius: 20,
+            pointerEvents: 'auto', zIndex: 20, cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            animation: 'fadeInDown 0.2s ease',
+          }}
+          onClick={() => {
+            historyRef.current?.undo?.()
+            setUndoFlash(false)
+            window.showToast?.('↩ Undone', 'info', 1200)
+          }}
+          title="Ctrl+Z"
+        >
+          ↩ Undo
+        </div>
+      )}
+
+      {/* Fit / Fill toggle */}
       <div style={{
         position: 'absolute', top: 8, right: 8, zIndex: 5,
         display: 'flex', gap: 2,
         background: 'rgba(0,0,0,0.55)', borderRadius: 6, padding: 3,
         backdropFilter: 'blur(6px)',
       }}>
-        <button
-          style={{
-            ...fitBtnBase,
-            background: fitMode === 'contain' ? '#7c3aed' : 'transparent',
-            color: fitMode === 'contain' ? '#fff' : 'rgba(255,255,255,0.6)',
-          }}
-          onClick={() => setFitMode('contain')}
-          title="Fit — whole image visible"
-        >Fit</button>
-        <button
-          style={{
-            ...fitBtnBase,
-            background: fitMode === 'cover' ? '#7c3aed' : 'transparent',
-            color: fitMode === 'cover' ? '#fff' : 'rgba(255,255,255,0.6)',
-          }}
-          onClick={() => setFitMode('cover')}
-          title="Fill — covers canvas, may crop"
-        >Fill</button>
+        <button style={{ ...fitBtnBase, background: fitMode === 'contain' ? '#7c3aed' : 'transparent', color: fitMode === 'contain' ? '#fff' : 'rgba(255,255,255,0.6)' }}
+          onClick={() => setFitMode('contain')} title="Fit — whole image visible">Fit</button>
+        <button style={{ ...fitBtnBase, background: fitMode === 'cover' ? '#7c3aed' : 'transparent', color: fitMode === 'cover' ? '#fff' : 'rgba(255,255,255,0.6)' }}
+          onClick={() => setFitMode('cover')} title="Fill — covers canvas, may crop">Fill</button>
       </div>
 
-      {/* Zoom controls */}
       <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} onZoomReset={zoomReset} />
-
-      {/* Face detection visual */}
       <FaceOverlay />
     </div>
   )
