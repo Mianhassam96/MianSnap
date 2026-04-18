@@ -13,51 +13,42 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
   const [hasImage, setHasImage] = useState(false)
 
   const handleDragOver = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragging(true)
+    e.preventDefault(); e.stopPropagation(); setDragging(true)
   }, [])
 
   const handleDragLeave = useCallback((e) => {
-    e.preventDefault()
-    setDragging(false)
+    e.preventDefault(); setDragging(false)
   }, [])
 
   const handleDrop = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragging(false)
+    e.preventDefault(); e.stopPropagation(); setDragging(false)
     const file = e.dataTransfer.files[0]
     if (!file) return
-    if (file.type.startsWith('video/')) {
-      setVideoFile(file)
-    } else if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file)
-      applyImageAsBackground(fabricCanvas, url, 'cover')
+    if (file.type.startsWith('video/')) { setVideoFile(file) }
+    else if (file.type.startsWith('image/')) {
+      applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
       setHasImage(true)
     }
   }, [fabricCanvas, setVideoFile])
 
   const handleClick = useCallback(() => {
     const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'video/*,image/*'
+    input.type = 'file'; input.accept = 'video/*,image/*'
     input.onchange = (e) => {
-      const file = e.target.files[0]
-      if (!file) return
-      if (file.type.startsWith('video/')) {
-        setVideoFile(file)
-      } else if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file)
-        applyImageAsBackground(fabricCanvas, url, 'cover')
+      const file = e.target.files[0]; if (!file) return
+      if (file.type.startsWith('video/')) { setVideoFile(file) }
+      else if (file.type.startsWith('image/')) {
+        applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
         setHasImage(true)
       }
     }
     input.click()
   }, [fabricCanvas, setVideoFile])
 
-  // Hide once video/image is loaded — AFTER all hooks
+  // All hooks above — conditional return after
   if (videoUrl || hasImage) return null
+
+  const accent = '#7c3aed'
 
   return (
     <div
@@ -67,97 +58,120 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer',
         background: dragging
-          ? (theme.isDark ? 'rgba(124,58,237,0.12)' : 'rgba(124,58,237,0.06)')
+          ? (theme.isDark ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.05)')
           : 'transparent',
-        border: dragging ? `2px dashed ${theme.accent}` : '2px dashed transparent',
-        borderRadius: 8,
-        transition: 'all 0.2s',
+        border: dragging ? `2px dashed ${accent}` : '2px dashed transparent',
+        borderRadius: 8, transition: 'all 0.2s',
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={handleClick}
     >
-      {/* Drop zone visual */}
       <div style={{
-        textAlign: 'center', maxWidth: 380, padding: '0 24px',
-        animation: 'fadeIn 0.4s ease',
+        textAlign: 'center', maxWidth: 400, padding: '0 24px',
+        animation: 'fadeIn 0.35s ease',
         pointerEvents: 'none',
       }}>
-        {/* Big drop icon */}
+
+        {/* Icon */}
         <div style={{
-          fontSize: 52, marginBottom: 16,
-          filter: dragging ? 'drop-shadow(0 0 16px rgba(124,58,237,0.6))' : 'none',
+          fontSize: 48, marginBottom: 14,
+          filter: dragging ? `drop-shadow(0 0 14px ${accent})` : 'none',
           transition: 'filter 0.2s',
         }}>
           {dragging ? '📥' : '🎬'}
         </div>
 
+        {/* Primary instruction */}
         <div style={{
-          fontSize: 20, fontWeight: 900, color: theme.text,
-          marginBottom: 8, letterSpacing: '-0.5px',
-          fontFamily: "'Montserrat', sans-serif",
+          fontSize: 22, fontWeight: 900, color: theme.text,
+          marginBottom: 6, letterSpacing: '-0.5px',
+          fontFamily: "'Montserrat',sans-serif",
         }}>
           {dragging ? 'Drop it!' : 'Drop video or image here'}
         </div>
 
-        <div style={{
-          fontSize: 13, color: theme.textSecondary,
-          marginBottom: 28, lineHeight: 1.6,
-        }}>
+        {/* Sub instruction */}
+        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 10, lineHeight: 1.5 }}>
           {dragging
             ? 'Release to load onto canvas'
-            : <>Or <span style={{ color: theme.accent, fontWeight: 600 }}>click anywhere</span> to browse files</>
+            : <>or <span style={{ color: accent, fontWeight: 600 }}>click anywhere</span> to browse</>
           }
         </div>
 
-        {/* Action buttons — stop propagation so they don't trigger the outer click */}
+        {/* ── MICRO GUIDANCE — what happens next ── */}
+        {!dragging && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            marginBottom: 28, flexWrap: 'wrap',
+          }}>
+            {[
+              { icon: '🧠', label: 'AI picks best frame' },
+              { icon: '⚡', label: 'One click enhances' },
+              { icon: '⬇', label: 'Export instantly' },
+            ].map((s, i) => (
+              <React.Fragment key={s.label}>
+                <span style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: 11, color: theme.textMuted, fontWeight: 500,
+                }}>
+                  <span>{s.icon}</span> {s.label}
+                </span>
+                {i < 2 && <span style={{ color: theme.border, fontSize: 10 }}>→</span>}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* Action cards */}
         {!dragging && (
           <div
-            style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 20 }}
+            style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}
             onClick={(e) => e.stopPropagation()}
           >
             {[
-              { id: 'video', icon: '🎬', label: 'Upload Video', sub: 'AI picks best frames', action: onUploadVideo },
+              { id: 'video', icon: '🎬', label: 'Upload Video', sub: 'AI picks frames', action: onUploadVideo },
               { id: 'image', icon: '🖼', label: 'Upload Image', sub: 'Edit directly', action: onUploadImage },
               { id: 'template', icon: '✨', label: 'Use Template', sub: 'Gaming, Drama...', action: onUseTemplate },
             ].map(c => (
               <div key={c.id}
                 style={{
-                  padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
-                  border: `1px solid ${hovered === c.id ? theme.accent : theme.border}`,
+                  padding: '11px 13px', borderRadius: 10, cursor: 'pointer',
+                  border: `1px solid ${hovered === c.id ? accent : theme.border}`,
                   background: hovered === c.id ? theme.accentGlow : theme.bgSecondary,
                   transition: 'all 0.15s',
-                  transform: hovered === c.id ? 'translateY(-3px)' : 'translateY(0)',
-                  boxShadow: hovered === c.id ? theme.shadowLg : 'none',
-                  minWidth: 96, textAlign: 'center',
+                  transform: hovered === c.id ? 'translateY(-2px)' : 'translateY(0)',
+                  minWidth: 90, textAlign: 'center',
                 }}
                 onMouseEnter={() => setHovered(c.id)}
                 onMouseLeave={() => setHovered(null)}
                 onClick={c.action}
               >
-                <div style={{ fontSize: 22, marginBottom: 5 }}>{c.icon}</div>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{c.icon}</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: theme.text }}>{c.label}</div>
-                <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{c.sub}</div>
+                <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 1 }}>{c.sub}</div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Quick Mode CTA */}
+        {/* Quick Mode */}
         {!dragging && (
-          <div onClick={(e) => { e.stopPropagation(); onQuickMode?.() }} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '9px 20px', borderRadius: 20,
-            background: 'linear-gradient(135deg,#0ea5e9,#6366f1,#7c3aed)',
-            color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 3px 16px rgba(99,102,241,0.4)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.5)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 16px rgba(99,102,241,0.4)' }}
+          <div
+            onClick={(e) => { e.stopPropagation(); onQuickMode?.() }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '8px 18px', borderRadius: 20,
+              background: 'linear-gradient(135deg,#0ea5e9,#6366f1,#7c3aed)',
+              color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 3px 14px rgba(99,102,241,0.35)',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 22px rgba(99,102,241,0.5)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 14px rgba(99,102,241,0.35)' }}
           >
-            🚀 Quick Mode — 1-click thumbnail
+            🚀 Quick Mode — no upload needed
           </div>
         )}
       </div>

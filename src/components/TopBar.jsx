@@ -96,15 +96,15 @@ export default function TopBar() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Privacy badge */}
+      {/* Privacy — subtle, secondary, not competing */}
       <span style={{
-        fontSize: 10, color: theme.textMuted, fontWeight: 500,
-        display: 'flex', alignItems: 'center', gap: 4,
+        fontSize: 10, color: theme.textMuted, fontWeight: 400,
+        opacity: 0.7, letterSpacing: 0.2,
       }} className="ms-topbar-selects">
-        🔒 No uploads · stays in your browser
+        🔒 private · no uploads
       </span>
 
-      <div style={{ flex: 1 }} />
+      <div style={{ width: 1, height: 20, background: theme.border, margin: '0 4px', flexShrink: 0 }} />
 
       {/* Quality */}
       <select
