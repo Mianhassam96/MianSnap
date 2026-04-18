@@ -169,7 +169,7 @@ export default function App() {
         <TopBar />
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <LeftSidebar />
+          {/* No left sidebar — full canvas width */}
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
             <div className="ms-canvas-area" style={{
