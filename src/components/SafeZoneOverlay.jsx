@@ -7,6 +7,7 @@ export const SAFE_ZONES = {
     zones: [
       { label: 'Title Safe', x: 0.05, y: 0.05, w: 0.90, h: 0.90, color: 'rgba(255,200,0,0.25)' },
       { label: 'Action Safe', x: 0.025, y: 0.025, w: 0.95, h: 0.95, color: 'rgba(0,200,255,0.15)' },
+      { label: '⏱ Time Code', x: 0.78, y: 0.88, w: 0.20, h: 0.10, color: 'rgba(255,0,0,0.35)' },
     ],
   },
   tiktok: {

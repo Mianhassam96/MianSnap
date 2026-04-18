@@ -147,6 +147,12 @@
       @media (max-width: 768px) {
         .canvas-container { touch-action: none; }
         .canvas-container .upper-canvas { touch-action: none; }
+        /* Bigger slider thumbs on mobile */
+        input[type=range] { height: 28px !important; }
+        input[type=range]::-webkit-slider-thumb { width: 22px !important; height: 22px !important; }
+        input[type=range]::-moz-range-thumb { width: 22px !important; height: 22px !important; }
+        /* Bigger buttons on mobile */
+        button { min-height: 36px; }
       }
     </style>
   </head>

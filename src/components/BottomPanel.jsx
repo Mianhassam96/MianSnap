@@ -5,6 +5,7 @@ import useCanvasStore from '../store/useCanvasStore'
 import { extractFrames, captureFrame, stepFrame } from '../utils/frameExtractor'
 import { getSuggestedFrames } from '../utils/frameSuggestions'
 import { applyImageAsBackground } from '../utils/imageUtils'
+import { fabric } from '../lib/fabric'
 
 export default function BottomPanel() {
   const { theme, fitMode } = useUIStore()
@@ -63,6 +64,35 @@ export default function BottomPanel() {
     applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
       window.showToast?.('🖼 Frame applied to canvas', 'success', 1200)
     })
+  }
+
+  function snapAndAutoText(frame, idx) {
+    applyFrame(frame, idx)
+    // Wait for background to load then add bold text
+    setTimeout(() => {
+      if (!fabricCanvas) return
+      // Remove previous auto-text
+      fabricCanvas.getObjects().filter(o => o._autoText).forEach(o => fabricCanvas.remove(o))
+      const cw = fabricCanvas.width
+      const ch = fabricCanvas.height
+      const text = new fabric.IText('YOUR TITLE HERE', {
+        left: cw / 2, top: ch * 0.82,
+        originX: 'center', originY: 'center',
+        fontFamily: 'Impact',
+        fontSize: Math.round(cw * 0.07),
+        fill: '#ffff00',
+        stroke: '#000000',
+        strokeWidth: Math.round(cw * 0.004),
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 20, offsetX: 3, offsetY: 3 }),
+        _autoText: true,
+      })
+      fabricCanvas.add(text)
+      fabricCanvas.setActiveObject(text)
+      text.enterEditing()
+      text.selectAll()
+      fabricCanvas.renderAll()
+      window.showToast?.('✏️ Click the text to edit it', 'info', 2500)
+    }, 400)
   }
 
   function captureCurrentFrame() {
@@ -313,8 +343,18 @@ export default function BottomPanel() {
                     transition: 'border-color 0.15s, transform 0.12s',
                   }}
                   onClick={() => applyFrame(f, i)}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = `0 4px 16px rgba(0,0,0,0.4)` }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.04)'
+                    e.currentTarget.style.boxShadow = `0 4px 16px rgba(0,0,0,0.4)`
+                    const btn = e.currentTarget.parentElement?.querySelector('.ms-snap-text-btn')
+                    if (btn) btn.style.opacity = '1'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)'
+                    e.currentTarget.style.boxShadow = selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none'
+                    const btn = e.currentTarget.parentElement?.querySelector('.ms-snap-text-btn')
+                    if (btn) btn.style.opacity = '0'
+                  }}
                   title={`${fmt(f.time)}${f.isBest ? ' — Recommended' : ''}`}
                 />
                 {f.isBest && (
@@ -330,6 +370,21 @@ export default function BottomPanel() {
                   background: 'rgba(0,0,0,0.7)', color: '#fff',
                   fontSize: 9, padding: '1px 4px', borderRadius: 3,
                 }}>{fmt(f.time)}</div>
+                {/* Snap + Auto-Text button — shows on hover */}
+                <div style={{
+                  position: 'absolute', bottom: 4, left: 4,
+                  opacity: 0, transition: 'opacity 0.15s',
+                }} className="ms-snap-text-btn">
+                  <button
+                    style={{
+                      padding: '2px 6px', borderRadius: 4, border: 'none',
+                      background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+                      color: '#fff', fontSize: 8, fontWeight: 700, cursor: 'pointer',
+                    }}
+                    onClick={(e) => { e.stopPropagation(); snapAndAutoText(f, i) }}
+                    title="Snap frame + add text box"
+                  >+Text</button>
+                </div>
               </div>
             ))}
           </div>

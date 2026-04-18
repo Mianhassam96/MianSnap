@@ -102,10 +102,10 @@ const PRESET_COLORS = [
 export default function LeftSidebar() {
   const { theme, activeLeftPanel, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
-  const [textColor, setTextColor] = useState('#ffffff')
-  const [strokeColor, setStrokeColor] = useState('#000000')
-  const [fontSize, setFontSize] = useState(64)
-  const [strokeWidth, setStrokeWidth] = useState(2)
+  const [textColor, setTextColor] = useState(() => prefs.getBrandColor())
+  const [strokeColor, setStrokeColor] = useState(() => prefs.getBrandStroke())
+  const [fontSize, setFontSize] = useState(() => prefs.getBrandFontSize())
+  const [strokeWidth, setStrokeWidth] = useState(() => prefs.getBrandStrokeW())
   const [shadowBlur, setShadowBlur] = useState(12)
   const [openCategory, setOpenCategory] = useState(0)
   const [titles, setTitles] = useState([])
@@ -123,6 +123,7 @@ export default function LeftSidebar() {
   function addText(fontName, customContent, customSize) {
     if (!fabricCanvas) return
     prefs.setLastFont(fontName)
+    prefs.setBrandFont(fontName)
     if (document.fonts && !document.fonts.check(`16px "${fontName}"`)) {
       document.fonts.load(`16px "${fontName}"`).catch(() => {})
     }
@@ -154,6 +155,7 @@ export default function LeftSidebar() {
 
   function updateSelectedTextColor(color) {
     setTextColor(color)
+    prefs.setBrandColor(color)
     if (!fabricCanvas) return
     const obj = fabricCanvas.getActiveObject()
     if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
@@ -164,6 +166,7 @@ export default function LeftSidebar() {
 
   function updateSelectedStrokeColor(color) {
     setStrokeColor(color)
+    prefs.setBrandStroke(color)
     if (!fabricCanvas) return
     const obj = fabricCanvas.getActiveObject()
     if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
@@ -175,6 +178,7 @@ export default function LeftSidebar() {
   function updateFontSize(size) {
     const clamped = Math.max(12, Math.min(400, +size || 64))
     setFontSize(clamped)
+    prefs.setBrandFontSize(clamped)
     if (!fabricCanvas) return
     const obj = fabricCanvas.getActiveObject()
     if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
@@ -186,6 +190,7 @@ export default function LeftSidebar() {
   function updateStrokeWidth(width) {
     const clamped = Math.max(0, Math.min(20, +width || 0))
     setStrokeWidth(clamped)
+    prefs.setBrandStrokeW(clamped)
     if (!fabricCanvas) return
     const obj = fabricCanvas.getActiveObject()
     if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
