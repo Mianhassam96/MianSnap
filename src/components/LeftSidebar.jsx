@@ -105,6 +105,8 @@ export default function LeftSidebar() {
   const [textColor, setTextColor] = useState('#ffffff')
   const [strokeColor, setStrokeColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(64)
+  const [strokeWidth, setStrokeWidth] = useState(2)
+  const [shadowBlur, setShadowBlur] = useState(12)
   const [openCategory, setOpenCategory] = useState(0)
   const [titles, setTitles] = useState([])
   const [titleStyle, setTitleStyle] = useState('reaction')
@@ -177,6 +179,31 @@ export default function LeftSidebar() {
     const obj = fabricCanvas.getActiveObject()
     if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
       obj.set('fontSize', clamped)
+      fabricCanvas.renderAll()
+    }
+  }
+
+  function updateStrokeWidth(width) {
+    const clamped = Math.max(0, Math.min(20, +width || 0))
+    setStrokeWidth(clamped)
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
+      obj.set({ strokeWidth: clamped, stroke: clamped > 0 ? strokeColor : 'transparent' })
+      fabricCanvas.renderAll()
+    }
+  }
+
+  function updateShadowBlur(blur) {
+    const clamped = Math.max(0, Math.min(60, +blur || 0))
+    setShadowBlur(clamped)
+    if (!fabricCanvas) return
+    const obj = fabricCanvas.getActiveObject()
+    if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
+      obj.set('shadow', clamped > 0
+        ? new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: clamped, offsetX: 2, offsetY: 2 })
+        : null
+      )
       fabricCanvas.renderAll()
     }
   }
@@ -388,6 +415,24 @@ export default function LeftSidebar() {
                   onChange={(e) => updateFontSize(+e.target.value)} />
                 <input type="number" style={{ ...s.sizeInput, width: 52 }} min={12} max={400}
                   value={fontSize} onChange={(e) => updateFontSize(+e.target.value)} />
+              </div>
+
+              {/* Stroke width */}
+              <div style={s.sectionTitle}>Stroke Width <span style={{ color: theme.textMuted, fontWeight: 400 }}>(outline)</span></div>
+              <div style={s.row}>
+                <input type="range" style={s.sizeRange} min={0} max={20} value={strokeWidth}
+                  onChange={(e) => updateStrokeWidth(+e.target.value)} />
+                <input type="number" style={{ ...s.sizeInput, width: 52 }} min={0} max={20}
+                  value={strokeWidth} onChange={(e) => updateStrokeWidth(+e.target.value)} />
+              </div>
+
+              {/* Shadow blur */}
+              <div style={s.sectionTitle}>Shadow Blur <span style={{ color: theme.textMuted, fontWeight: 400 }}>(drop shadow)</span></div>
+              <div style={s.row}>
+                <input type="range" style={s.sizeRange} min={0} max={60} value={shadowBlur}
+                  onChange={(e) => updateShadowBlur(+e.target.value)} />
+                <input type="number" style={{ ...s.sizeInput, width: 52 }} min={0} max={60}
+                  value={shadowBlur} onChange={(e) => updateShadowBlur(+e.target.value)} />
               </div>
             </div>
 

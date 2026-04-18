@@ -67,13 +67,36 @@ export default function TopBar() {
     window.showToast?.('🔄 Layout reset', 'info', 1500)
   }
 
+  const [watermark, setWatermark] = useState(false)
+
   function handleExport() {
     if (!fabricCanvas) return
     try {
+      // Add watermark temporarily if enabled
+      let wmObj = null
+      if (watermark) {
+        wmObj = new fabric.Text('Created with MianSnap', {
+          left: fabricCanvas.width - 12,
+          top: fabricCanvas.height - 12,
+          originX: 'right', originY: 'bottom',
+          fontSize: Math.round(fabricCanvas.width * 0.018),
+          fill: 'rgba(255,255,255,0.7)',
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 600,
+          shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.8)', blur: 6, offsetX: 1, offsetY: 1 }),
+          selectable: false, evented: false,
+        })
+        fabricCanvas.add(wmObj)
+        fabricCanvas.renderAll()
+      }
+
       const multiplier = exportQuality === '1080p' ? 1.5 : 1
       const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
       const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: fmt === 'jpeg' ? 0.95 : 1, multiplier })
-      // Smart filename: platform-size.ext
+
+      // Remove watermark after export
+      if (wmObj) { fabricCanvas.remove(wmObj); fabricCanvas.renderAll() }
+
       const size = CANVAS_SIZES.find(s => s.id === canvasSize)
       const platformSlug = size?.id || 'thumbnail'
       const dims = `${fabricCanvas.width}x${fabricCanvas.height}`
@@ -200,16 +223,34 @@ export default function TopBar() {
         <option value="png">PNG</option>
       </select>
 
-      {/* Export */}
+      {/* Watermark toggle */}
+      <button
+        onClick={() => setWatermark(w => !w)}
+        title={watermark ? 'Watermark ON — click to remove' : 'Add "Created with MianSnap" watermark'}
+        style={{
+          ...iconBtn, fontSize: 10, width: 'auto', padding: '0 8px',
+          background: watermark ? theme.accentGlow : theme.bgTertiary,
+          borderColor: watermark ? theme.accent : theme.border,
+          color: watermark ? theme.accent : theme.textSecondary,
+        }}
+        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}
+      >
+        {watermark ? '🏷 WM ON' : '🏷 WM'}
+      </button>
+
+      {/* Export — glassmorphic gradient */}
       <button onClick={handleExport} style={{
-        padding: '0 16px', height: 32, borderRadius: 7, border: 'none',
-        background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+        padding: '0 18px', height: 32, borderRadius: 7,
+        border: '1px solid rgba(124,58,237,0.4)',
+        background: 'linear-gradient(135deg,rgba(124,58,237,0.9),rgba(79,70,229,0.9))',
+        backdropFilter: 'blur(8px)',
         color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-        boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
+        boxShadow: '0 2px 12px rgba(124,58,237,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
         transition: 'transform 0.15s, box-shadow 0.15s', flexShrink: 0,
+        letterSpacing: '0.3px',
       }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 5px 18px rgba(124,58,237,0.5)' }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(124,58,237,0.35)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(124,58,237,0.6), inset 0 1px 0 rgba(255,255,255,0.2)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(124,58,237,0.4), inset 0 1px 0 rgba(255,255,255,0.15)' }}
       >⬇ Export</button>
 
       {/* Theme */}

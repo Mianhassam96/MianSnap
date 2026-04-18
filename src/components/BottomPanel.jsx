@@ -81,6 +81,30 @@ export default function BottomPanel() {
     stepFrame(video, fps, dir)
   }
 
+  // ── Keyboard seeking ──────────────────────────────────────────
+  useEffect(() => {
+    if (!videoUrl) return
+    const onKey = (e) => {
+      const video = videoRef.current
+      if (!video) return
+      // Don't hijack when typing in inputs
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      const obj = window.__fabricCanvas?.getActiveObject?.()
+      if (obj && (obj.type === 'i-text' || obj.type === 'textbox') && obj.isEditing) return
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        video.currentTime = Math.min(video.duration, video.currentTime + (e.shiftKey ? 5 : 1))
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        video.currentTime = Math.max(0, video.currentTime - (e.shiftKey ? 5 : 1))
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [videoUrl])
+
   function handleDrop(e) {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
@@ -154,6 +178,11 @@ export default function BottomPanel() {
           onClick={() => { setAutoRan(false); runSmartPick() }} disabled={!videoUrl || isExtracting}>
           {isExtracting ? '⏳' : '🧠 Smart Pick'}
         </button>
+        {videoUrl && (
+          <span style={{ fontSize: 9, color: theme.textMuted, flexShrink: 0 }}>
+            ← → seek · Shift+← → ±5s
+          </span>
+        )}
       </div>
 
       {/* ── Body: video preview + frames ── */}

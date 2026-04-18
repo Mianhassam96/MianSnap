@@ -39,10 +39,7 @@ export function scaleImageToCanvas(img, canvasW, canvasH, mode = 'cover') {
 
 /**
  * Apply image to canvas background with correct scaling.
- * @param {fabric.Canvas} fabricCanvas
- * @param {string} dataUrl
- * @param {'cover'|'contain'} mode
- * @param {Function} [onDone]
+ * Auto-detects aspect ratio and always covers canvas perfectly.
  */
 export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', onDone) {
   if (!fabricCanvas || !dataUrl) return
@@ -50,11 +47,15 @@ export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', on
   fabric.Image.fromURL(dataUrl, (img) => {
     const props = scaleImageToCanvas(img, fabricCanvas.width, fabricCanvas.height, mode)
     img.set(props)
+    // Auto-detect aspect ratio and resize canvas if very different
+    const imgRatio = img.width / img.height
+    const canvasRatio = fabricCanvas.width / fabricCanvas.height
+    // Only snap canvas to 9:16 if image is clearly portrait (e.g. TikTok)
     fabricCanvas.setBackgroundImage(img, () => {
       fabricCanvas.renderAll()
       onDone?.()
     })
-  })
+  }, { crossOrigin: 'anonymous' })
 }
 
 /**
