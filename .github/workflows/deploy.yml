@@ -23,11 +23,9 @@ jobs:
 
       - name: Install
         run: npm ci
-        working-directory: MianSnap
 
       - name: Build
         run: npm run build
-        working-directory: MianSnap
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
@@ -36,15 +34,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages || true
-          # Copy dist to a temp location outside the repo
-          cp -r MianSnap/dist /tmp/dist-deploy
-          # Switch to gh-pages branch
+          cp -r dist /tmp/dist-deploy
           git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
-          # Remove everything
           git rm -rf . --quiet || true
-          # Copy built files back
           cp -r /tmp/dist-deploy/. .
-          # Add .nojekyll to prevent Jekyll processing
           touch .nojekyll
           git add -A
           git diff --staged --quiet || git commit -m "deploy: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
