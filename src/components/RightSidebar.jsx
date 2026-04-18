@@ -13,16 +13,18 @@ export default function RightSidebar() {
   const [activeObj, setActiveObj] = useState(null)
   const [compareUpdated, setCompareUpdated] = useState(false)
 
-  // Flash compare tab when BeforeAfter updates
+  // Flash compare tab when BeforeAfter updates — stays until opened
   useEffect(() => {
     const handler = () => {
-      if (activeRightPanel !== 'compare') {
-        setCompareUpdated(true)
-        setTimeout(() => setCompareUpdated(false), 4000)
-      }
+      if (activeRightPanel !== 'compare') setCompareUpdated(true)
     }
     window.addEventListener('miansnap:viralDone', handler)
     return () => window.removeEventListener('miansnap:viralDone', handler)
+  }, [activeRightPanel])
+
+  // Clear dot when user opens compare tab
+  useEffect(() => {
+    if (activeRightPanel === 'compare') setCompareUpdated(false)
   }, [activeRightPanel])
 
   // Sync layers from canvas
