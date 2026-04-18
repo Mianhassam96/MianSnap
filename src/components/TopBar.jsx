@@ -4,6 +4,7 @@ import useCanvasStore from '../store/useCanvasStore'
 import ExportModal from './ExportModal'
 import { trackExport } from '../utils/analytics'
 import { CANVAS_SIZES, resizeCanvas } from '../utils/canvasSizes'
+import { fabric } from '../lib/fabric'
 
 export default function TopBar() {
   const { theme, isDark, toggleTheme } = useUIStore()
@@ -23,7 +24,47 @@ export default function TopBar() {
     const size = CANVAS_SIZES.find(s => s.id === id)
     if (!size || !fabricCanvas) return
     resizeCanvas(fabricCanvas, size.w, size.h)
-    window.showToast?.(`Canvas: ${size.label} (${size.w}×${size.h})`, 'info', 2000)
+    window.showToast?.(`${size.label} — ${size.w}×${size.h}`, 'info', 2000)
+  }
+
+  function handleOptimizeLayout() {
+    if (!fabricCanvas) return
+    const cw = fabricCanvas.width
+    const ch = fabricCanvas.height
+    // Boost text size for current canvas
+    fabricCanvas.getObjects()
+      .filter(o => o.type === 'i-text' || o.type === 'textbox')
+      .forEach(o => {
+        const minSize = Math.round(cw * 0.055) // ~5.5% of canvas width
+        if (o.fontSize < minSize) o.set('fontSize', minSize)
+        // Re-center vertically if near edges
+        if (o.top < ch * 0.05) o.set('top', ch * 0.08)
+        if (o.top > ch * 0.85) o.set('top', ch * 0.82)
+      })
+    // Ensure background fills canvas
+    const bg = fabricCanvas.backgroundImage
+    if (bg) {
+      const scale = Math.max(cw / bg.width, ch / bg.height)
+      bg.set({
+        scaleX: scale, scaleY: scale,
+        left: (cw - bg.width * scale) / 2,
+        top: (ch - bg.height * scale) / 2,
+      })
+    }
+    fabricCanvas.renderAll()
+    window.showToast?.('⚡ Layout optimized for platform', 'success')
+  }
+
+  function handleResetLayout() {
+    if (!fabricCanvas) return
+    const bg = fabricCanvas.backgroundImage
+    if (bg) {
+      const cw = fabricCanvas.width, ch = fabricCanvas.height
+      const scale = Math.max(cw / bg.width, ch / bg.height)
+      bg.set({ scaleX: scale, scaleY: scale, left: (cw - bg.width * scale) / 2, top: (ch - bg.height * scale) / 2 })
+    }
+    fabricCanvas.renderAll()
+    window.showToast?.('🔄 Layout reset', 'info', 1500)
   }
 
   function handleExport() {
@@ -32,12 +73,15 @@ export default function TopBar() {
       const multiplier = exportQuality === '1080p' ? 1.5 : 1
       const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
       const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: fmt === 'jpeg' ? 0.95 : 1, multiplier })
-      const filename = `miansnap-${Date.now()}.${exportFormat === 'png' ? 'png' : 'jpg'}`
+      // Smart filename: platform-size.ext
+      const size = CANVAS_SIZES.find(s => s.id === canvasSize)
+      const platformSlug = size?.id || 'thumbnail'
+      const dims = `${fabricCanvas.width}x${fabricCanvas.height}`
+      const filename = `${platformSlug}-${dims}.${exportFormat === 'png' ? 'png' : 'jpg'}`
       const a = document.createElement('a')
       a.href = dataUrl; a.download = filename; a.click()
       const timeToResult = trackExport()
-      const size = CANVAS_SIZES.find(s => s.id === canvasSize)
-      window.showToast?.(`✓ Downloaded ${size?.label || ''}${timeToResult ? ` · ⚡ ${timeToResult}s` : ''}`, 'success')
+      window.showToast?.(`✓ Saved as ${filename}${timeToResult ? ` · ⚡ ${timeToResult}s` : ''}`, 'success')
       setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score, timeToResult })
     } catch (err) {
       window.showToast?.('Export failed — try again', 'error')
@@ -56,11 +100,11 @@ export default function TopBar() {
   }
 
   const iconBtn = {
-    width: 34, height: 34, borderRadius: 7,
+    width: 32, height: 32, borderRadius: 7,
     border: `1px solid ${theme.border}`,
     background: theme.bgTertiary, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.15s', flexShrink: 0, fontSize: 15,
+    transition: 'all 0.15s', flexShrink: 0, fontSize: 14,
     color: theme.textSecondary,
   }
   const hov = (e, on) => {
@@ -68,111 +112,107 @@ export default function TopBar() {
     e.currentTarget.style.background = on ? theme.accentGlow : theme.bgTertiary
     e.currentTarget.style.color = on ? theme.accent : theme.textSecondary
   }
-  const selectStyle = {
+  const sel = {
     background: theme.bgTertiary, border: `1px solid ${theme.border}`,
-    color: theme.textSecondary, borderRadius: 6, padding: '5px 8px',
-    fontSize: 12, cursor: 'pointer', outline: 'none', height: 32,
+    color: theme.textSecondary, borderRadius: 6, padding: '4px 7px',
+    fontSize: 11, cursor: 'pointer', outline: 'none', height: 30,
   }
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px',
-      height: 48, background: theme.bgSecondary,
+      display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px',
+      height: 46, background: theme.bgSecondary,
       borderBottom: `1px solid ${theme.border}`,
-      flexShrink: 0, zIndex: 100, flexWrap: 'nowrap', overflowX: 'auto',
+      flexShrink: 0, zIndex: 100, overflowX: 'auto',
     }}>
       {exportData && (
-        <ExportModal
-          {...exportData}
-          prevScore={prevScore?.score}
-          onClose={() => setExportData(null)}
-          onCreateAnother={handleCreateAnother}
-        />
+        <ExportModal {...exportData} prevScore={prevScore?.score}
+          onClose={() => setExportData(null)} onCreateAnother={handleCreateAnother} />
       )}
 
       {/* Logo */}
       <span style={{
-        fontSize: 17, fontWeight: 800, letterSpacing: '-0.5px',
+        fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px',
         background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         fontFamily: "'Montserrat',sans-serif", flexShrink: 0, userSelect: 'none',
       }}>MianSnap</span>
 
-      <div style={{ width: 1, height: 20, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
+      <div style={{ width: 1, height: 18, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
 
       {/* Undo / Redo */}
-      <button style={{ ...iconBtn, opacity: canUndo ? 1 : 0.3, cursor: canUndo ? 'pointer' : 'default' }}
-        onClick={triggerUndo} disabled={!canUndo} title="Undo (Ctrl+Z)"
-        onMouseEnter={(e) => canUndo && hov(e, true)} onMouseLeave={(e) => hov(e, false)}
-      >↩</button>
-      <button style={{ ...iconBtn, opacity: canRedo ? 1 : 0.3, cursor: canRedo ? 'pointer' : 'default' }}
-        onClick={triggerRedo} disabled={!canRedo} title="Redo (Ctrl+Y)"
-        onMouseEnter={(e) => canRedo && hov(e, true)} onMouseLeave={(e) => hov(e, false)}
-      >↪</button>
+      <button style={{ ...iconBtn, opacity: canUndo ? 1 : 0.3 }} onClick={triggerUndo}
+        disabled={!canUndo} title="Undo (Ctrl+Z)"
+        onMouseEnter={(e) => canUndo && hov(e, true)} onMouseLeave={(e) => hov(e, false)}>↩</button>
+      <button style={{ ...iconBtn, opacity: canRedo ? 1 : 0.3 }} onClick={triggerRedo}
+        disabled={!canRedo} title="Redo (Ctrl+Y)"
+        onMouseEnter={(e) => canRedo && hov(e, true)} onMouseLeave={(e) => hov(e, false)}>↪</button>
 
-      <div style={{ width: 1, height: 20, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
+      <div style={{ width: 1, height: 18, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
 
-      {/* Canvas size switcher */}
-      <select
-        value={canvasSize}
-        onChange={(e) => handleSizeChange(e.target.value)}
-        className="ms-topbar-selects"
-        title="Canvas size / platform"
-        style={{ ...selectStyle, maxWidth: 160 }}
-      >
-        {CANVAS_SIZES.map(s => (
-          <option key={s.id} value={s.id}>{s.label}</option>
-        ))}
+      {/* Platform / canvas size */}
+      <select value={canvasSize} onChange={(e) => handleSizeChange(e.target.value)}
+        className="ms-topbar-selects" title="Platform / canvas size"
+        style={{ ...sel, maxWidth: 155 }}>
+        {CANVAS_SIZES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
       </select>
+
+      {/* Optimize for platform */}
+      <button style={{ ...iconBtn, fontSize: 12, width: 'auto', padding: '0 8px' }}
+        onClick={handleOptimizeLayout} title="Optimize layout for this platform"
+        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>
+        ⚡ Optimize
+      </button>
+
+      {/* Reset layout */}
+      <button style={{ ...iconBtn, fontSize: 11, width: 'auto', padding: '0 7px' }}
+        onClick={handleResetLayout} title="Reset background to fill canvas"
+        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>
+        🔄 Reset
+      </button>
 
       <div style={{ flex: 1 }} />
 
       {/* Privacy */}
-      <span
-        style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400, opacity: 0.55, letterSpacing: 0.2, transition: 'opacity 0.3s', cursor: 'default', flexShrink: 0 }}
+      <span style={{ fontSize: 10, color: theme.textMuted, opacity: 0.5, flexShrink: 0, cursor: 'default' }}
         className="ms-topbar-selects"
         onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.55' }}
-        title="Everything runs in your browser — nothing is uploaded or stored"
-      >
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5' }}
+        title="Everything runs in your browser — nothing uploaded">
         🔒 private
       </span>
 
-      <div style={{ width: 1, height: 20, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
+      <div style={{ width: 1, height: 18, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
 
       {/* Quality + Format */}
       <select value={exportQuality} onChange={(e) => setExportQuality(e.target.value)}
-        className="ms-topbar-selects" style={selectStyle}>
+        className="ms-topbar-selects" style={sel}>
         <option value="720p">720p</option>
         <option value="1080p">1080p</option>
       </select>
-
       <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}
-        className="ms-topbar-selects" style={selectStyle}>
+        className="ms-topbar-selects" style={sel}>
         <option value="jpg">JPG</option>
         <option value="png">PNG</option>
       </select>
 
       {/* Export */}
-      <button
-        onClick={handleExport}
-        style={{
-          padding: '0 18px', height: 34, borderRadius: 7, border: 'none',
-          background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-          color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          boxShadow: '0 2px 12px rgba(124,58,237,0.35)',
-          transition: 'transform 0.15s, box-shadow 0.15s',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 5px 20px rgba(124,58,237,0.5)' }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(124,58,237,0.35)' }}
+      <button onClick={handleExport} style={{
+        padding: '0 16px', height: 32, borderRadius: 7, border: 'none',
+        background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+        color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+        boxShadow: '0 2px 10px rgba(124,58,237,0.35)',
+        transition: 'transform 0.15s, box-shadow 0.15s', flexShrink: 0,
+      }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 5px 18px rgba(124,58,237,0.5)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(124,58,237,0.35)' }}
       >⬇ Export</button>
 
       {/* Theme */}
-      <button style={iconBtn} onClick={toggleTheme}
-        title={isDark ? 'Light mode' : 'Dark mode'}
-        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}
-      >{isDark ? '☀️' : '🌙'}</button>
+      <button style={iconBtn} onClick={toggleTheme} title={isDark ? 'Light' : 'Dark'}
+        onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>
+        {isDark ? '☀️' : '🌙'}
+      </button>
     </div>
   )
 }
