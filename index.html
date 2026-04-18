@@ -64,8 +64,11 @@
       .scale-in { animation: scaleIn 0.2s ease both; }
       button { font-family: inherit; }
       input, select, textarea { font-family: inherit; }
-      /* Smooth transitions for theme switching */
-      * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
+      /* Micro-interactions */
+      button:active { transform: scale(0.97) !important; }
+      .ms-fab:active { transform: scale(0.95) translateY(0) !important; }
+      /* Hover glow consistency */
+      button { transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
       canvas, img, video { transition: none !important; }
       input, select { transition: border-color 0.15s ease !important; }
 

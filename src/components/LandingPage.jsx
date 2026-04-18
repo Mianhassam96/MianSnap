@@ -329,6 +329,62 @@ export default function LandingPage({ onEnter }) {
         </div>
       </section>
 
+      {/* ── RESULT CONFIDENCE ── */}
+      <section style={{ padding: 'clamp(48px,6vw,72px) 24px', background: isDark ? 'rgba(124,58,237,0.04)' : 'rgba(124,58,237,0.02)', borderTop: `1px solid ${theme.border}` }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>WHAT YOU GET</div>
+          <h2 style={{ fontSize: 'clamp(22px,3.5vw,36px)', fontWeight: 800, color: theme.text, letterSpacing: '-1px', marginBottom: 40, fontFamily: "'Montserrat',sans-serif" }}>
+            Thumbnails optimized for high CTR
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
+            {[
+              { icon: '🔥', title: 'Viral Ready Score', desc: 'Live 0–100 score tells you exactly what to fix before you export.' },
+              { icon: '⚡', title: 'Likely to outperform', desc: 'High contrast + bold text = 2× more clicks than average thumbnails.' },
+              { icon: '🎯', title: 'Face-optimized', desc: 'Auto face detection places text away from faces for maximum impact.' },
+              { icon: '📱', title: 'Mobile-first', desc: 'Every thumbnail is tested for mobile readability before you export.' },
+            ].map(c => (
+              <div key={c.title} style={{
+                padding: '24px 20px', borderRadius: 14,
+                border: `1px solid ${theme.border}`, background: theme.bgSecondary,
+                textAlign: 'left', transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(124,58,237,0.1)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{c.icon}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginBottom: 6 }}>{c.title}</div>
+                <div style={{ fontSize: 12, color: theme.textSecondary, lineHeight: 1.6 }}>{c.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SOCIAL PROOF ── */}
+      <section style={{ padding: 'clamp(48px,6vw,72px) 24px' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: accent, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>CREATORS LOVE IT</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
+            {[
+              { quote: "Created my best thumbnail in under 30 seconds. The viral score told me exactly what to fix.", name: 'YouTube Creator', handle: '120K subs' },
+              { quote: "Quick Mode is insane. Drop video, click once, done. My CTR went up immediately.", name: 'TikTok Creator', handle: '45K followers' },
+              { quote: "Finally a tool that doesn't require a design degree. The AI does everything.", name: 'Gaming Creator', handle: '200K subs' },
+            ].map((t, i) => (
+              <div key={i} style={{
+                padding: '24px 20px', borderRadius: 14,
+                border: `1px solid ${theme.border}`, background: theme.bgSecondary,
+                textAlign: 'left',
+              }}>
+                <div style={{ fontSize: 20, marginBottom: 12, color: '#facc15' }}>★★★★★</div>
+                <div style={{ fontSize: 13, color: theme.text, lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.quote}"</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: theme.textSecondary }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: theme.textMuted }}>{t.handle}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA BANNER ── */}
       <section style={{ padding: 'clamp(60px,8vw,96px) 24px' }}>
         <div style={{

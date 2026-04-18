@@ -11,6 +11,7 @@ const useVideoStore = create((set) => ({
   fps: 30,
 
   setVideoFile: (file) => set({ videoFile: file, videoUrl: URL.createObjectURL(file) }),
+  clearVideo: () => set({ videoFile: null, videoUrl: null, frames: [], selectedFrame: null }),
   setFrames: (frames) => set({ frames }),
   setSelectedFrame: (frame) => set({ selectedFrame: frame }),
   setIsExtracting: (v) => set({ isExtracting: v }),

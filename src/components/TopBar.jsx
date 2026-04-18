@@ -33,7 +33,6 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
   }
 
   function handleCreateAnother() {
-    // Clear canvas and trigger new session
     if (fabricCanvas) {
       fabricCanvas.clear()
       fabricCanvas.setBackgroundImage(null, fabricCanvas.renderAll.bind(fabricCanvas))
@@ -43,7 +42,9 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       )
     }
     setExportData(null)
-    window.showToast?.('Canvas cleared — start a new thumbnail!', 'info')
+    // Reset video so empty state shows again
+    window.dispatchEvent(new CustomEvent('miansnap:resetCanvas'))
+    window.showToast?.('Canvas cleared — drop another video or try Quick Mode ⚡', 'info', 3500)
   }
 
   async function handleSave() {

@@ -32,7 +32,7 @@ export default function App() {
   const { theme, setActiveRightPanel, focusMode, toggleFocusMode, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas, setViralScore, viralScore, setPrevScore, prevScore, sessionBest } = useCanvasStore()
   const { projectName } = useProjectStore()
-  const { setVideoFile } = useVideoStore()
+  const { setVideoFile, clearVideo } = useVideoStore()
   const [showLanding, setShowLanding] = useState(true)
   const [showSmartStart, setShowSmartStart] = useState(false)
   const [showProjects, setShowProjects] = useState(false)
@@ -86,6 +86,13 @@ export default function App() {
     window.addEventListener('miansnap:makeViral', handler)
     return () => window.removeEventListener('miansnap:makeViral', handler)
   }, [fabricCanvas, viralRunning])
+
+  // Reset canvas + video state for "Create Another"
+  useEffect(() => {
+    const handler = () => clearVideo()
+    window.addEventListener('miansnap:resetCanvas', handler)
+    return () => window.removeEventListener('miansnap:resetCanvas', handler)
+  }, [])
 
   async function handleMakeViral() {
     if (!fabricCanvas || viralRunning) return
