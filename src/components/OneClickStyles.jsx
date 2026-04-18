@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { applyThumbnailStyle, STYLES } from '../utils/thumbnailStyles'
@@ -7,8 +7,46 @@ import { prefs } from '../utils/prefs'
 export default function OneClickStyles() {
   const { theme } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
+  const [hoveredKey, setHoveredKey] = useState(null)
+  const hoverTimer = useRef(null)
+  const savedState = useRef(null)
+
+  function saveState() {
+    if (!fabricCanvas || savedState.current) return
+    const bg = fabricCanvas.backgroundImage
+    savedState.current = bg ? [...(bg.filters || [])] : null
+  }
+
+  function onHover(key) {
+    saveState()
+    clearTimeout(hoverTimer.current)
+    setHoveredKey(key)
+    hoverTimer.current = setTimeout(() => {
+      const bg = fabricCanvas?.backgroundImage
+      if (!bg || bg.filters === undefined) return
+      // Preview: just apply filters from style, not text
+      const style = STYLES[key]
+      if (!style) return
+      bg.filters = style.filters.map((f) => {
+        if (f.type === 'Contrast') return new (fabricCanvas._objects ? window.fabric?.Image?.filters?.Contrast : Object)({ contrast: f.value })
+        return null
+      }).filter(Boolean)
+      try { bg.applyFilters(); fabricCanvas.renderAll() } catch (_) {}
+    }, 200)
+  }
+
+  function onLeave(key) {
+    clearTimeout(hoverTimer.current)
+    setHoveredKey(null)
+    const bg = fabricCanvas?.backgroundImage
+    if (!bg || !savedState.current) return
+    bg.filters = savedState.current
+    try { bg.applyFilters(); fabricCanvas.renderAll() } catch (_) {}
+    savedState.current = null
+  }
 
   function handleApply(key) {
+    savedState.current = null // commit
     applyThumbnailStyle(fabricCanvas, key)
     prefs.setLastTemplate(key)
     window.showToast?.(`${STYLES[key].label} applied`, 'success')
@@ -25,6 +63,7 @@ export default function OneClickStyles() {
       color: '#fff', fontSize: 13, fontWeight: 700,
       textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.15s',
       textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+      position: 'relative',
     }),
   }
 
@@ -42,11 +81,12 @@ export default function OneClickStyles() {
       <div style={s.title}>One-Click Styles</div>
       <div style={s.desc}>Instantly apply color grading, text and effects.</div>
       {Object.entries(STYLES).map(([key, style]) => (
-        <button key={key} style={s.btn(key)}
+        <button key={key} style={{ ...s.btn(key), outline: hoveredKey === key ? `2px solid rgba(124,58,237,0.5)` : 'none' }}
           onClick={() => handleApply(key)}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+          onMouseEnter={() => onHover(key)}
+          onMouseLeave={() => onLeave(key)}
         >
+          {hoveredKey === key && <span style={{ position: 'absolute', top: 4, right: 6, fontSize: 8, color: 'rgba(255,255,255,0.7)', fontWeight: 400 }}>PREVIEW</span>}
           {style.label}
         </button>
       ))}

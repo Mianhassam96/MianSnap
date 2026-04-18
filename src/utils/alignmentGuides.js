@@ -38,24 +38,30 @@ export function setupAlignmentGuides(fabricCanvas) {
     const ch = fabricCanvas.height
     const cx = obj.left + (obj.width * obj.scaleX) / 2
     const cy = obj.top + (obj.height * obj.scaleY) / 2
+    let snapped = false
 
     // Snap to canvas center X
     if (Math.abs(cx - cw / 2) < SNAP_THRESHOLD) {
       obj.set('left', cw / 2 - (obj.width * obj.scaleX) / 2)
       drawGuide(cw / 2, 0, cw / 2, ch)
+      snapped = true
     }
     // Snap to canvas center Y
     if (Math.abs(cy - ch / 2) < SNAP_THRESHOLD) {
       obj.set('top', ch / 2 - (obj.height * obj.scaleY) / 2)
       drawGuide(0, ch / 2, cw, ch / 2)
+      snapped = true
     }
     // Snap to canvas edges
-    if (Math.abs(obj.left) < SNAP_THRESHOLD) { obj.set('left', 0); drawGuide(0, 0, 0, ch) }
-    if (Math.abs(obj.top) < SNAP_THRESHOLD) { obj.set('top', 0); drawGuide(0, 0, cw, 0) }
+    if (Math.abs(obj.left) < SNAP_THRESHOLD) { obj.set('left', 0); drawGuide(0, 0, 0, ch); snapped = true }
+    if (Math.abs(obj.top) < SNAP_THRESHOLD) { obj.set('top', 0); drawGuide(0, 0, cw, 0); snapped = true }
     if (Math.abs(obj.left + obj.width * obj.scaleX - cw) < SNAP_THRESHOLD) {
       obj.set('left', cw - obj.width * obj.scaleX)
       drawGuide(cw, 0, cw, ch)
+      snapped = true
     }
+
+    if (snapped) window.dispatchEvent(new CustomEvent('miansnap:snapped'))
   })
 
   fabricCanvas.on('object:moved', clearGuides)

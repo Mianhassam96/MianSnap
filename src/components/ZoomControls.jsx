@@ -1,9 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import useUIStore from '../store/useUIStore'
-import useCanvasStore from '../store/useCanvasStore'
 
 export default function ZoomControls({ zoom, onZoomIn, onZoomOut, onZoomReset }) {
   const { theme } = useUIStore()
+  const [resetFlash, setResetFlash] = useState(false)
+
+  function handleReset() {
+    onZoomReset()
+    setResetFlash(true)
+    setTimeout(() => setResetFlash(false), 600)
+  }
 
   const s = {
     wrap: {
@@ -24,10 +30,18 @@ export default function ZoomControls({ zoom, onZoomIn, onZoomOut, onZoomReset })
       transition: 'all 0.15s',
     },
     label: {
-      fontSize: 11, color: theme.textMuted, minWidth: 38,
-      textAlign: 'center', fontWeight: 600, userSelect: 'none',
+      fontSize: 11, minWidth: 38,
+      textAlign: 'center', fontWeight: 700, userSelect: 'none',
+      color: zoom !== 1 ? theme.accent : theme.textMuted,
+      transition: 'color 0.2s',
     },
     divider: { width: 1, height: 16, background: theme.border, margin: '0 2px' },
+    resetBtn: {
+      fontSize: 10, height: 28, padding: '0 8px', borderRadius: 5, border: 'none',
+      background: resetFlash ? theme.accentGlow : 'transparent',
+      color: resetFlash ? theme.accent : theme.textSecondary,
+      cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s', whiteSpace: 'nowrap',
+    },
   }
 
   return (
@@ -36,17 +50,16 @@ export default function ZoomControls({ zoom, onZoomIn, onZoomOut, onZoomReset })
         onMouseEnter={(e) => { e.currentTarget.style.background = theme.bgTertiary; e.currentTarget.style.color = theme.text }}
         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = theme.textSecondary }}
       >−</button>
-      <span style={s.label}>{Math.round(zoom * 100)}%</span>
+      <span style={s.label} title="Current zoom level">{Math.round(zoom * 100)}%</span>
       <button style={s.btn} onClick={onZoomIn} title="Zoom in (Ctrl+=)"
         onMouseEnter={(e) => { e.currentTarget.style.background = theme.bgTertiary; e.currentTarget.style.color = theme.text }}
         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = theme.textSecondary }}
       >+</button>
       <div style={s.divider} />
-      <button style={{ ...s.btn, fontSize: 10, width: 'auto', padding: '0 6px' }}
-        onClick={onZoomReset} title="Reset zoom (Ctrl+0)"
+      <button style={s.resetBtn} onClick={handleReset} title="Reset view — 100% centered (Ctrl+0)"
         onMouseEnter={(e) => { e.currentTarget.style.background = theme.bgTertiary; e.currentTarget.style.color = theme.accent }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = theme.textSecondary }}
-      >Fit</button>
+        onMouseLeave={(e) => { if (!resetFlash) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = theme.textSecondary } }}
+      >Reset View</button>
     </div>
   )
 }

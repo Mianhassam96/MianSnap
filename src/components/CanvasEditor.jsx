@@ -35,6 +35,8 @@ export default function CanvasEditor() {
   const [dragShift, setDragShift] = useState(false) // shift = add as layer
   const [bgSelected, setBgSelected] = useState(false) // background selected label
   const [undoFlash, setUndoFlash] = useState(false)   // undo visibility flash
+  const [snapFlash, setSnapFlash] = useState(false)   // snap feedback
+  const snapCooldown = useRef(false)
 
   // ── Init canvas — wait for Fabric CDN to load ─────────────────
   useEffect(() => {
@@ -325,6 +327,38 @@ export default function CanvasEditor() {
     }
   }, [fabricCanvas])
 
+  // ── Snap feedback ──────────────────────────────────────────────
+  useEffect(() => {
+    const handler = () => {
+      if (snapCooldown.current) return
+      snapCooldown.current = true
+      setSnapFlash(true)
+      setTimeout(() => { setSnapFlash(false); snapCooldown.current = false }, 400)
+    }
+    window.addEventListener('miansnap:snapped', handler)
+    return () => window.removeEventListener('miansnap:snapped', handler)
+  }, [])
+
+  // ── Auto-focus on object add (brief zoom-to hint) ──────────────
+  useEffect(() => {
+    if (!fabricCanvas) return
+    const onAdded = (e) => {
+      const obj = e.target
+      if (!obj || obj._isGuide || obj._viralGlow || obj._viralVignette || obj._vignette) return
+      // Brief border pulse on the object
+      const origBorder = obj.borderColor
+      obj.set('borderColor', '#7c3aed')
+      fabricCanvas.setActiveObject(obj)
+      fabricCanvas.renderAll()
+      setTimeout(() => {
+        obj.set('borderColor', origBorder || '#7c3aed')
+        fabricCanvas.renderAll()
+      }, 600)
+    }
+    fabricCanvas.on('object:added', onAdded)
+    return () => fabricCanvas.off('object:added', onAdded)
+  }, [fabricCanvas])
+
   // ── Load video frame as background ────────────────────────────
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
@@ -430,6 +464,19 @@ export default function CanvasEditor() {
           animation: 'fadeInDown 0.2s ease',
         }}>
           🖼 Background selected — drag to reposition
+        </div>
+      )}
+
+      {/* ── Snap feedback ── */}
+      {snapFlash && (
+        <div style={{
+          position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(124,58,237,0.85)', color: '#fff',
+          fontSize: 10, fontWeight: 700, padding: '3px 12px', borderRadius: 20,
+          pointerEvents: 'none', zIndex: 20,
+          animation: 'fadeInDown 0.15s ease',
+        }}>
+          🧲 Snapped
         </div>
       )}
 
