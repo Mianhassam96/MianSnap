@@ -11,15 +11,21 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MianSnap
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: MianSnap/package-lock.json
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Build
         run: npm run build
@@ -29,6 +35,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist
+          folder: MianSnap/dist
           branch: gh-pages
           clean: true

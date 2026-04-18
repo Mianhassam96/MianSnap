@@ -21,13 +21,13 @@ import VideoLoadingOverlay from './components/VideoLoadingOverlay'
 import MobileTabBar from './components/MobileTabBar'
 import MobileDrawer from './components/MobileDrawer'
 import SmartWarnings from './components/SmartWarnings'
+import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import { prefs } from './utils/prefs'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
-import { fabric } from './lib/fabric'
-import { applyImageAsBackground, applyProImageSettings, isMobileDevice } from './utils/imageUtils'
+import { applyImageAsBackground, isMobileDevice } from './utils/imageUtils'
 export default function App() {
   const { theme, setActiveRightPanel, focusMode, toggleFocusMode, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas, setViralScore, viralScore } = useCanvasStore()
@@ -36,6 +36,7 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true)
   const [showSmartStart, setShowSmartStart] = useState(false)
   const [showProjects, setShowProjects] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [snapEnabled, setSnapEnabled] = useState(false)
   const [viralRunning, setViralRunning] = useState(false)
   const [viralDone, setViralDone] = useState(false)
@@ -44,7 +45,11 @@ export default function App() {
 
   function enterEditor() {
     setShowLanding(false)
-    setShowSmartStart(true) // always show on entry
+    if (shouldShowOnboarding()) {
+      setShowOnboarding(true)
+    } else {
+      setShowSmartStart(true)
+    }
   }
 
   function handleSmartStartDone() {
@@ -131,6 +136,7 @@ export default function App() {
       overflow: 'hidden',
     }}>
       {showSmartStart && <SmartStart onDone={handleSmartStartDone} />}
+      {showOnboarding && <Onboarding onDone={() => { setShowOnboarding(false); setShowSmartStart(true) }} />}
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
       <Toast />
 
@@ -195,6 +201,10 @@ export default function App() {
               <div
                 className="ms-score-badge"
                 onClick={() => setActiveRightPanel('score')}
+                role="button"
+                tabIndex={0}
+                aria-label={`Viral score: ${viralScore.score} out of 100. Click to see breakdown.`}
+                onKeyDown={(e) => e.key === 'Enter' && setActiveRightPanel('score')}
                 title="Click to see full score breakdown"
                 style={{
                   position: 'absolute', top: 12, left: '50%',
@@ -230,6 +240,7 @@ export default function App() {
               className="ms-fab"
               onClick={handleMakeViral}
               disabled={viralRunning}
+              aria-label={viralRunning ? 'Enhancing thumbnail...' : viralDone ? 'Enhancement done' : 'Make this thumbnail viral in one click'}
               title="Make this thumbnail viral in 1 click — contrast, glow, face focus & text"
               style={{
                 position: 'absolute', bottom: 24, right: 24,

@@ -3,6 +3,7 @@
  * Uses canvas pixel analysis for basic face region detection
  * and CSS filter-based emotion enhancement on fabric Image objects
  */
+import { fabric } from '../lib/fabric'
 
 // Auto-zoom crop to rule-of-thirds based on detected skin-tone region
 export function faceAutoFocus(fabricCanvas) {
@@ -82,16 +83,11 @@ export function amplifyEmotion(fabricCanvas) {
   const obj = fabricCanvas.getActiveObject() || fabricCanvas.backgroundImage
   if (!obj) return
 
-  // Apply CSS-style filter via fabric filter chain
-  const { fabric } = window
-  if (!fabric) return
-
   // Use fabric's built-in filters
   const filters = [
     new fabric.Image.filters.Brightness({ brightness: 0.08 }),
     new fabric.Image.filters.Contrast({ contrast: 0.15 }),
     new fabric.Image.filters.Saturation({ saturation: 0.2 }),
-    new fabric.Image.filters.Sharpen(),
   ]
 
   if (obj.filters !== undefined) {

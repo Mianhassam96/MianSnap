@@ -116,9 +116,12 @@ export default function RightSidebar() {
 
   return (
     <div style={s.sidebar} className="ms-right-sidebar">
-      <div style={s.tabs}>
+      <div style={s.tabs} role="tablist" aria-label="Right panel tabs">
         {['layers', 'properties', 'score', 'preview', 'compare'].map((p) => (
           <button key={p}
+            role="tab"
+            aria-selected={activeRightPanel === p}
+            aria-label={p === 'score' ? 'Viral Score' : p === 'preview' ? 'Live Preview' : p === 'compare' ? 'Before/After' : p}
             style={{ ...s.tab, ...(activeRightPanel === p ? s.tabActive : {}) }}
             onClick={() => setActiveRightPanel(p)}
             title={p === 'score' ? 'Viral Score' : p === 'preview' ? 'Live Preview' : p === 'compare' ? 'Before/After' : p}
@@ -185,30 +188,32 @@ export default function RightSidebar() {
                 <div style={s.propRow}>
                   <span style={s.propLabel}>X</span>
                   <input style={s.propInput} type="number" value={Math.round(activeObj.left || 0)}
-                    onChange={(e) => { activeObj.set('left', +e.target.value); fabricCanvas.renderAll() }} />
+                    onChange={(e) => { activeObj.set('left', +e.target.value || 0); fabricCanvas.renderAll() }} />
                 </div>
                 <div style={s.propRow}>
                   <span style={s.propLabel}>Y</span>
                   <input style={s.propInput} type="number" value={Math.round(activeObj.top || 0)}
-                    onChange={(e) => { activeObj.set('top', +e.target.value); fabricCanvas.renderAll() }} />
+                    onChange={(e) => { activeObj.set('top', +e.target.value || 0); fabricCanvas.renderAll() }} />
                 </div>
                 <div style={s.propRow}>
                   <span style={s.propLabel}>Opacity</span>
                   <input style={s.propInput} type="range" min="0" max="1" step="0.01"
+                    aria-label="Opacity"
                     value={activeObj.opacity ?? 1}
                     onChange={(e) => { activeObj.set('opacity', +e.target.value); fabricCanvas.renderAll() }} />
                 </div>
                 <div style={s.propRow}>
                   <span style={s.propLabel}>Angle</span>
                   <input style={s.propInput} type="number" value={Math.round(activeObj.angle || 0)}
-                    onChange={(e) => { activeObj.set('angle', +e.target.value); fabricCanvas.renderAll() }} />
+                    onChange={(e) => { activeObj.set('angle', (+e.target.value || 0) % 360); fabricCanvas.renderAll() }} />
                 </div>
                 {(activeObj.type === 'i-text' || activeObj.type === 'textbox') && (
                   <>
                     <div style={s.propRow}>
                       <span style={s.propLabel}>Font size</span>
-                      <input style={s.propInput} type="number" value={activeObj.fontSize || 40}
-                        onChange={(e) => { activeObj.set('fontSize', +e.target.value); fabricCanvas.renderAll() }} />
+                      <input style={s.propInput} type="number" min="8" max="400"
+                        value={activeObj.fontSize || 40}
+                        onChange={(e) => { const v = Math.max(8, Math.min(400, +e.target.value || 40)); activeObj.set('fontSize', v); fabricCanvas.renderAll() }} />
                     </div>
                     <div style={s.propRow}>
                       <span style={s.propLabel}>Color</span>

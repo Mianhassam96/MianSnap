@@ -175,8 +175,20 @@ export function applyThumbnailStyle(fabricCanvas, styleKey) {
     const vignette = new fabric.Rect({
       left: 0, top: 0,
       width: fabricCanvas.width, height: fabricCanvas.height,
-      fill: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)',
-      selectable: false, evented: false, _vignette: true, opacity: 0.6,
+      fill: new fabric.Gradient({
+        type: 'radial',
+        coords: {
+          r1: 0, r2: fabricCanvas.width * 0.75,
+          x1: fabricCanvas.width / 2, y1: fabricCanvas.height / 2,
+          x2: fabricCanvas.width / 2, y2: fabricCanvas.height / 2,
+        },
+        colorStops: [
+          { offset: 0, color: 'rgba(0,0,0,0)' },
+          { offset: 0.6, color: 'rgba(0,0,0,0)' },
+          { offset: 1, color: 'rgba(0,0,0,0.65)' },
+        ],
+      }),
+      selectable: false, evented: false, _vignette: true, opacity: 0.9,
     })
     fabricCanvas.add(vignette)
     fabricCanvas.sendToBack(vignette)

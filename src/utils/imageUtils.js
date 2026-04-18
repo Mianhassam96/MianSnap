@@ -2,6 +2,7 @@
  * Central image placement utility for MianSnap.
  * All image-to-canvas operations go through here for consistency.
  */
+import { fabric } from '../lib/fabric'
 
 /**
  * Scale modes:
@@ -45,9 +46,7 @@ export function scaleImageToCanvas(img, canvasW, canvasH, mode = 'cover') {
  */
 export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', onDone) {
   if (!fabricCanvas || !dataUrl) return
-  const { fabric } = window
   if (!fabric) return
-
   fabric.Image.fromURL(dataUrl, (img) => {
     const props = scaleImageToCanvas(img, fabricCanvas.width, fabricCanvas.height, mode)
     img.set(props)

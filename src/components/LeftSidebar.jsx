@@ -107,12 +107,16 @@ export default function LeftSidebar() {
   function addText(fontName) {
     if (!fabricCanvas) return
     prefs.setLastFont(fontName)
+    // Ensure font is loaded before adding text
+    if (document.fonts && !document.fonts.check(`16px "${fontName}"`)) {
+      document.fonts.load(`16px "${fontName}"`).catch(() => {})
+    }
     // Smart placement — away from face region
     const pos = getSmartTextPosition(fabricCanvas)
     const text = new fabric.IText('Your Text Here', {
       ...pos,
       fontFamily: fontName,
-      fontSize,
+      fontSize: Math.max(12, Math.min(400, fontSize)),
       fill: textColor,
       stroke: strokeColor,
       strokeWidth: strokeColor === 'transparent' ? 0 : 2,
@@ -144,11 +148,12 @@ export default function LeftSidebar() {
   }
 
   function updateFontSize(size) {
-    setFontSize(size)
+    const clamped = Math.max(12, Math.min(400, +size || 64))
+    setFontSize(clamped)
     if (!fabricCanvas) return
     const obj = fabricCanvas.getActiveObject()
     if (obj && (obj.type === 'i-text' || obj.type === 'textbox')) {
-      obj.set('fontSize', size)
+      obj.set('fontSize', clamped)
       fabricCanvas.renderAll()
     }
   }
@@ -239,9 +244,13 @@ export default function LeftSidebar() {
 
   return (
     <div style={s.sidebar} className="ms-left-sidebar">
-      <div style={s.tabs}>
+      <div style={s.tabs} role="tablist" aria-label="Left panel tools">
         {TOOLS.map((t) => (
-          <button key={t.id} style={s.tab(activeLeftPanel === t.id)} onClick={() => setActiveLeftPanel(t.id)}>
+          <button key={t.id} style={s.tab(activeLeftPanel === t.id)}
+            role="tab"
+            aria-selected={activeLeftPanel === t.id}
+            aria-label={t.label}
+            onClick={() => setActiveLeftPanel(t.id)}>
             <div style={{ fontSize: 15, marginBottom: 2 }}>{t.icon}</div>
             <div>{t.label}</div>
           </button>

@@ -2,6 +2,7 @@
  * Snap-to-grid + alignment guides for Fabric.js canvas
  * Shows center/edge guide lines when objects are near alignment points
  */
+import { fabric } from '../lib/fabric'
 
 const SNAP_THRESHOLD = 10
 const GRID_SIZE = 20
@@ -17,8 +18,6 @@ export function setupAlignmentGuides(fabricCanvas) {
   }
 
   function drawGuide(x1, y1, x2, y2) {
-    const { fabric } = window
-    if (!fabric) return
     const line = new fabric.Line([x1, y1, x2, y2], {
       stroke: 'rgba(124,58,237,0.7)',
       strokeWidth: 1,

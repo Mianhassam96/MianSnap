@@ -164,6 +164,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       <button
         style={{ ...s.iconBtn, opacity: canUndo ? 1 : 0.35, cursor: canUndo ? 'pointer' : 'not-allowed' }}
         onClick={triggerUndo} disabled={!canUndo}
+        aria-label="Undo"
         title="Undo (Ctrl+Z)"
         onMouseEnter={(e) => { if (canUndo) { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow } }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
@@ -171,6 +172,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       <button
         style={{ ...s.iconBtn, opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'not-allowed' }}
         onClick={triggerRedo} disabled={!canRedo}
+        aria-label="Redo"
         title="Redo (Ctrl+Y)"
         onMouseEnter={(e) => { if (canRedo) { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow } }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
@@ -197,6 +199,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
 
       {/* Save */}
       <button style={s.saveBtn} onClick={handleSave} disabled={isSaving}
+        aria-label={isSaving ? 'Saving project' : 'Save project'}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
       >
@@ -205,6 +208,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
 
       {/* Projects */}
       <button style={s.saveBtn} onClick={onShowProjects}
+        aria-label="Open projects"
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
       >
@@ -213,6 +217,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
 
       {/* Export */}
       <button style={s.exportBtn} onClick={handleExport}
+        aria-label="Export thumbnail"
         onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 5px 20px rgba(124,58,237,0.5)' }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(124,58,237,0.35)' }}
       >
@@ -231,6 +236,8 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
           background: snapEnabled ? theme.accentGlow : theme.bgTertiary,
         }}
         onClick={onToggleSnap}
+        aria-label={snapEnabled ? 'Disable snap to grid' : 'Enable snap to grid'}
+        aria-pressed={snapEnabled}
         title="Toggle snap to grid"
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = snapEnabled ? theme.accent : theme.border }}
@@ -248,6 +255,8 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
           fontSize: 13,
         }}
         onClick={toggleFocusMode}
+        aria-label={focusMode ? 'Exit focus mode' : 'Enter focus mode'}
+        aria-pressed={focusMode}
         title={focusMode ? 'Exit Focus Mode (show panels)' : 'Focus Mode — hide panels'}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = focusMode ? theme.accent : theme.border; e.currentTarget.style.background = focusMode ? theme.accentGlow : theme.bgTertiary }}
@@ -259,6 +268,7 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
       <button
         style={s.iconBtn}
         onClick={toggleTheme}
+        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         title={isDark ? 'Switch to light' : 'Switch to dark'}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}

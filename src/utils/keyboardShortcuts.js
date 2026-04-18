@@ -16,6 +16,7 @@
  * Ctrl+Shift+]  Bring to front
  * Ctrl+Shift+[  Send to back
  */
+import { fabric } from '../lib/fabric'
 
 let _clipboard = null
 

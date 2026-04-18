@@ -3,7 +3,6 @@ import useUIStore from '../store/useUIStore'
 import useProjectStore from '../store/useProjectStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { deleteProject } from '../utils/projectStorage'
-import { fabric } from '../lib/fabric'
 
 export default function ProjectsPanel({ onClose }) {
   const { theme } = useUIStore()

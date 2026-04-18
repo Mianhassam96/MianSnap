@@ -22,7 +22,19 @@
     <!-- Arabic & Urdu Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Kufi+Arabic:wght@400;700;900&family=Noto+Nastaliq+Urdu:wght@400;700&family=Amiri:ital,wght@0,400;0,700;1,400&family=Scheherazade+New:wght@400;700&family=Lateef&family=Reem+Kufi:wght@400;700&family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;900&family=Almarai:wght@400;700;800&display=swap" rel="stylesheet" />
     <!-- Fabric.js from CDN (externalized from bundle to fix CI build) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <!-- Primary CDN with fallback to jsDelivr -->
+    <script>
+      (function() {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js';
+        s.onerror = function() {
+          var fallback = document.createElement('script');
+          fallback.src = 'https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js';
+          document.head.appendChild(fallback);
+        };
+        document.head.appendChild(s);
+      })();
+    </script>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html, body, #root { height: 100%; }

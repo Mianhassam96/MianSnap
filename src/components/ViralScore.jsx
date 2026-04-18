@@ -98,8 +98,8 @@ export default function ViralScore() {
   return (
     <div style={s.wrap}>
       {/* Score card */}
-      <div style={s.scoreCard}>
-        <div style={s.scoreBg} />
+      <div style={s.scoreCard} aria-label={score !== null ? `Viral score: ${score} out of 100. ${label}` : 'No score yet'}>
+        <div style={s.scoreBg} aria-hidden="true" />
         {score !== null ? (
           <>
             <div>
@@ -121,10 +121,10 @@ export default function ViralScore() {
 
       {/* Feedback */}
       {feedback.length > 0 && (
-        <div style={s.feedbackList}>
+        <div style={s.feedbackList} role="list" aria-label="Score feedback">
           {feedback.map((f, i) => (
-            <div key={i} style={s.item(f.type)}>
-              <span style={s.itemIcon}>{f.type === 'good' ? '✓' : '⚠'}</span>
+            <div key={i} style={s.item(f.type)} role="listitem" aria-label={`${f.type === 'good' ? 'Good' : 'Warning'}: ${f.msg}`}>
+              <span style={s.itemIcon} aria-hidden="true">{f.type === 'good' ? '✓' : '⚠'}</span>
               <span>{f.msg}</span>
             </div>
           ))}

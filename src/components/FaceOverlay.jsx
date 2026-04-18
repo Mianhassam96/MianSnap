@@ -58,7 +58,17 @@ export default function FaceOverlay() {
       ctx.save()
       ctx.fillStyle = 'rgba(124,58,237,0.85)'
       ctx.beginPath()
-      ctx.roundRect(x, y - 22, 90, 20, 4)
+      const lx = x, ly = y - 22, lw = 90, lh = 20, lr = 4
+      ctx.moveTo(lx + lr, ly)
+      ctx.lineTo(lx + lw - lr, ly)
+      ctx.arcTo(lx + lw, ly, lx + lw, ly + lr, lr)
+      ctx.lineTo(lx + lw, ly + lh - lr)
+      ctx.arcTo(lx + lw, ly + lh, lx + lw - lr, ly + lh, lr)
+      ctx.lineTo(lx + lr, ly + lh)
+      ctx.arcTo(lx, ly + lh, lx, ly + lh - lr, lr)
+      ctx.lineTo(lx, ly + lr)
+      ctx.arcTo(lx, ly, lx + lr, ly, lr)
+      ctx.closePath()
       ctx.fill()
       ctx.fillStyle = '#fff'
       ctx.font = 'bold 11px Inter, sans-serif'
