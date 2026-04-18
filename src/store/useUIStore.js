@@ -10,6 +10,7 @@ const useUIStore = create((set, get) => ({
   activePlatform: 'youtube',
   showBottomPanel: true,
   focusMode: false,
+  fitMode: 'cover',   // 'cover' | 'contain' — shared between CanvasEditor and BottomPanel
 
   toggleTheme: () => set((s) => ({
     isDark: !s.isDark,
@@ -21,6 +22,7 @@ const useUIStore = create((set, get) => ({
   setActivePlatform: (p) => set({ activePlatform: p }),
   toggleBottomPanel: () => set((s) => ({ showBottomPanel: !s.showBottomPanel })),
   toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+  setFitMode: (m) => set({ fitMode: m }),
 }))
 
 export default useUIStore

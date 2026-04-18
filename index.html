@@ -129,6 +129,18 @@
         .ms-left-sidebar  { width: 200px !important; }
         .ms-right-sidebar { width: 180px !important; }
       }
+      /* Laptop tight: shrink sidebars further */
+      @media (min-width: 769px) and (max-width: 1280px) {
+        .ms-left-sidebar  { width: 210px !important; }
+        .ms-right-sidebar { width: 190px !important; }
+      }
+      /* Tablet portrait: stack vertically */
+      @media (max-width: 900px) and (min-width: 769px) {
+        .ms-main-layout { flex-direction: column !important; overflow-y: auto !important; }
+        .ms-left-sidebar { width: 100% !important; height: auto !important; flex-direction: row !important; overflow-x: auto !important; border-right: none !important; border-bottom: 1px solid var(--border) !important; }
+        .ms-right-sidebar { width: 100% !important; height: 200px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+        .ms-canvas-area { padding: 8px !important; }
+      }
       /* Mobile tabs — hidden by default, shown on mobile */
       .ms-mobile-tabs { display: none; }
       /* Mobile: larger touch targets */

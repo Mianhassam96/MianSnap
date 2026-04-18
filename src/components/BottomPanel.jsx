@@ -7,7 +7,7 @@ import { getSuggestedFrames } from '../utils/frameSuggestions'
 import { applyImageAsBackground } from '../utils/imageUtils'
 
 export default function BottomPanel() {
-  const { theme } = useUIStore()
+  const { theme, fitMode } = useUIStore()
   const {
     videoUrl, frames, setFrames, selectedFrame, setSelectedFrame,
     isExtracting, setIsExtracting, currentTime, setCurrentTime,
@@ -17,7 +17,8 @@ export default function BottomPanel() {
   const videoRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [autoRan, setAutoRan] = useState(false)
-  const [snapFlash, setSnapFlash] = useState(null) // index of frame being snapped
+  const [snapFlash, setSnapFlash] = useState(null)
+  const [playbackRate, setPlaybackRate] = useState(1)
 
   useEffect(() => {
     const video = videoRef.current
@@ -54,12 +55,12 @@ export default function BottomPanel() {
   function applyFrame(frame, idx) {
     setSelectedFrame(frame)
     if (!fabricCanvas) return
-    // Flash animation on the frame thumbnail
     if (idx !== undefined) {
       setSnapFlash(idx)
       setTimeout(() => setSnapFlash(null), 500)
     }
-    applyImageAsBackground(fabricCanvas, frame.dataUrl, 'cover', () => {
+    // Use the shared fitMode from store — respects user's Fit/Fill toggle
+    applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
       window.showToast?.('🖼 Frame applied to canvas', 'success', 1200)
     })
   }
@@ -75,6 +76,12 @@ export default function BottomPanel() {
     if (!video) return
     if (video.paused) { video.play(); setPlaying(true) }
     else { video.pause(); setPlaying(false) }
+  }
+
+  function changePlaybackRate(rate) {
+    const video = videoRef.current
+    if (video) video.playbackRate = rate
+    setPlaybackRate(rate)
   }
 
   function handleSeek(e) {
@@ -194,6 +201,25 @@ export default function BottomPanel() {
           <span style={{ fontSize: 9, color: theme.textMuted, flexShrink: 0 }}>
             Space play/pause · ← → seek · Shift+← → ±5s
           </span>
+        )}
+
+        {/* Playback speed */}
+        {videoUrl && (
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            {[0.25, 0.5, 1, 2].map(rate => (
+              <button key={rate}
+                style={{
+                  ...btn,
+                  padding: '3px 7px', fontSize: 10,
+                  background: playbackRate === rate ? theme.accent : theme.bgTertiary,
+                  color: playbackRate === rate ? '#fff' : theme.textSecondary,
+                  border: `1px solid ${playbackRate === rate ? theme.accent : theme.border}`,
+                }}
+                onClick={() => changePlaybackRate(rate)}
+                title={`${rate}x speed`}
+              >{rate}x</button>
+            ))}
+          </div>
         )}
       </div>
 

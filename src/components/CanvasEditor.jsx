@@ -26,9 +26,8 @@ export default function CanvasEditor() {
 
   const { setFabricCanvas, fabricCanvas, setUndoRedo } = useCanvasStore()
   const { selectedFrame } = useVideoStore()
-  const { showSafeZone, activePlatform, theme } = useUIStore()
+  const { showSafeZone, activePlatform, theme, fitMode, setFitMode } = useUIStore()
   const [zoom, setZoom] = useState(1)
-  const [fitMode, setFitMode] = useState('cover')
   const [canvasW, setCanvasW] = useState(CANVAS_W)
   const [canvasH, setCanvasH] = useState(CANVAS_H)
   const [dragOver, setDragOver] = useState(false)   // drag-to-replace overlay

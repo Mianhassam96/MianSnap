@@ -180,7 +180,7 @@ export default function App() {
         <Toast />
         <TopBar />
 
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }} className="ms-main-layout">
           {!focusMode && <LeftSidebar />}
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
