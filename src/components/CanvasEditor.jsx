@@ -28,6 +28,8 @@ export default function CanvasEditor() {
   const { showSafeZone, activePlatform, theme } = useUIStore()
   const [zoom, setZoom] = useState(1)
   const [fitMode, setFitMode] = useState('cover') // 'cover' | 'contain'
+  const [canvasW, setCanvasW] = useState(CANVAS_W)
+  const [canvasH, setCanvasH] = useState(CANVAS_H)
 
   // ── Init canvas — wait for Fabric CDN to load ─────────────────
   useEffect(() => {
@@ -89,7 +91,17 @@ export default function CanvasEditor() {
     }
   }, [fabricCanvas])
 
-  // ── Pro image settings + clamp on all added images ─────────────
+  // ── Track canvas size changes ──────────────────────────────────
+  useEffect(() => {
+    if (!fabricCanvas) return
+    const sync = () => {
+      setCanvasW(fabricCanvas.width)
+      setCanvasH(fabricCanvas.height)
+    }
+    // Listen for resize events
+    window.addEventListener('miansnap:canvasResized', sync)
+    return () => window.removeEventListener('miansnap:canvasResized', sync)
+  }, [fabricCanvas])
   useEffect(() => {
     if (!fabricCanvas) return
     const mobile = isMobileDevice()
@@ -105,7 +117,9 @@ export default function CanvasEditor() {
     const onMoving = (e) => {
       const obj = e.target
       if (!obj) return
-      clampToBounds(obj, CANVAS_W, CANVAS_H)
+      const cw = fabricCanvas.width
+      const ch = fabricCanvas.height
+      clampToBounds(obj, cw, ch)
       obj.setCoords()
     }
 
@@ -233,20 +247,22 @@ export default function CanvasEditor() {
     const overlay = overlayRef.current
     if (!overlay) return
     const ctx = overlay.getContext('2d')
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
+    const cw = fabricCanvas?.width || canvasW
+    const ch = fabricCanvas?.height || canvasH
+    ctx.clearRect(0, 0, cw, ch)
     if (!showSafeZone) return
     const zones = SAFE_ZONES[activePlatform]?.zones || []
     zones.forEach((z) => {
       ctx.fillStyle = z.color
-      ctx.fillRect(z.x * CANVAS_W, z.y * CANVAS_H, z.w * CANVAS_W, z.h * CANVAS_H)
+      ctx.fillRect(z.x * cw, z.y * ch, z.w * cw, z.h * ch)
       ctx.strokeStyle = z.color.replace(/[\d.]+\)$/, '0.9)')
       ctx.lineWidth = 2
-      ctx.strokeRect(z.x * CANVAS_W, z.y * CANVAS_H, z.w * CANVAS_W, z.h * CANVAS_H)
+      ctx.strokeRect(z.x * cw, z.y * ch, z.w * cw, z.h * ch)
       ctx.fillStyle = 'rgba(255,255,255,0.8)'
       ctx.font = 'bold 14px Segoe UI'
-      ctx.fillText(z.label, z.x * CANVAS_W + 8, z.y * CANVAS_H + 18)
+      ctx.fillText(z.label, z.x * cw + 8, z.y * ch + 18)
     })
-  }, [showSafeZone, activePlatform])
+  }, [showSafeZone, activePlatform, canvasW, canvasH, fabricCanvas])
 
   const fitBtnBase = {
     padding: '3px 10px', borderRadius: 4, border: 'none',
@@ -256,16 +272,16 @@ export default function CanvasEditor() {
 
   return (
     <div ref={wrapRef} style={{
-      position: 'relative', width: '100%', aspectRatio: '16/9',
+      position: 'relative', width: '100%',
+      aspectRatio: `${canvasW} / ${canvasH}`,
       borderRadius: 8, overflow: 'hidden',
       boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${theme.border}`,
-      // Touch scroll isolation — prevents page scroll while editing canvas
       touchAction: 'none',
       userSelect: 'none',
     }}>
       <canvas ref={canvasRef}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-      <canvas ref={overlayRef} width={CANVAS_W} height={CANVAS_H}
+      <canvas ref={overlayRef} width={canvasW} height={canvasH}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 
       {/* Fit / Fill toggle — top right of canvas */}

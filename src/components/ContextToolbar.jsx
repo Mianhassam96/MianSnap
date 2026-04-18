@@ -137,23 +137,47 @@ export default function ContextToolbar() {
           </>
         ) : (
           <>
+            {/* Image quick actions */}
+            <button style={s.btn} onClick={() => {
+              // Fit — whole image visible
+              const cw = fabricCanvas.width, ch = fabricCanvas.height
+              const scale = Math.min(cw / activeObj.width, ch / activeObj.height)
+              activeObj.set({ scaleX: scale, scaleY: scale, left: (cw - activeObj.width * scale) / 2, top: (ch - activeObj.height * scale) / 2 })
+              fabricCanvas.renderAll()
+              window.showToast?.('Fit applied', 'success', 1200)
+            }}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >⊡ Fit</button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={() => {
+              // Fill — covers canvas
+              const cw = fabricCanvas.width, ch = fabricCanvas.height
+              const scale = Math.max(cw / activeObj.width, ch / activeObj.height)
+              activeObj.set({ scaleX: scale, scaleY: scale, left: (cw - activeObj.width * scale) / 2, top: (ch - activeObj.height * scale) / 2 })
+              fabricCanvas.renderAll()
+              window.showToast?.('Fill applied', 'success', 1200)
+            }}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >⊠ Fill</button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={() => {
+              // Center
+              activeObj.set({ left: fabricCanvas.width / 2, top: fabricCanvas.height / 2, originX: 'center', originY: 'center' })
+              fabricCanvas.renderAll()
+              window.showToast?.('Centered', 'success', 1200)
+            }}
+              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
+            >⊕ Center</button>
+            <div style={s.divider} />
             <button style={s.btn} onClick={handleRemoveBg} disabled={running}
               onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
             >
-              ✂️ {running ? bgStatus || 'Processing...' : 'Remove BG'}
-            </button>
-            <div style={s.divider} />
-            <button style={s.btn} onClick={handleBlurBg}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-            >
-              🌫 Blur BG
+              ✂️ {running ? bgStatus || '...' : 'Remove BG'}
             </button>
             <div style={s.divider} />
             <button style={s.btn} onClick={handleReplaceBg}
               onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-            >
-              🖼 Replace BG
-            </button>
+            >🖼 Replace</button>
           </>
         )}
       </div>
