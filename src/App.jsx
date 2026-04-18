@@ -1,76 +1,48 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import useUIStore from './store/useUIStore'
 import useCanvasStore from './store/useCanvasStore'
-import useProjectStore from './store/useProjectStore'
 import useVideoStore from './store/useVideoStore'
 import TopBar from './components/TopBar'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import CanvasEditor from './components/CanvasEditor'
 import BottomPanel from './components/BottomPanel'
-import LandingPage from './components/LandingPage'
-import SmartStart from './components/SmartStart'
-import ProjectsPanel from './components/ProjectsPanel'
 import CanvasEmptyState from './components/CanvasEmptyState'
 import ShortcutBar from './components/ShortcutBar'
 import Toast from './components/Toast'
-import CanvasHint from './components/CanvasHint'
 import ContextToolbar from './components/ContextToolbar'
-import NextStepNudge from './components/NextStepNudge'
 import VideoLoadingOverlay from './components/VideoLoadingOverlay'
 import MobileTabBar from './components/MobileTabBar'
 import MobileDrawer from './components/MobileDrawer'
 import SmartWarnings from './components/SmartWarnings'
-import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import DiscoveryHints from './components/DiscoveryHints'
 import FeedbackButton from './components/FeedbackButton'
-import { installAnalytics, track, trackUpload, trackExport, getTimeToResult } from './utils/analytics'
-import { prefs } from './utils/prefs'
+import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
-import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
+import { setupAlignmentGuides } from './utils/alignmentGuides'
 import { makeItViral } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
-import { applyImageAsBackground, isMobileDevice } from './utils/imageUtils'
+import { applyImageAsBackground } from './utils/imageUtils'
+import { applyThumbnailStyle, STYLES } from './utils/thumbnailStyles'
+
 export default function App() {
-  const { theme, setActiveRightPanel, focusMode, toggleFocusMode, setActiveLeftPanel } = useUIStore()
-  const { fabricCanvas, setViralScore, viralScore, setPrevScore, prevScore, sessionBest } = useCanvasStore()
-  const { projectName } = useProjectStore()
-  const { setVideoFile, clearVideo } = useVideoStore()
-  const [showLanding, setShowLanding] = useState(true)
-  const [showSmartStart, setShowSmartStart] = useState(false)
-  const [showProjects, setShowProjects] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
-  const [snapEnabled, setSnapEnabled] = useState(false)
+  const { theme, setActiveRightPanel, setActiveLeftPanel } = useUIStore()
+  const { fabricCanvas, setViralScore, viralScore, setPrevScore } = useCanvasStore()
+  const { setVideoFile, clearVideo, videoUrl } = useVideoStore()
   const [viralRunning, setViralRunning] = useState(false)
   const [viralDone, setViralDone] = useState(false)
   const [viralFlash, setViralFlash] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const autoRanRef = useRef(false)
 
-  function enterEditor() {
-    setShowLanding(false)
-    track('editor_opened')
-    if (shouldShowOnboarding()) {
-      setShowOnboarding(true)
-    } else {
-      setShowSmartStart(true)
-    }
-  }
+  // Install analytics
+  useEffect(() => { installAnalytics(); track('app_opened') }, [])
 
-  function handleSmartStartDone() {
-    setShowSmartStart(false)
-    setActiveRightPanel('score') // default to score tab
-  }
-
-  // Install analytics on mount
-  useEffect(() => { installAnalytics() }, [])
-
+  // Canvas setup
   useEffect(() => {
     if (!fabricCanvas) return
-    const cleanup = setupAutoSave(fabricCanvas, () => projectName)
+    const cleanup = setupAutoSave(fabricCanvas, () => 'MianSnap')
     setupAlignmentGuides(fabricCanvas)
-    setupSnapToGrid(fabricCanvas, snapEnabled)
-
-    // Live score on every canvas change
     const autoScore = () => {
       const score = calculateViralScore(fabricCanvas)
       if (score) setViralScore(score)
@@ -78,7 +50,6 @@ export default function App() {
     fabricCanvas.on('object:added', autoScore)
     fabricCanvas.on('object:modified', autoScore)
     fabricCanvas.on('object:removed', autoScore)
-
     return () => {
       cleanup()
       fabricCanvas.off('object:added', autoScore)
@@ -87,16 +58,27 @@ export default function App() {
     }
   }, [fabricCanvas])
 
-  // Listen for makeViral event from ViralScore "Fix It" button
+  // Auto-run Quick Mode after video loads (once per session)
+  useEffect(() => {
+    if (!videoUrl || !fabricCanvas || autoRanRef.current) return
+    autoRanRef.current = true
+    // Small delay to let frame extraction start first
+    const t = setTimeout(() => {
+      window.showToast?.('⚡ Auto-enhancing your thumbnail...', 'info', 2000)
+    }, 3000)
+    return () => clearTimeout(t)
+  }, [videoUrl, fabricCanvas])
+
+  // Listen for makeViral event
   useEffect(() => {
     const handler = () => handleMakeViral()
     window.addEventListener('miansnap:makeViral', handler)
     return () => window.removeEventListener('miansnap:makeViral', handler)
   }, [fabricCanvas, viralRunning])
 
-  // Reset canvas + video state for "Create Another"
+  // Reset for "Create Another"
   useEffect(() => {
-    const handler = () => clearVideo()
+    const handler = () => { clearVideo(); autoRanRef.current = false }
     window.addEventListener('miansnap:resetCanvas', handler)
     return () => window.removeEventListener('miansnap:resetCanvas', handler)
   }, [])
@@ -105,7 +87,6 @@ export default function App() {
     if (!fabricCanvas || viralRunning) return
     setViralRunning(true)
     setViralDone(false)
-    // Save score before enhancement
     if (viralScore) setPrevScore(viralScore)
     setViralFlash(true)
     setTimeout(() => setViralFlash(false), 600)
@@ -114,15 +95,14 @@ export default function App() {
     if (score) { setViralScore(score); setActiveRightPanel('score') }
     setViralRunning(false)
     setViralDone(true)
-    // Fire event for BeforeAfter auto-flash
     window.dispatchEvent(new CustomEvent('miansnap:viralDone'))
     track('make_viral_clicked')
     if (result?.steps?.length) {
       result.steps.forEach((step, i) => {
-        setTimeout(() => window.showToast?.(step, 'success', 2500), i * 350)
+        setTimeout(() => window.showToast?.(step, 'success', 2000), i * 300)
       })
     } else {
-      window.showToast?.('⚡ Viral enhancements applied!', 'success')
+      window.showToast?.('⚡ Done!', 'success')
     }
     setTimeout(() => setViralDone(false), 3000)
   }
@@ -132,7 +112,9 @@ export default function App() {
     input.type = 'file'; input.accept = 'video/*'
     input.onchange = (e) => {
       const f = e.target.files[0]
-      if (f) { trackUpload(); setVideoFile(f) }
+      if (!f) return
+      if (f.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 4000)
+      trackUpload(); setVideoFile(f)
     }
     input.click()
   }
@@ -143,68 +125,51 @@ export default function App() {
     input.onchange = (e) => {
       const file = e.target.files[0]
       if (!file || !fabricCanvas) return
-      const url = URL.createObjectURL(file)
-      applyImageAsBackground(fabricCanvas, url, 'cover')
+      applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
     }
     input.click()
   }
 
-  if (showLanding) {
-    document.body.style.overflow = 'auto'
-    return <LandingPage onEnter={enterEditor} />
-  }
   document.body.style.overflow = 'hidden'
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100vh',
       background: theme.bg, color: theme.text,
-      fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+      fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
       overflow: 'hidden',
     }}>
-      {showSmartStart && <SmartStart onDone={handleSmartStartDone} />}
-      {showOnboarding && <Onboarding onDone={() => { setShowOnboarding(false); setShowSmartStart(true) }} />}
-      {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
       <Toast />
-
-      <TopBar
-        onShowLanding={() => setShowLanding(true)}
-        onShowProjects={() => setShowProjects(true)}
-        snapEnabled={snapEnabled}
-        onToggleSnap={() => setSnapEnabled(v => !v)}
-      />
+      <TopBar />
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {!focusMode && <LeftSidebar />}
+        <LeftSidebar />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
           {/* Canvas area */}
           <div className="ms-canvas-area" style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '20px 24px', overflow: 'hidden',
+            padding: '16px 20px', overflow: 'hidden',
             background: theme.canvasBg,
             backgroundImage: theme.isDark
               ? 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.05) 0%, transparent 70%)'
               : 'radial-gradient(circle at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 70%)',
             position: 'relative',
           }}>
-            {/* Empty state guide */}
+            {/* Drop zone / empty state */}
             <CanvasEmptyState
               onUploadVideo={handleUploadVideo}
               onUploadImage={handleUploadImage}
-              onUseTemplate={() => { setActiveLeftPanel('styles') }}
-              onQuickMode={() => { setActiveLeftPanel('styles'); window.showToast?.('⚡ Quick Mode — hit the button!', 'info') }}
+              onUseTemplate={() => setActiveLeftPanel('styles')}
+              onQuickMode={() => setActiveLeftPanel('styles')}
             />
 
             <div style={{ width: '100%', maxWidth: 920, position: 'relative' }}>
               <CanvasEditor />
-              {/* Video loading overlay */}
               <VideoLoadingOverlay />
-              {/* Contextual toolbar — appears above selected image */}
               <ContextToolbar />
-              {/* Canvas onboarding hint — fades after 5s */}
-              <CanvasHint />
-              {/* Make Viral flash overlay */}
+
+              {/* Make Viral flash */}
               {viralFlash && (
                 <div style={{
                   position: 'absolute', inset: 0, borderRadius: 8,
@@ -215,43 +180,35 @@ export default function App() {
               )}
             </div>
 
-            {/* Keyboard shortcut hint */}
+            {/* Context toolbar (selection) */}
             <ShortcutBar />
 
-            {/* Smart warnings — inline above canvas */}
+            {/* Smart warnings */}
             {!viralScore && <SmartWarnings />}
 
-            {/* Discovery hints — "Did you know?" */}
+            {/* Discovery hints */}
             <DiscoveryHints />
 
-            {/* Next step nudge */}
-            <NextStepNudge onMakeViral={handleMakeViral} />
-
-            {/* Live score badge — top center above canvas */}
+            {/* Live score badge */}
             {viralScore && (
               <div
-                className="ms-score-badge"
                 onClick={() => setActiveRightPanel('score')}
-                role="button"
-                tabIndex={0}
-                aria-label={`Viral score: ${viralScore.score} out of 100. Click to see breakdown.`}
+                role="button" tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && setActiveRightPanel('score')}
-                title="Click to see full score breakdown"
                 style={{
-                  position: 'absolute', top: 12, left: '50%',
+                  position: 'absolute', top: 10, left: '50%',
                   transform: 'translateX(-50%)',
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                  padding: '4px 12px', borderRadius: 20, cursor: 'pointer',
                   background: theme.isDark ? 'rgba(13,13,24,0.92)' : 'rgba(255,255,255,0.92)',
                   border: `1px solid ${viralScore.score >= 75 ? theme.success : viralScore.score >= 50 ? theme.warning : theme.danger}44`,
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: theme.shadowSm,
-                  zIndex: 10, transition: 'all 0.2s',
+                  backdropFilter: 'blur(8px)', boxShadow: theme.shadowSm,
+                  zIndex: 10, transition: 'transform 0.2s',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateX(-50%) scale(1.05)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateX(-50%) scale(1)' }}
               >
-                <span style={{ fontSize: 12 }}>
+                <span style={{ fontSize: 11 }}>
                   {viralScore.score >= 75 ? '🔥' : viralScore.score >= 50 ? '⚡' : '⚠️'}
                 </span>
                 <span style={{
@@ -260,42 +217,35 @@ export default function App() {
                 }}>
                   {viralScore.score}/100
                 </span>
-                <span style={{ fontSize: 11, color: theme.textMuted }}>
-                  {viralScore.score >= 75 ? 'Viral Ready' : viralScore.score >= 50 ? 'Looking Good' : 'Needs Work'}
+                <span style={{ fontSize: 10, color: theme.textMuted }}>
+                  {viralScore.score >= 75 ? 'Viral Ready' : viralScore.score >= 50 ? 'Good' : 'Needs Work'}
                 </span>
               </div>
             )}
 
-            {/* Floating Make Viral FAB */}
+            {/* Make Viral FAB */}
             <button
               className="ms-fab"
               onClick={handleMakeViral}
               disabled={viralRunning}
-              aria-label={viralRunning ? 'Enhancing thumbnail...' : viralDone ? 'Enhancement done' : 'Make this thumbnail viral in one click'}
-              title="Make this thumbnail viral in 1 click — contrast, glow, face focus & text"
+              title="One click — contrast, glow, face focus, text enhancement"
               style={{
-                position: 'absolute', bottom: 24, right: 24,
-                padding: '12px 24px', borderRadius: 10, border: 'none',
+                position: 'absolute', bottom: 20, right: 20,
+                padding: '11px 22px', borderRadius: 10, border: 'none',
                 background: viralDone
                   ? 'linear-gradient(135deg,#16a34a,#15803d)'
                   : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
                 color: '#fff', fontSize: 14, fontWeight: 800,
                 cursor: viralRunning ? 'wait' : 'pointer',
-                boxShadow: viralDone
-                  ? '0 4px 20px rgba(22,163,74,0.5)'
-                  : '0 6px 28px rgba(239,68,68,0.5)',
+                boxShadow: viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 6px 28px rgba(239,68,68,0.5)',
                 transition: 'transform 0.15s, box-shadow 0.15s, background 0.3s',
                 display: 'flex', alignItems: 'center', gap: 8,
-                zIndex: 10, letterSpacing: '-0.2px',
-                // Pulse when idle to draw attention
+                zIndex: 10,
                 animation: !viralRunning && !viralDone ? 'viralPulse 2.5s ease-in-out infinite' : 'none',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.animation = 'none'
-                if (!viralRunning) {
-                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)'
-                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(239,68,68,0.7)'
-                }
+                if (!viralRunning) { e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(239,68,68,0.7)' }
               }}
               onMouseLeave={(e) => {
                 if (!viralRunning && !viralDone) e.currentTarget.style.animation = 'viralPulse 2.5s ease-in-out infinite'
@@ -308,49 +258,39 @@ export default function App() {
 
             <style>{`
               @keyframes viralPulse {
-                0%, 100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
+                0%,100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
                 50% { box-shadow: 0 6px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(239,68,68,0.15); }
               }
               @keyframes viralFlash {
-                0%   { opacity: 1; transform: scale(1); }
-                40%  { opacity: 0.9; transform: scale(1.01); }
-                100% { opacity: 0; transform: scale(1); }
+                0% { opacity:1; transform:scale(1); }
+                40% { opacity:0.9; transform:scale(1.01); }
+                100% { opacity:0; transform:scale(1); }
               }
             `}</style>
           </div>
 
-          {!focusMode && <BottomPanel />}
+          <BottomPanel />
         </div>
 
-        {!focusMode && <RightSidebar />}
+        <RightSidebar />
       </div>
 
-      {/* Mobile bottom tab bar + drawer */}
+      {/* Mobile */}
       <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
       <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} />
-
-      {/* Feedback button — always visible */}
       <FeedbackButton />
 
-      {/* Mobile floating upload button — shown only on mobile when no content */}
       <style>{`
         .ms-mobile-upload { display: none; }
         @media (max-width: 768px) { .ms-mobile-upload { display: flex !important; } }
       `}</style>
-      <button
-        className="ms-mobile-upload"
-        onClick={handleUploadVideo}
-        style={{
-          position: 'fixed', bottom: 72, left: 16, zIndex: 199,
-          alignItems: 'center', gap: 8,
-          padding: '11px 18px', borderRadius: 24, border: 'none',
-          background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-          color: '#fff', fontSize: 13, fontWeight: 700,
-          boxShadow: '0 4px 20px rgba(124,58,237,0.5)',
-        }}
-      >
-        + Upload
-      </button>
+      <button className="ms-mobile-upload" onClick={handleUploadVideo} style={{
+        position: 'fixed', bottom: 72, left: 16, zIndex: 199,
+        alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 24, border: 'none',
+        background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+        color: '#fff', fontSize: 13, fontWeight: 700,
+        boxShadow: '0 4px 20px rgba(124,58,237,0.5)',
+      }}>+ Upload</button>
     </div>
   )
 }
