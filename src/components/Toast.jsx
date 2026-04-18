@@ -2,20 +2,51 @@ import React, { useEffect, useState } from 'react'
 import useUIStore from '../store/useUIStore'
 
 /**
- * Global toast notification system.
- * Usage: window.showToast('message', 'success' | 'error' | 'info')
+ * Global toast + error handler.
+ * window.showToast('msg', 'success'|'error'|'info'|'save', duration?)
+ * Also catches unhandled errors and promise rejections.
  */
 export default function Toast() {
   const { theme } = useUIStore()
   const [toasts, setToasts] = useState([])
 
+  function addToast(msg, type = 'success', duration = 3000) {
+    // Deduplicate — don't stack same message
+    const id = Date.now() + Math.random()
+    setToasts(prev => {
+      if (prev.some(t => t.msg === msg)) return prev
+      return [...prev.slice(-4), { id, msg, type }] // max 5 toasts
+    })
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration)
+  }
+
   useEffect(() => {
-    window.showToast = (msg, type = 'success', duration = 3000) => {
-      const id = Date.now()
-      setToasts(prev => [...prev, { id, msg, type }])
-      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration)
+    window.showToast = addToast
+
+    // Global error handler — catch unhandled errors
+    const onError = (event) => {
+      const msg = event?.message || 'Something went wrong'
+      // Filter out noisy browser errors
+      if (msg.includes('ResizeObserver') || msg.includes('Script error')) return
+      addToast(`⚠️ ${msg.slice(0, 80)}`, 'error', 5000)
     }
-    return () => { delete window.showToast }
+
+    // Unhandled promise rejections
+    const onUnhandled = (event) => {
+      const msg = event?.reason?.message || 'An error occurred — try again'
+      if (msg.includes('ResizeObserver') || msg.includes('AbortError')) return
+      addToast(`⚠️ ${msg.slice(0, 80)}`, 'error', 5000)
+      event.preventDefault()
+    }
+
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onUnhandled)
+
+    return () => {
+      delete window.showToast
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onUnhandled)
+    }
   }, [])
 
   const colors = {
@@ -42,9 +73,10 @@ export default function Toast() {
             boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
             animation: 'fadeInDown 0.25s ease',
             backdropFilter: 'blur(8px)',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap', maxWidth: '90vw',
+            overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            <span style={{ fontSize: 15 }}>{c.icon}</span>
+            <span style={{ fontSize: 15, flexShrink: 0 }}>{c.icon}</span>
             {t.msg}
           </div>
         )

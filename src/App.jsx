@@ -22,6 +22,7 @@ import MobileTabBar from './components/MobileTabBar'
 import MobileDrawer from './components/MobileDrawer'
 import SmartWarnings from './components/SmartWarnings'
 import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
+import DiscoveryHints from './components/DiscoveryHints'
 import { prefs } from './utils/prefs'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides, setupSnapToGrid } from './utils/alignmentGuides'
@@ -209,6 +210,9 @@ export default function App() {
 
             {/* Smart warnings — inline above canvas */}
             {!viralScore && <SmartWarnings />}
+
+            {/* Discovery hints — "Did you know?" */}
+            <DiscoveryHints />
 
             {/* Next step nudge */}
             <NextStepNudge onMakeViral={handleMakeViral} />

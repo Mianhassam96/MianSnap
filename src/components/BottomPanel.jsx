@@ -92,13 +92,27 @@ export default function BottomPanel() {
   function handleDrop(e) {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
-    if (file?.type.startsWith('video/')) { setAutoRan(false); setVideoFile(file) }
+    if (file?.type.startsWith('video/')) {
+      if (file.size > 200 * 1024 * 1024) {
+        window.showToast?.('⚠️ Video over 200MB — may be slow. Try trimming first.', 'error', 5000)
+      }
+      setAutoRan(false)
+      setVideoFile(file)
+    }
   }
 
   function handleFileClick() {
     const i = document.createElement('input')
     i.type = 'file'; i.accept = 'video/*'
-    i.onchange = (e) => { setAutoRan(false); setVideoFile(e.target.files[0]) }
+    i.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      if (file.size > 200 * 1024 * 1024) {
+        window.showToast?.('⚠️ Video over 200MB — may be slow. Try trimming first.', 'error', 5000)
+      }
+      setAutoRan(false)
+      setVideoFile(file)
+    }
     i.click()
   }
 

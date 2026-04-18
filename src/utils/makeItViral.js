@@ -12,7 +12,7 @@ export async function makeItViral(fabricCanvas) {
 
   const steps = []
 
-  // 1. Boost background image — contrast + saturation + slight brightness
+  // 1. Boost background image — always reset first, then apply
   const bg = fabricCanvas.backgroundImage
   if (bg && bg.filters !== undefined) {
     bg.filters = [

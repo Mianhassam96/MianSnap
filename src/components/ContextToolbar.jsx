@@ -41,11 +41,11 @@ export default function ContextToolbar() {
         fabricCanvas.setActiveObject(img)
         fabricCanvas.renderAll()
         setBgStatus('')
-        window.showToast?.('Background removed!', 'success')
+        window.showToast?.('✂️ Background removed!', 'success')
       })
-    } catch {
-      setBgStatus('Failed')
-      window.showToast?.('AI model failed — check connection', 'error')
+    } catch (err) {
+      setBgStatus('')
+      window.showToast?.(err?.message || 'AI model failed — check connection', 'error', 5000)
     }
     setRunning(false)
   }

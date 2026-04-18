@@ -38,11 +38,26 @@ export default function CanvasEditor() {
       height: CANVAS_H,
       backgroundColor: theme.isDark ? '#0a0a0f' : '#ffffff',
       preserveObjectStacking: true,
-      targetFindTolerance: mobile ? 14 : 8,
+      targetFindTolerance: mobile ? 16 : 8,
       perPixelTargetFind: false,
+      // Mobile: larger touch targets
+      selectionBorderColor: '#7c3aed',
+      selectionLineWidth: 2,
     })
     setFabricCanvas(canvas)
-    return () => { canvas.dispose(); setFabricCanvas(null) }
+    return () => {
+      try {
+        // Full memory cleanup
+        canvas.getObjects().forEach(obj => {
+          if (obj.type === 'image') {
+            obj.setSrc('', () => {})
+          }
+        })
+        canvas.clear()
+        canvas.dispose()
+      } catch (_) {}
+      setFabricCanvas(null)
+    }
   }, [])
 
   // ── Pro image settings + clamp on all added images ─────────────
@@ -215,6 +230,9 @@ export default function CanvasEditor() {
       position: 'relative', width: '100%', aspectRatio: '16/9',
       borderRadius: 8, overflow: 'hidden',
       boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${theme.border}`,
+      // Touch scroll isolation — prevents page scroll while editing canvas
+      touchAction: 'none',
+      userSelect: 'none',
     }}>
       <canvas ref={canvasRef}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />

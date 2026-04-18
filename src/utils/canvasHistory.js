@@ -1,31 +1,34 @@
 /**
- * Undo / Redo history for Fabric.js canvas
- * Stores JSON snapshots on every meaningful change.
- * Max 50 states to keep memory reasonable.
+ * Undo / Redo history — JSON snapshots, max 30 states.
+ * Debounced to avoid stacking rapid changes.
  */
 
-const MAX = 50
+const MAX = 30
+let debounceTimer = null
 
 export function createHistory(fabricCanvas) {
-  let stack = []   // past states
-  let future = []  // redo states
+  let stack = []
+  let future = []
   let paused = false
 
   function snapshot() {
     if (paused) return
-    const json = JSON.stringify(fabricCanvas.toJSON())
-    // Avoid duplicate consecutive states
-    if (stack.length && stack[stack.length - 1] === json) return
-    stack.push(json)
-    if (stack.length > MAX) stack.shift()
-    future = [] // clear redo on new action
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      try {
+        const json = JSON.stringify(fabricCanvas.toJSON())
+        if (stack.length && stack[stack.length - 1] === json) return
+        stack.push(json)
+        if (stack.length > MAX) stack.shift()
+        future = []
+      } catch (_) {}
+    }, 150)
   }
 
   function undo() {
-    if (stack.length < 2) return // need at least 2: current + one before
-    future.push(stack.pop())     // move current to redo
-    const prev = stack[stack.length - 1]
-    restore(prev)
+    if (stack.length < 2) return
+    future.push(stack.pop())
+    restore(stack[stack.length - 1])
   }
 
   function redo() {
@@ -37,25 +40,37 @@ export function createHistory(fabricCanvas) {
 
   function restore(json) {
     paused = true
-    fabricCanvas.loadFromJSON(JSON.parse(json), () => {
-      fabricCanvas.renderAll()
+    try {
+      fabricCanvas.loadFromJSON(JSON.parse(json), () => {
+        fabricCanvas.renderAll()
+        paused = false
+      })
+    } catch (_) {
       paused = false
-    })
+    }
   }
 
   function canUndo() { return stack.length > 1 }
   function canRedo() { return future.length > 0 }
 
-  // Take initial snapshot
+  function clear() {
+    stack = []
+    future = []
+    clearTimeout(debounceTimer)
+  }
+
+  // Initial snapshot
   snapshot()
 
-  // Listen to canvas events
   const events = ['object:added', 'object:removed', 'object:modified']
   events.forEach(e => fabricCanvas.on(e, snapshot))
 
   function destroy() {
+    clearTimeout(debounceTimer)
     events.forEach(e => fabricCanvas.off(e, snapshot))
+    stack = []
+    future = []
   }
 
-  return { undo, redo, canUndo, canRedo, snapshot, destroy }
+  return { undo, redo, canUndo, canRedo, snapshot, clear, destroy }
 }

@@ -20,16 +20,21 @@ export default function TopBar({ onShowLanding, snapEnabled, onToggleSnap, onSho
 
   function handleExport() {
     if (!fabricCanvas) return
-    const multiplier = exportQuality === '1080p' ? 1.5 : 1
-    const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
-    const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: 0.93, multiplier })
-    const filename = `miansnap-${Date.now()}.${exportFormat}`
-    // Trigger download immediately
-    const a = document.createElement('a')
-    a.href = dataUrl; a.download = filename; a.click()
-    window.showToast?.(`✓ Saved to Downloads — ${exportFormat.toUpperCase()} ${exportQuality}`, 'success')
-    // Show preview modal
-    setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score })
+    try {
+      // Correct multiplier: 720p = 1× (1280×720), 1080p = 1.5× (1920×1080)
+      const multiplier = exportQuality === '1080p' ? 1.5 : 1
+      const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
+      const quality = fmt === 'jpeg' ? 0.95 : 1
+      const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality, multiplier })
+      const filename = `miansnap-${Date.now()}.${exportFormat === 'png' ? 'png' : 'jpg'}`
+      const a = document.createElement('a')
+      a.href = dataUrl; a.download = filename; a.click()
+      window.showToast?.(`✓ Exported ${exportFormat.toUpperCase()} ${exportQuality}`, 'success')
+      setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score })
+    } catch (err) {
+      window.showToast?.('Export failed — try again', 'error')
+      console.error('[MianSnap] Export error:', err)
+    }
   }
 
   function handleCreateAnother() {
