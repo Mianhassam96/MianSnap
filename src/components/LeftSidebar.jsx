@@ -1,11 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { fabric } from '../lib/fabric'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
+import useVideoStore from '../store/useVideoStore'
 import { faceAutoFocus, amplifyEmotion, resetFilters } from '../utils/faceDetect'
 import { prefs } from '../utils/prefs'
 import { getSmartTextPosition } from '../utils/smartPlacement'
 import { generateTitles, detectStyle, rewriteViral } from '../utils/titleGenerator'
+import { extractFrames, captureFrame, stepFrame } from '../utils/frameExtractor'
+import { getSuggestedFrames } from '../utils/frameSuggestions'
+import { applyImageAsBackground } from '../utils/imageUtils'
 import CreatorPacks from './CreatorPacks'
 import SafeZoneOverlay from './SafeZoneOverlay'
 import AssetManager from './AssetManager'
@@ -20,6 +24,7 @@ import FiltersPanel from './FiltersPanel'
 import ColorSystem from './ColorSystem'
 
 const TOOLS = [
+  { id: 'video',   icon: '🎬',  label: 'Video' },
   { id: 'text',    icon: '𝐓',  label: 'Text' },
   { id: 'shapes',  icon: '◻',  label: 'Shapes' },
   { id: 'filters', icon: '✨',  label: 'Filters' },
@@ -100,6 +105,14 @@ const PRESET_COLORS = [
 export default function LeftSidebar() {
   const { theme, activeLeftPanel, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
+  const {
+    videoUrl, frames, setFrames, selectedFrame, setSelectedFrame,
+    isExtracting, setIsExtracting, currentTime, setCurrentTime,
+    duration, setDuration, fps, setFps, setVideoFile,
+  } = useVideoStore()
+  const videoRef = useRef(null)
+  const [playing, setPlaying] = useState(false)
+  const [autoRan, setAutoRan] = useState(false)
   const [textColor, setTextColor] = useState('#ffffff')
   const [strokeColor, setStrokeColor] = useState('#000000')
   const [fontSize, setFontSize] = useState(64)
@@ -107,6 +120,92 @@ export default function LeftSidebar() {
   const [titles, setTitles] = useState([])
   const [titleStyle, setTitleStyle] = useState('reaction')
   const [rewriting, setRewriting] = useState(false)
+
+  // ── Video panel logic ──────────────────────────────────────────
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !videoUrl) return
+    video.src = videoUrl
+    video.onloadedmetadata = () => { setDuration(video.duration); setFps(30) }
+    video.ontimeupdate = () => setCurrentTime(video.currentTime)
+  }, [videoUrl])
+
+  useEffect(() => {
+    if (!videoUrl || autoRan || isExtracting) return
+    setAutoRan(true)
+    runSmartPick()
+  }, [videoUrl])
+
+  async function runSmartPick() {
+    if (!videoUrl) return
+    setIsExtracting(true)
+    const suggested = await getSuggestedFrames(videoUrl, 20)
+    setFrames(suggested)
+    setIsExtracting(false)
+    const best = suggested.find(f => f.isBest) || suggested[0]
+    if (best && fabricCanvas) applyVideoFrame(best)
+  }
+
+  async function handleExtractAll() {
+    if (!videoUrl) return
+    setIsExtracting(true)
+    const extracted = await extractFrames(videoUrl, 20)
+    setFrames(extracted)
+    setIsExtracting(false)
+  }
+
+  function applyVideoFrame(frame) {
+    setSelectedFrame(frame)
+    if (!fabricCanvas) return
+    applyImageAsBackground(fabricCanvas, frame.dataUrl, 'cover')
+  }
+
+  function captureCurrentFrame() {
+    const video = videoRef.current
+    if (!video || !fabricCanvas) return
+    applyVideoFrame({ time: video.currentTime, dataUrl: captureFrame(video) })
+  }
+
+  function togglePlay() {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) { video.play(); setPlaying(true) }
+    else { video.pause(); setPlaying(false) }
+  }
+
+  function handleSeek(e) {
+    const video = videoRef.current
+    if (video) video.currentTime = +e.target.value
+  }
+
+  function handleVideoStep(dir) {
+    const video = videoRef.current
+    if (!video) return
+    video.pause(); setPlaying(false)
+    stepFrame(video, fps, dir)
+  }
+
+  function handleVideoDrop(e) {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file?.type.startsWith('video/')) {
+      if (file.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 5000)
+      setAutoRan(false); setVideoFile(file)
+    }
+  }
+
+  function handleVideoFileClick() {
+    const i = document.createElement('input')
+    i.type = 'file'; i.accept = 'video/*'
+    i.onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return
+      if (file.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 5000)
+      setAutoRan(false); setVideoFile(file)
+    }
+    i.click()
+  }
+
+  const fmtTime = (t) => `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, '0')}`
 
   const SMART_DEFAULTS = [
     'YOU WON\'T BELIEVE THIS',
@@ -337,6 +436,100 @@ export default function LeftSidebar() {
       </div>
 
       <div style={s.content}>
+
+        {/* ── VIDEO PANEL ── */}
+        {activeLeftPanel === 'video' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, margin: -12 }}>
+
+            {/* Drop zone / video preview */}
+            {videoUrl ? (
+              <div style={{ background: '#000', height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} muted playsInline />
+              </div>
+            ) : (
+              <div style={{
+                height: 130, border: `2px dashed ${theme.border}`, margin: 12, borderRadius: 8,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', cursor: 'pointer', gap: 5, transition: 'all 0.15s',
+              }}
+                onDragOver={(e) => e.preventDefault()} onDrop={handleVideoDrop}
+                onClick={handleVideoFileClick}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ fontSize: 28 }}>🎬</span>
+                <span style={{ fontSize: 12, color: theme.textMuted, fontWeight: 600 }}>Drop video here</span>
+                <span style={{ fontSize: 10, color: theme.textMuted }}>or click to browse</span>
+              </div>
+            )}
+
+            {/* Playback controls */}
+            {videoUrl && (
+              <div style={{ padding: '6px 10px', borderBottom: `1px solid ${theme.border}`, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <button style={{ padding: '3px 8px', borderRadius: 5, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.text, fontSize: 11, cursor: 'pointer' }}
+                    onClick={() => handleVideoStep(-1)}>⏮</button>
+                  <button style={{ padding: '3px 10px', borderRadius: 5, border: 'none', background: theme.accent, color: '#fff', fontSize: 11, cursor: 'pointer' }}
+                    onClick={togglePlay}>{playing ? '⏸' : '▶'}</button>
+                  <button style={{ padding: '3px 8px', borderRadius: 5, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.text, fontSize: 11, cursor: 'pointer' }}
+                    onClick={() => handleVideoStep(1)}>⏭</button>
+                  <input type="range" style={{ flex: 1, accentColor: theme.accent }} min={0} max={duration || 100} step={0.01} value={currentTime} onChange={handleSeek} />
+                  <span style={{ fontSize: 9, color: theme.textMuted, whiteSpace: 'nowrap' }}>{fmtTime(currentTime)}/{fmtTime(duration)}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button style={{ flex: 1, padding: '4px 6px', borderRadius: 5, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.text, fontSize: 10, cursor: 'pointer' }}
+                    onClick={captureCurrentFrame} disabled={!videoUrl}>📸 Capture</button>
+                  <button style={{ flex: 1, padding: '4px 6px', borderRadius: 5, border: 'none', background: theme.accent, color: '#fff', fontSize: 10, cursor: 'pointer' }}
+                    onClick={handleExtractAll} disabled={!videoUrl || isExtracting}>{isExtracting ? '⏳' : '⚡ All'}</button>
+                  <button style={{ flex: 1, padding: '4px 6px', borderRadius: 5, border: 'none', background: 'linear-gradient(135deg,#f59e0b,#ef4444)', color: '#fff', fontSize: 10, cursor: 'pointer' }}
+                    onClick={() => { setAutoRan(false); runSmartPick() }} disabled={!videoUrl || isExtracting}>{isExtracting ? '⏳' : '🧠 Smart'}</button>
+                </div>
+              </div>
+            )}
+
+            {/* Frames header */}
+            <div style={{ padding: '5px 10px', borderBottom: `1px solid ${theme.border}`, fontSize: 10, color: theme.textMuted }}>
+              {isExtracting ? (
+                <span style={{ color: theme.accent }}>⏳ Analyzing frames...</span>
+              ) : frames.length > 0 ? (
+                <span>{frames.filter(f => f.isBest).length} recommended · {frames.length} total · <span style={{ color: theme.accent }}>click to use</span></span>
+              ) : (
+                <span>{videoUrl ? 'Processing...' : 'Upload a video to extract frames'}</span>
+              )}
+            </div>
+
+            {/* Frames grid — vertical scroll */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 10px', overflowY: 'auto', maxHeight: 'calc(100vh - 420px)' }}>
+              {frames.map((f, i) => (
+                <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
+                  <img
+                    src={f.dataUrl}
+                    alt={fmtTime(f.time)}
+                    style={{
+                      width: '100%', aspectRatio: '16/9', objectFit: 'cover',
+                      borderRadius: 6, cursor: 'pointer', display: 'block',
+                      border: `2px solid ${selectedFrame?.time === f.time ? theme.accent : f.isBest ? '#facc15' : theme.border}`,
+                      boxShadow: selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none',
+                      transition: 'border-color 0.15s, transform 0.12s',
+                    }}
+                    onClick={() => applyVideoFrame(f)}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+                  />
+                  {f.isBest && (
+                    <div style={{ position: 'absolute', top: 5, left: 5, background: 'linear-gradient(135deg,#f59e0b,#ef4444)', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 3 }}>⭐ BEST</div>
+                  )}
+                  <div style={{ position: 'absolute', bottom: 5, right: 5, background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 9, padding: '1px 5px', borderRadius: 3 }}>{fmtTime(f.time)}</div>
+                </div>
+              ))}
+              {!videoUrl && frames.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '20px 0', color: theme.textMuted, fontSize: 11 }}>
+                  No frames yet.<br />Upload a video above.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── TEXT PANEL ── */}
         {activeLeftPanel === 'text' && (

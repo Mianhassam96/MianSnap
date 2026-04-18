@@ -401,5 +401,14 @@ export default function LandingLayer({ onEnter, onDemo }) {
 }
 
 export function shouldShowLanding() {
-  return !localStorage.getItem(SEEN_KEY)
+  // Show landing on first visit
+  try {
+    return !localStorage.getItem(SEEN_KEY)
+  } catch {
+    return true
+  }
+}
+
+export function resetLanding() {
+  try { localStorage.removeItem(SEEN_KEY) } catch {}
 }

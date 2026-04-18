@@ -130,13 +130,17 @@ export default function TopBar() {
           onClose={() => setExportData(null)} onCreateAnother={handleCreateAnother} />
       )}
 
-      {/* Logo */}
+      {/* Logo — click to go back to landing */}
       <span style={{
         fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px',
         background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         fontFamily: "'Montserrat',sans-serif", flexShrink: 0, userSelect: 'none',
-      }}>MianSnap</span>
+        cursor: 'pointer',
+      }} onClick={() => {
+        localStorage.removeItem('miansnap_landing_seen')
+        window.location.reload()
+      }} title="Back to home">MianSnap</span>
 
       <div style={{ width: 1, height: 18, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
 

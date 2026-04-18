@@ -6,7 +6,6 @@ import TopBar from './components/TopBar'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import CanvasEditor from './components/CanvasEditor'
-import BottomPanel from './components/BottomPanel'
 import CanvasEmptyState from './components/CanvasEmptyState'
 import ShortcutBar from './components/ShortcutBar'
 import Toast from './components/Toast'
@@ -82,6 +81,7 @@ export default function App() {
   useEffect(() => {
     if (!videoUrl || !fabricCanvas || autoRanRef.current) return
     autoRanRef.current = true
+    setActiveLeftPanel('video')
     const t = setTimeout(() => {
       window.showToast?.('⚡ Auto-enhancing your thumbnail...', 'info', 2000)
     }, 3000)
@@ -159,17 +159,16 @@ export default function App() {
       )}
 
       <div style={{
-        display: 'flex', flexDirection: 'column', height: '100vh',
+        display: showLanding ? 'none' : 'flex', flexDirection: 'column', height: '100vh',
         background: theme.bg, color: theme.text,
         fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
         overflow: 'hidden',
-        visibility: showLanding ? 'hidden' : 'visible',
       }}>
         <Toast />
         <TopBar />
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          {/* No left sidebar — full canvas width */}
+          <LeftSidebar />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
             <div className="ms-canvas-area" style={{
@@ -282,8 +281,6 @@ export default function App() {
                 }
               `}</style>
             </div>
-
-            <BottomPanel />
           </div>
 
           <RightSidebar />
