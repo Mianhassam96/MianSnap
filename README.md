@@ -143,7 +143,7 @@ npm run build
 Contributions welcome! Open an issue or submit a pull request.
 
 ---
-
+ 
 ## 📌 Author
 
 Built with ❤️ by **[MultiMian](https://multimian.com/)**
