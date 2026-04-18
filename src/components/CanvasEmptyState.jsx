@@ -10,10 +10,7 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
   const { fabricCanvas } = useCanvasStore()
   const [dragging, setDragging] = useState(false)
   const [hovered, setHovered] = useState(null)
-
-  // Hide once video/image is loaded
   const [hasImage, setHasImage] = useState(false)
-  if (videoUrl || hasImage) return null
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault()
@@ -58,6 +55,9 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
     }
     input.click()
   }, [fabricCanvas, setVideoFile])
+
+  // Hide once video/image is loaded — AFTER all hooks
+  if (videoUrl || hasImage) return null
 
   return (
     <div
