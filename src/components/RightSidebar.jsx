@@ -11,6 +11,19 @@ export default function RightSidebar() {
   const { fabricCanvas, viralScore } = useCanvasStore()
   const { layers, setLayers, selectedId, setSelectedId, toggleVisibility, toggleLock } = useLayerStore()
   const [activeObj, setActiveObj] = useState(null)
+  const [compareUpdated, setCompareUpdated] = useState(false)
+
+  // Flash compare tab when BeforeAfter updates
+  useEffect(() => {
+    const handler = () => {
+      if (activeRightPanel !== 'compare') {
+        setCompareUpdated(true)
+        setTimeout(() => setCompareUpdated(false), 4000)
+      }
+    }
+    window.addEventListener('miansnap:viralDone', handler)
+    return () => window.removeEventListener('miansnap:viralDone', handler)
+  }, [activeRightPanel])
 
   // Sync layers from canvas
   useEffect(() => {
@@ -141,7 +154,20 @@ export default function RightSidebar() {
                   )}
                 </span>
               )
-              : p === 'preview' ? '📱' : '↔'}
+              : p === 'preview' ? '📱' : (
+                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  ↔
+                  {compareUpdated && (
+                    <span style={{
+                      position: 'absolute', top: -6, right: -8,
+                      width: 7, height: 7, borderRadius: '50%',
+                      background: '#4ade80',
+                      boxShadow: '0 0 6px #4ade80',
+                      animation: 'pulse 1s infinite',
+                    }} />
+                  )}
+                </span>
+              )}
           </button>
         ))}
       </div>

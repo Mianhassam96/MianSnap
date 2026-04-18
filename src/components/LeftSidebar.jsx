@@ -375,6 +375,54 @@ export default function LeftSidebar() {
         {/* ── TEXT PANEL ── */}
         {activeLeftPanel === 'text' && (
           <>
+            {/* Text Style Presets */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={s.sectionTitle}>⚡ Style Presets</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+                {[
+                  { label: '🔥 Viral Caption', font: 'Impact', size: 88, fill: '#ffff00', stroke: '#000', strokeWidth: 4, shadow: 20 },
+                  { label: '🎣 Hook Text', font: 'Bebas Neue', size: 72, fill: '#ffffff', stroke: '#7c3aed', strokeWidth: 3, shadow: 16 },
+                  { label: '📰 Breaking News', font: 'Anton', size: 64, fill: '#ffcc00', stroke: '#ff0000', strokeWidth: 3, shadow: 10 },
+                  { label: '🎮 Gaming Bold', font: 'Bangers', size: 80, fill: '#00ffcc', stroke: '#000', strokeWidth: 3, shadow: 24 },
+                  { label: '💎 Clean Title', font: 'Montserrat', size: 60, fill: '#ffffff', stroke: 'transparent', strokeWidth: 0, shadow: 8 },
+                  { label: '😱 Reaction', font: 'Oswald', size: 76, fill: '#ff3300', stroke: '#000', strokeWidth: 4, shadow: 18 },
+                ].map((preset) => (
+                  <button key={preset.label}
+                    style={{
+                      padding: '8px 8px', borderRadius: 7, border: `1px solid ${theme.border}`,
+                      background: theme.bgTertiary, cursor: 'pointer', textAlign: 'left',
+                      fontSize: 10, fontWeight: 600, color: theme.text,
+                      transition: 'all 0.15s',
+                    }}
+                    onClick={() => {
+                      if (!fabricCanvas) return
+                      const { fabric: f } = window
+                      if (!f) return
+                      const pos = { left: fabricCanvas.width / 2, top: fabricCanvas.height * 0.82, originX: 'center', originY: 'center' }
+                      const text = new fabric.IText('YOUR TEXT HERE', {
+                        ...pos,
+                        fontFamily: preset.font,
+                        fontSize: preset.size,
+                        fill: preset.fill,
+                        stroke: preset.stroke,
+                        strokeWidth: preset.strokeWidth,
+                        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: preset.shadow, offsetX: 2, offsetY: 2 }),
+                      })
+                      fabricCanvas.add(text)
+                      fabricCanvas.setActiveObject(text)
+                      text.enterEditing(); text.selectAll()
+                      fabricCanvas.renderAll()
+                      setTextColor(preset.fill)
+                      setStrokeColor(preset.stroke)
+                      setFontSize(preset.size)
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+                  >{preset.label}</button>
+                ))}
+              </div>
+            </div>
+
             {/* Quick-add text buttons */}
             <div style={{ marginBottom: 14 }}>
               <div style={s.sectionTitle}>Quick Add</div>

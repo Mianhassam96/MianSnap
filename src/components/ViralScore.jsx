@@ -65,6 +65,9 @@ export default function ViralScore() {
                 transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
               }} />
             </div>
+            <div style={{ fontSize: 9, color: theme.textMuted, marginTop: 8, lineHeight: 1.4 }}>
+              Based on contrast · text visibility · face detection · engagement patterns
+            </div>
           </>
         ) : (
           <div style={{ textAlign: 'center', padding: '16px 0', color: theme.textMuted, fontSize: 12 }}>
