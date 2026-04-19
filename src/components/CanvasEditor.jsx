@@ -56,11 +56,11 @@ export default function CanvasEditor() {
           perPixelTargetFind: false,
           selectionBorderColor: '#7c3aed',
           selectionLineWidth: 2,
+          enableRetinaScaling: true,  // crisp on HiDPI/retina/mobile screens
         })
         setFabricCanvas(canvas)
       } catch (err) {
         console.error('[MianSnap] Canvas init failed:', err)
-        // Retry after short delay
         setTimeout(init, 200)
       }
     }

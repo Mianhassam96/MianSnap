@@ -217,25 +217,25 @@ export default function TopBar() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Privacy */}
+      {/* Privacy + auto-save indicator */}
       <span style={{ fontSize: 10, color: theme.textMuted, opacity: 0.5, flexShrink: 0, cursor: 'default' }}
         className="ms-topbar-selects"
         onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5' }}
-        title="Everything runs in your browser — nothing uploaded">
-        🔒 private
+        title="Auto-saves every 2 seconds · Nothing uploaded to any server">
+        🔒 private · auto-saved
       </span>
 
       <div style={{ width: 1, height: 18, background: theme.border, margin: '0 2px', flexShrink: 0 }} />
 
       {/* Quality + Format */}
       <select value={exportQuality} onChange={(e) => setExportQuality(e.target.value)}
-        className="ms-topbar-selects" style={sel}>
-        <option value="720p">720p</option>
-        <option value="1080p">1080p</option>
+        className="ms-topbar-selects" style={sel} title="Export resolution">
+        <option value="720p">720p (1280×720)</option>
+        <option value="1080p">1080p (1920×1080)</option>
       </select>
       <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}
-        className="ms-topbar-selects" style={sel}>
+        className="ms-topbar-selects" style={sel} title="Export format — JPG is smaller, PNG is lossless">
         <option value="jpg">JPG</option>
         <option value="png">PNG</option>
       </select>
