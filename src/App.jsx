@@ -19,7 +19,6 @@ import DiscoveryHints from './components/DiscoveryHints'
 import FeedbackButton from './components/FeedbackButton'
 import LandingLayer, { shouldShowLanding } from './components/LandingLayer'
 import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
-import FramesStrip from './components/FramesStrip'
 import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides } from './utils/alignmentGuides'
@@ -271,9 +270,6 @@ export default function App() {
           {!focusMode && <LeftSidebar />}
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-            {/* Frames strip — above canvas, only when video loaded */}
-            <FramesStrip />
-
             <div className="ms-canvas-area" style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '16px 20px', overflow: 'hidden',
