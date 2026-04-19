@@ -400,7 +400,7 @@ export default function App() {
                 <span>{viralRunning ? '⏳ Enhancing...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}</span>
                 {!viralRunning && !viralDone && (
                   <span style={{ fontSize: 9, opacity: 0.85, fontWeight: 400, letterSpacing: 0.3 }}>
-                    Auto-enhance + score
+                    MianSnap AI · auto-enhance + score
                   </span>
                 )}
               </button>

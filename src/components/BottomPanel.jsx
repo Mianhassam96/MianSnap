@@ -47,7 +47,7 @@ export default function BottomPanel() {
     const bestIdx = suggested.findIndex(f => f.isBest)
     if (bestIdx >= 0) {
       setTimeout(() => setSnapFlash(bestIdx), 300)
-      setTimeout(() => setSnapFlash(null), 1200)
+      setTimeout(() => setSnapFlash(null), 1700)
     }
   }
 
@@ -340,8 +340,9 @@ export default function BottomPanel() {
                 {snapFlash === i && (
                   <div style={{
                     position: 'absolute', inset: 0, zIndex: 5, borderRadius: 6,
-                    background: 'rgba(124,58,237,0.55)',
-                    animation: 'scaleIn 0.15s ease',
+                    background: 'rgba(124,58,237,0.45)',
+                    border: '2px solid rgba(124,58,237,0.8)',
+                    animation: 'pulse 0.7s ease-in-out 2',
                     pointerEvents: 'none',
                   }} />
                 )}

@@ -12,12 +12,12 @@ const PLATFORMS = [
 ]
 
 const FEATURES = [
-  { icon: '🧠', title: 'Finds your best frame automatically', desc: 'AI scores every frame for faces, motion & brightness — picks the winner for you.' },
-  { icon: '⚡', title: 'Makes it viral in one click', desc: 'Contrast boost, face focus, glow effects, vignette — all applied instantly. No design skills needed.' },
-  { icon: '🎯', title: 'Switches platforms instantly', desc: 'YouTube, Instagram, TikTok, LinkedIn — canvas resizes proportionally with one click.' },
-  { icon: '✂️', title: 'Removes backgrounds in seconds', desc: 'Browser-side AI — no upload, no waiting, no account required.' },
-  { icon: '📊', title: 'Scores your thumbnail live', desc: 'Real-time 0–100 score with one-tap fix buttons. Know exactly what to improve.' },
-  { icon: '🔒', title: 'Keeps your content private', desc: 'Nothing leaves your device. No uploads, no storage, no account. Ever.' },
+  { icon: '🧠', title: 'Finds your best frame automatically', desc: 'AI scores every frame for faces, motion & brightness — picks the winner for you.', sub: 'No scrubbing needed' },
+  { icon: '⚡', title: 'Makes it viral in one click', desc: 'Contrast boost, face focus, glow effects, vignette — all applied instantly.', sub: 'No design skills needed' },
+  { icon: '🎯', title: 'Switches platforms instantly', desc: 'YouTube, Instagram, TikTok, LinkedIn — canvas resizes proportionally.', sub: '5 platforms supported' },
+  { icon: '✂️', title: 'Removes backgrounds in seconds', desc: 'Browser-side AI — no upload, no waiting, no account required.', sub: 'Runs 100% in your browser' },
+  { icon: '📊', title: 'Scores your thumbnail live', desc: 'Real-time 0–100 score with one-tap fix buttons.', sub: 'Know exactly what to improve' },
+  { icon: '🔒', title: 'Keeps your content private', desc: 'Nothing leaves your device. No uploads, no storage, no account. Ever.', sub: 'Zero data collection' },
 ]
 
 export default function LandingLayer({ onEnter, onDemo }) {
@@ -158,7 +158,7 @@ export default function LandingLayer({ onEnter, onDemo }) {
           Free · No account · No uploads · Works in your browser
         </div>
 
-        {/* H1 — outcome-driven, 2-second read */}
+        {/* H1 — unique + outcome-driven */}
         <h1 style={{
           fontSize: 'clamp(36px,6.5vw,72px)', fontWeight: 900, lineHeight: 1.04,
           letterSpacing: '-2px', marginBottom: 14,
@@ -170,13 +170,21 @@ export default function LandingLayer({ onEnter, onDemo }) {
           Viral thumbnails<br />in 10 seconds
         </h1>
 
-        <p style={{
-          fontSize: 'clamp(15px,1.8vw,18px)', color: theme.textSecondary,
-          maxWidth: 480, margin: '0 auto 10px', lineHeight: 1.6,
-          animation: 'fadeInDown 0.5s ease 0.2s both',
-          fontWeight: 500,
+        {/* Differentiator tag */}
+        <div style={{
+          display: 'inline-block', fontSize: 13, fontWeight: 700,
+          color: theme.text, marginBottom: 10,
+          animation: 'fadeInDown 0.5s ease 0.18s both',
         }}>
-          No uploads. No login. Just drop → enhance → export.
+          No Canva. No uploads. No login.
+        </div>
+
+        <p style={{
+          fontSize: 'clamp(14px,1.6vw,16px)', color: theme.textSecondary,
+          maxWidth: 440, margin: '0 auto 10px', lineHeight: 1.6,
+          animation: 'fadeInDown 0.5s ease 0.2s both',
+        }}>
+          Drop your video → AI picks the best frame → one click makes it viral → export.
         </p>
 
         {/* Who it's for */}
@@ -224,6 +232,10 @@ export default function LandingLayer({ onEnter, onDemo }) {
           >
             📥 Drop your video to start
           </button>
+          {/* Trust anchor */}
+          <div style={{ fontSize: 11, color: theme.textMuted, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🔒 Used by creators worldwide · 100% private</span>
+          </div>
           <div style={{ fontSize: 11, color: theme.textMuted }}>
             or{' '}
             <span
@@ -233,7 +245,7 @@ export default function LandingLayer({ onEnter, onDemo }) {
               onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted }}
               title="Applies AI style to a sample thumbnail — no upload needed"
             >try demo instantly →</span>
-            {' '}applies AI style to a sample, no upload needed
+            {' '}no upload needed
           </div>
         </div>
 
@@ -371,7 +383,7 @@ export default function LandingLayer({ onEnter, onDemo }) {
         {/* Stats */}
         <div style={{ marginTop: 40, display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap', animation: 'fadeInDown 0.5s ease 0.3s both' }}>
           {[
-            { stat: '⚡ 9s', label: 'Avg creation time', highlight: true },
+            { stat: '⚡ 9s', label: 'avg to create a thumbnail', highlight: true },
             { stat: '5', label: 'Platforms supported' },
             { stat: '2.3×', label: 'Avg CTR boost' },
             { stat: '100%', label: 'Free forever' },
@@ -453,7 +465,8 @@ export default function LandingLayer({ onEnter, onDemo }) {
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = theme.border }}
             >
               <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, marginBottom: 5 }}>{f.title}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, marginBottom: 3 }}>{f.title}</div>
+              {f.sub && <div style={{ fontSize: 10, fontWeight: 600, color: accent, marginBottom: 5, opacity: 0.8 }}>{f.sub}</div>}
               <div style={{ fontSize: 11, color: theme.textSecondary, lineHeight: 1.55 }}>{f.desc}</div>
             </div>
           ))}
