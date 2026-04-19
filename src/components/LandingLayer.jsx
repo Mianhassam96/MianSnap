@@ -329,11 +329,10 @@ export default function LandingLayer({ onEnter, onDemo }) {
 
           {/* Score context — live count-up */}
           <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: theme.textMuted }}>
-            Score{' '}
-            <strong style={{ color: scoreDisplay < 60 ? '#ef4444' : scoreDisplay < 80 ? '#f59e0b' : '#4ade80', fontSize: 14, transition: 'color 0.3s' }}>
-              {scoreDisplay}
-            </strong>
-            /100 · Higher score = better engagement potential
+            {demoAnimDone
+              ? <>Score <strong style={{ color: '#ef4444' }}>32</strong> → <strong style={{ color: '#4ade80' }}>87</strong> · Higher score = better engagement potential</>
+              : <>Score{' '}<strong style={{ color: scoreDisplay < 60 ? '#ef4444' : scoreDisplay < 80 ? '#f59e0b' : '#4ade80', fontSize: 14, transition: 'color 0.3s' }}>{scoreDisplay}</strong>/100 · Higher score = better engagement potential</>
+            }
           </div>
 
           {/* Feature pills */}
