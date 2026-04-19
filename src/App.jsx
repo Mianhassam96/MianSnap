@@ -426,7 +426,7 @@ export default function App() {
         </div>
 
         <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
-        {/* Mobile quick actions — always visible above tab bar */}
+        {/* Mobile quick actions — Quick Mode as primary floating button */}
         <div className="ms-mobile-tabs" style={{
           position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 198,
           display: 'flex', gap: 8, padding: '8px 12px',
@@ -437,16 +437,17 @@ export default function App() {
           <button onClick={() => { setMobileDrawerOpen(true); }} style={{
             flex: 1, padding: '9px 4px', borderRadius: 8, border: `1px solid ${theme.border}`,
             background: theme.bgTertiary, color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-          }}>✏️ Add Text</button>
+          }}>✏️ Text</button>
           <button onClick={handleMakeViral} style={{
-            flex: 2, padding: '9px 4px', borderRadius: 8, border: 'none',
+            flex: 3, padding: '9px 4px', borderRadius: 8, border: 'none',
             background: 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-            color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+            color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+            boxShadow: '0 3px 14px rgba(239,68,68,0.4)',
           }}>⚡ Make Viral</button>
           <button onClick={() => window.dispatchEvent(new CustomEvent('miansnap:export'))} style={{
             flex: 1, padding: '9px 4px', borderRadius: 8, border: 'none',
             background: theme.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-          }}>⬇ Export</button>
+          }}>⬇ Save</button>
         </div>
         <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} />
         <FeedbackButton />

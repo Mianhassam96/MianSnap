@@ -59,7 +59,7 @@ export default function MakeItViral() {
 
   return (
     <div style={s.wrap}>
-      <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 6, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 4, lineHeight: 1.4 }}>
         Boosts contrast · focuses face · adds glow + vignette · scores result
       </div>
       <button style={s.btn} onClick={handleClick} disabled={running}

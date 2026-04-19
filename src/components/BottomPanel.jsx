@@ -43,6 +43,12 @@ export default function BottomPanel() {
     setIsExtracting(false)
     const best = suggested.find(f => f.isBest) || suggested[0]
     if (best && fabricCanvas) applyFrame(best, 0)
+    // Auto-highlight best frame index for pulse
+    const bestIdx = suggested.findIndex(f => f.isBest)
+    if (bestIdx >= 0) {
+      setTimeout(() => setSnapFlash(bestIdx), 300)
+      setTimeout(() => setSnapFlash(null), 1200)
+    }
   }
 
   async function handleExtractAll() {

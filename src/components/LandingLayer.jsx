@@ -12,12 +12,12 @@ const PLATFORMS = [
 ]
 
 const FEATURES = [
-  { icon: '🧠', title: 'AI Frame Detection', desc: 'Upload any video — AI scores every frame for faces, motion, brightness. Best frame auto-selected.' },
-  { icon: '⚡', title: 'One-Click Make Viral', desc: 'Contrast boost, face focus, glow effects, vignette — all in one click. No design skills needed.' },
-  { icon: '🎯', title: 'Multi-Platform Canvas', desc: 'Switch between YouTube, Instagram, TikTok, LinkedIn instantly. Layout scales proportionally.' },
-  { icon: '✂️', title: 'AI Background Removal', desc: 'Browser-side AI removes backgrounds instantly. No upload, no waiting, no account.' },
-  { icon: '📊', title: 'Live Viral Score', desc: 'Real-time 0–100 score with actionable feedback. Fix it buttons auto-improve your design.' },
-  { icon: '🔒', title: '100% Private', desc: 'Nothing leaves your device. No uploads, no storage, no account. Your content stays yours.' },
+  { icon: '🧠', title: 'Finds your best frame automatically', desc: 'AI scores every frame for faces, motion & brightness — picks the winner for you.' },
+  { icon: '⚡', title: 'Makes it viral in one click', desc: 'Contrast boost, face focus, glow effects, vignette — all applied instantly. No design skills needed.' },
+  { icon: '🎯', title: 'Switches platforms instantly', desc: 'YouTube, Instagram, TikTok, LinkedIn — canvas resizes proportionally with one click.' },
+  { icon: '✂️', title: 'Removes backgrounds in seconds', desc: 'Browser-side AI — no upload, no waiting, no account required.' },
+  { icon: '📊', title: 'Scores your thumbnail live', desc: 'Real-time 0–100 score with one-tap fix buttons. Know exactly what to improve.' },
+  { icon: '🔒', title: 'Keeps your content private', desc: 'Nothing leaves your device. No uploads, no storage, no account. Ever.' },
 ]
 
 export default function LandingLayer({ onEnter, onDemo }) {
@@ -158,26 +158,34 @@ export default function LandingLayer({ onEnter, onDemo }) {
           Free · No account · No uploads · Works in your browser
         </div>
 
-        {/* H1 */}
+        {/* H1 — outcome-driven, 2-second read */}
         <h1 style={{
-          fontSize: 'clamp(32px,6vw,68px)', fontWeight: 900, lineHeight: 1.06,
-          letterSpacing: '-2px', marginBottom: 18,
+          fontSize: 'clamp(36px,6.5vw,72px)', fontWeight: 900, lineHeight: 1.04,
+          letterSpacing: '-2px', marginBottom: 14,
           background: `linear-gradient(135deg,${accent} 0%,#4f46e5 45%,#a78bfa 100%)`,
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           fontFamily: "'Montserrat',sans-serif",
           animation: 'fadeInDown 0.5s ease 0.15s both',
         }}>
-          Create viral content<br />for every platform
+          Viral thumbnails<br />in 10 seconds
         </h1>
 
         <p style={{
-          fontSize: 'clamp(14px,1.7vw,17px)', color: theme.textSecondary,
-          maxWidth: 520, margin: '0 auto 16px', lineHeight: 1.7,
+          fontSize: 'clamp(15px,1.8vw,18px)', color: theme.textSecondary,
+          maxWidth: 480, margin: '0 auto 10px', lineHeight: 1.6,
           animation: 'fadeInDown 0.5s ease 0.2s both',
+          fontWeight: 500,
         }}>
-          Upload a video → AI picks the best frame → one click makes it viral.<br />
-          YouTube, Instagram, TikTok, LinkedIn — <strong style={{ color: theme.text }}>all in one tool.</strong>
+          No uploads. No login. Just drop → enhance → export.
         </p>
+
+        {/* Who it's for */}
+        <div style={{
+          fontSize: 12, color: theme.textMuted, marginBottom: 24,
+          animation: 'fadeInDown 0.5s ease 0.22s both',
+        }}>
+          For YouTubers, TikTok creators &amp; social media posts
+        </div>
 
         {/* Platform pills — animated */}
         <div style={{
@@ -202,28 +210,31 @@ export default function LandingLayer({ onEnter, onDemo }) {
           ))}
         </div>
 
-        {/* CTAs */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, animation: 'fadeInDown 0.5s ease 0.25s both' }}>
+        {/* CTAs — primary dominant, demo clearly secondary */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, animation: 'fadeInDown 0.5s ease 0.25s both' }}>
           <button onClick={() => enter(false)} style={{
-            padding: '15px 44px', borderRadius: 12, border: 'none',
-            background: grad, color: '#fff', fontSize: 15, fontWeight: 800,
-            cursor: 'pointer', boxShadow: '0 6px 28px rgba(124,58,237,0.5)',
+            padding: '18px 52px', borderRadius: 14, border: 'none',
+            background: grad, color: '#fff', fontSize: 17, fontWeight: 900,
+            cursor: 'pointer', boxShadow: '0 8px 32px rgba(124,58,237,0.55)',
             transition: 'transform 0.2s, box-shadow 0.2s',
+            letterSpacing: '-0.3px',
           }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(124,58,237,0.6)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,58,237,0.5)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(124,58,237,0.65)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,58,237,0.55)' }}
           >
-            📥 Start creating — it's free
+            📥 Drop your video to start
           </button>
-          <button onClick={() => enter(true)} style={{
-            padding: '6px 16px', border: 'none', background: 'transparent',
-            color: theme.textMuted, fontSize: 13, cursor: 'pointer',
-            textDecoration: 'underline', textDecorationColor: 'transparent',
-            transition: 'color 0.15s, text-decoration-color 0.15s',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = accent; e.currentTarget.style.textDecorationColor = accent }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.textDecorationColor = 'transparent' }}
-          >or try demo — applies AI style to sample thumbnail, no upload needed →</button>
+          <div style={{ fontSize: 11, color: theme.textMuted }}>
+            or{' '}
+            <span
+              onClick={() => enter(true)}
+              style={{ color: theme.textMuted, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = accent }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted }}
+              title="Applies AI style to a sample thumbnail — no upload needed"
+            >try demo instantly →</span>
+            {' '}applies AI style to a sample, no upload needed
+          </div>
         </div>
 
         {/* ── LIVE DEMO VISUAL — Interactive Before/After Slider ── */}
@@ -360,13 +371,13 @@ export default function LandingLayer({ onEnter, onDemo }) {
         {/* Stats */}
         <div style={{ marginTop: 40, display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap', animation: 'fadeInDown 0.5s ease 0.3s both' }}>
           {[
-            { stat: '10,000+', label: 'Thumbnails created' },
-            { stat: '5 platforms', label: 'Supported' },
-            { stat: '< 30s', label: 'Time to result' },
+            { stat: '⚡ 9s', label: 'Avg creation time', highlight: true },
+            { stat: '5', label: 'Platforms supported' },
+            { stat: '2.3×', label: 'Avg CTR boost' },
             { stat: '100%', label: 'Free forever' },
           ].map(s => (
             <div key={s.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, fontFamily: "'Montserrat',sans-serif" }}>{s.stat}</div>
+              <div style={{ fontSize: s.highlight ? 22 : 20, fontWeight: 800, color: s.highlight ? accent : theme.text, fontFamily: "'Montserrat',sans-serif" }}>{s.stat}</div>
               <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
