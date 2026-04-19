@@ -64,11 +64,17 @@ export default function ContextToolbar() {
   function handleBlurBg() {
     const bg = fabricCanvas.backgroundImage
     if (!bg || bg.filters === undefined) return
-    const existing = bg.filters.filter(f => f.type !== 'Blur')
-    bg.filters = [...existing, new fabric.Image.filters.Blur({ blur: 0.3 })]
-    bg.applyFilters()
-    fabricCanvas.renderAll()
-    window.showToast?.('Background blurred', 'success')
+    try {
+      const existing = Array.isArray(bg.filters)
+        ? bg.filters.filter(f => f && f.type !== 'Blur')
+        : []
+      bg.filters = [...existing, new fabric.Image.filters.Blur({ blur: 0.3 })]
+      bg.applyFilters()
+      fabricCanvas.renderAll()
+      window.showToast?.('Background blurred', 'success')
+    } catch (_) {
+      window.showToast?.('Blur failed', 'error', 2000)
+    }
   }
 
   function handleReplaceBg() {

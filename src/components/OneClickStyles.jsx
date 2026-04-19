@@ -24,14 +24,21 @@ export default function OneClickStyles() {
     hoverTimer.current = setTimeout(() => {
       const bg = fabricCanvas?.backgroundImage
       if (!bg || bg.filters === undefined) return
-      // Preview: just apply filters from style, not text
       const style = STYLES[key]
       if (!style) return
-      bg.filters = style.filters.map((f) => {
-        if (f.type === 'Contrast') return new (fabricCanvas._objects ? window.fabric?.Image?.filters?.Contrast : Object)({ contrast: f.value })
-        return null
-      }).filter(Boolean)
-      try { bg.applyFilters(); fabricCanvas.renderAll() } catch (_) {}
+      // Use fabric from window — safe access
+      const F = window.fabric
+      if (!F?.Image?.filters) return
+      try {
+        bg.filters = style.filters.map((f) => {
+          if (f.type === 'Contrast') return new F.Image.filters.Contrast({ contrast: f.value })
+          if (f.type === 'Saturation') return new F.Image.filters.Saturation({ saturation: f.value })
+          if (f.type === 'Brightness') return new F.Image.filters.Brightness({ brightness: f.value })
+          return null
+        }).filter(Boolean)
+        bg.applyFilters()
+        fabricCanvas.renderAll()
+      } catch (_) {}
     }, 200)
   }
 
@@ -39,9 +46,12 @@ export default function OneClickStyles() {
     clearTimeout(hoverTimer.current)
     setHoveredKey(null)
     const bg = fabricCanvas?.backgroundImage
-    if (!bg || !savedState.current) return
-    bg.filters = savedState.current
-    try { bg.applyFilters(); fabricCanvas.renderAll() } catch (_) {}
+    if (!bg) return
+    try {
+      bg.filters = savedState.current || []
+      bg.applyFilters()
+      fabricCanvas.renderAll()
+    } catch (_) {}
     savedState.current = null
   }
 

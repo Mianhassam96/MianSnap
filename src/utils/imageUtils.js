@@ -44,18 +44,29 @@ export function scaleImageToCanvas(img, canvasW, canvasH, mode = 'cover') {
 export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', onDone) {
   if (!fabricCanvas || !dataUrl) return
   if (!fabric) return
+  // Don't use crossOrigin for data URLs — it causes CORS errors
+  const opts = dataUrl.startsWith('data:') ? {} : { crossOrigin: 'anonymous' }
   fabric.Image.fromURL(dataUrl, (img) => {
+    if (!img || !img.width) {
+      // Retry without crossOrigin if image failed to load
+      fabric.Image.fromURL(dataUrl, (img2) => {
+        if (!img2) return
+        const props = scaleImageToCanvas(img2, fabricCanvas.width, fabricCanvas.height, mode)
+        img2.set(props)
+        fabricCanvas.setBackgroundImage(img2, () => {
+          fabricCanvas.renderAll()
+          onDone?.()
+        })
+      })
+      return
+    }
     const props = scaleImageToCanvas(img, fabricCanvas.width, fabricCanvas.height, mode)
     img.set(props)
-    // Auto-detect aspect ratio and resize canvas if very different
-    const imgRatio = img.width / img.height
-    const canvasRatio = fabricCanvas.width / fabricCanvas.height
-    // Only snap canvas to 9:16 if image is clearly portrait (e.g. TikTok)
     fabricCanvas.setBackgroundImage(img, () => {
       fabricCanvas.renderAll()
       onDone?.()
     })
-  }, { crossOrigin: 'anonymous' })
+  }, opts)
 }
 
 /**
