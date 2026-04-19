@@ -91,15 +91,18 @@ export function applyProImageSettings(img, isMobile = false) {
 }
 
 /**
- * Clamp object within canvas bounds on move.
+ * Soft boundary — allows objects to move freely but warns at edges.
+ * Objects can go partially off-canvas (needed for creative layouts).
  */
 export function clampToBounds(obj, canvasW, canvasH) {
+  // Allow objects to go up to 50% off canvas — don't hard-lock them
   const w = obj.getScaledWidth()
   const h = obj.getScaledHeight()
-  if (obj.left < 0) obj.left = 0
-  if (obj.top  < 0) obj.top  = 0
-  if (obj.left + w > canvasW) obj.left = canvasW - w
-  if (obj.top  + h > canvasH) obj.top  = canvasH - h
+  const minVisible = 40 // at least 40px must remain visible
+  if (obj.left + w < minVisible) obj.left = minVisible - w
+  if (obj.top + h < minVisible) obj.top = minVisible - h
+  if (obj.left > canvasW - minVisible) obj.left = canvasW - minVisible
+  if (obj.top > canvasH - minVisible) obj.top = canvasH - minVisible
 }
 
 /**

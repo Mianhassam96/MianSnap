@@ -286,7 +286,6 @@ export default function LandingLayer({ onEnter, onDemo }) {
           }}
             onMouseDown={(e) => { setIsDraggingSlider(true); lastSliderX.current = null }}
             onMouseMove={(e) => {
-              if (!isDraggingSlider && demoAnimDone) return
               const rect = e.currentTarget.getBoundingClientRect()
               handleSliderMove(e.clientX, rect)
             }}
