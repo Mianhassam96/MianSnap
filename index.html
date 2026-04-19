@@ -114,11 +114,13 @@
         .ms-right-sidebar { display: none !important; }
         .ms-bottom-panel  { display: none !important; }
         .ms-mobile-tabs   { display: flex !important; }
-        .ms-canvas-area   { padding: 8px !important; }
+        .ms-canvas-area   { padding: 8px 8px 80px 8px !important; }
         .ms-topbar-name   { display: none !important; }
         .ms-topbar-selects { display: none !important; }
         .ms-fab { bottom: 72px !important; right: 12px !important; padding: 10px 16px !important; font-size: 12px !important; }
         .ms-score-badge { top: 6px !important; font-size: 10px !important; padding: 3px 10px !important; }
+        /* Canvas fills full width on mobile */
+        .ms-canvas-area > div { max-width: 100% !important; width: 100% !important; }
       }
       @media (max-width: 480px) {
         .ms-topbar-save { display: none !important; }

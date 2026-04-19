@@ -145,7 +145,12 @@ export default function App() {
     input.onchange = (e) => {
       const f = e.target.files[0]
       if (!f) return
+      if (!f.type.startsWith('video/')) {
+        window.showToast?.('❌ Unsupported file type. Please upload a video (MP4, MOV, WebM)', 'error', 4000)
+        return
+      }
       if (f.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 4000)
+      window.showToast?.('🎬 Loading video...', 'info', 2000)
       trackUpload(); setVideoFile(f)
     }
     input.click()
@@ -156,8 +161,22 @@ export default function App() {
     input.type = 'file'; input.accept = 'image/*'
     input.onchange = (e) => {
       const file = e.target.files[0]
-      if (!file || !fabricCanvas) return
-      applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
+      if (!file) return
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        window.showToast?.('❌ Unsupported file type. Please upload an image (JPG, PNG, WebP, GIF)', 'error', 4000)
+        return
+      }
+      // Validate file size (50MB max for images)
+      if (file.size > 50 * 1024 * 1024) {
+        window.showToast?.('⚠️ Image too large (max 50MB)', 'error', 4000)
+        return
+      }
+      if (!fabricCanvas) return
+      window.showToast?.('🖼 Loading image...', 'info', 1500)
+      applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover', () => {
+        window.showToast?.('✓ Image loaded', 'success', 1500)
+      })
     }
     input.click()
   }

@@ -6,6 +6,11 @@ import ShapesPanel from './ShapesPanel'
 import OneClickStyles from './OneClickStyles'
 import MakeItViral from './MakeItViral'
 import QuickMode from './QuickMode'
+import ColorSystem from './ColorSystem'
+import useCanvasStore from '../store/useCanvasStore'
+import { fabric } from '../lib/fabric'
+import { prefs } from '../utils/prefs'
+import { getSmartTextPosition } from '../utils/smartPlacement'
 
 // Snap heights as % of viewport
 const SNAP_HALF = 0.5
@@ -13,9 +18,33 @@ const SNAP_FULL = 0.88
 
 export default function MobileDrawer({ open, onClose }) {
   const { theme, activeLeftPanel } = useUIStore()
-  const [snapLevel, setSnapLevel] = useState(SNAP_HALF) // start at 50%
+  const { fabricCanvas } = useCanvasStore()
+  const [snapLevel, setSnapLevel] = useState(SNAP_HALF)
   const startY = useRef(null)
   const startSnap = useRef(SNAP_HALF)
+  const [textColor, setTextColor] = useState(() => prefs.getBrandColor())
+  const [fontSize, setFontSize] = useState(() => prefs.getBrandFontSize())
+
+  function addQuickText(type) {
+    if (!fabricCanvas) return
+    const configs = {
+      heading:    { content: 'YOUR TITLE HERE', size: 88, font: 'Impact', fill: '#ffff00', stroke: '#000', strokeWidth: 4 },
+      subheading: { content: 'Watch until the end...', size: 52, font: 'Oswald', fill: '#ffffff', stroke: '#000', strokeWidth: 2 },
+      small:      { content: 'Tap to edit', size: 32, font: 'Poppins', fill: '#ffffff', stroke: 'transparent', strokeWidth: 0 },
+    }
+    const c = configs[type]
+    const pos = getSmartTextPosition(fabricCanvas)
+    const text = new fabric.IText(c.content, {
+      ...pos, fontFamily: c.font, fontSize: c.size,
+      fill: c.fill, stroke: c.stroke, strokeWidth: c.strokeWidth,
+      shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 16, offsetX: 2, offsetY: 2 }),
+    })
+    fabricCanvas.add(text)
+    fabricCanvas.setActiveObject(text)
+    text.enterEditing(); text.selectAll()
+    fabricCanvas.renderAll()
+    onClose()
+  }
 
   function onTouchStart(e) {
     startY.current = e.touches[0].clientY
@@ -38,12 +67,38 @@ export default function MobileDrawer({ open, onClose }) {
   const drawerH = `${Math.round(snapLevel * 100)}vh`
 
   const panelMap = {
+    text: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ fontSize: 10, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 4 }}>Quick Add Text</div>
+        {[
+          { type: 'heading', label: '🔥 Viral Heading', hint: 'Yellow Impact · 88px' },
+          { type: 'subheading', label: '📝 Subheading', hint: 'White Oswald · 52px' },
+          { type: 'small', label: '✏️ Small Text', hint: 'White Poppins · 32px' },
+        ].map(({ type, label, hint }) => (
+          <button key={type}
+            style={{
+              width: '100%', padding: '14px 16px', borderRadius: 10,
+              border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+              color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              transition: 'all 0.15s',
+            }}
+            onClick={() => addQuickText(type)}
+          >
+            <span>{label}</span>
+            <span style={{ fontSize: 10, color: theme.textMuted }}>{hint}</span>
+          </button>
+        ))}
+        <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 4, textAlign: 'center' }}>
+          Tap any to add · double-tap on canvas to edit
+        </div>
+      </div>
+    ),
     bg:      <BackgroundPanel />,
     filters: <FiltersPanel />,
     shapes:  <ShapesPanel />,
     styles: (
       <>
-        {/* Quick Mode banner — prominent on mobile */}
         <div style={{
           padding: '10px 12px', borderRadius: 10, marginBottom: 12,
           background: 'linear-gradient(135deg,rgba(14,165,233,0.15),rgba(99,102,241,0.15))',
