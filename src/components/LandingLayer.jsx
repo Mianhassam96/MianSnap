@@ -249,30 +249,40 @@ export default function LandingLayer({ onEnter, onDemo }) {
           </div>
         </div>
 
-        {/* ── LIVE DEMO VISUAL — Interactive Before/After Slider ── */}
+        {/* ── TRANSFORMATION SHOWCASE ── */}
         <div style={{
-          marginTop: 48, maxWidth: 680, margin: '48px auto 0',
+          marginTop: 52, maxWidth: 720, margin: '52px auto 0',
           animation: 'fadeInDown 0.6s ease 0.35s both',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: accent, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
-              ⚡ See it in action
+          {/* Section label */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 18px', borderRadius: 20,
+              background: 'linear-gradient(135deg,rgba(124,58,237,0.15),rgba(239,68,68,0.1))',
+              border: '1px solid rgba(124,58,237,0.3)',
+              fontSize: 12, fontWeight: 700, color: accent, letterSpacing: 0.5,
+            }}>
+              <span style={{ animation: 'pulse 1.5s infinite' }}>⚡</span>
+              1-click transformation — drag to see the difference
             </div>
-            {!demoAnimDone && (
-              <div style={{ fontSize: 10, color: theme.textMuted, animation: 'pulse 1s infinite' }}>← drag to compare →</div>
-            )}
-            {demoAnimDone && (
-              <div style={{ fontSize: 10, color: theme.textMuted }}>← drag to compare →</div>
-            )}
           </div>
 
-          {/* Interactive slider */}
+          {/* Slider with glow wrapper */}
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              position: 'absolute', inset: -2, borderRadius: 18,
+              background: `linear-gradient(135deg,rgba(124,58,237,${demoSlider > 50 ? 0.4 : 0.1}),rgba(239,68,68,${demoSlider > 50 ? 0.3 : 0.05}))`,
+              filter: 'blur(16px)', transition: 'background 0.4s ease', zIndex: 0,
+            }} />
+
           <div style={{
             position: 'relative', width: '100%', aspectRatio: '16/9',
-            borderRadius: 14, overflow: 'hidden', cursor: 'ew-resize',
-            border: `1px solid rgba(124,58,237,0.3)`,
-            boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
-            userSelect: 'none',
+            borderRadius: 16, overflow: 'hidden', cursor: 'ew-resize',
+            border: `1.5px solid rgba(124,58,237,${demoSlider > 50 ? 0.6 : 0.25})`,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            userSelect: 'none', zIndex: 1,
+            transition: 'border-color 0.3s ease',
           }}
             onMouseDown={(e) => { setIsDraggingSlider(true); lastSliderX.current = null }}
             onMouseMove={(e) => {
@@ -289,94 +299,89 @@ export default function LandingLayer({ onEnter, onDemo }) {
             }}
             onTouchEnd={handleSliderRelease}
           >
-            {/* BEFORE layer — full width */}
+            {/* BEFORE layer — desaturated */}
             <div style={{
               position: 'absolute', inset: 0,
-              background: isDark ? '#0f0f1a' : '#e0e0ee',
+              background: isDark ? 'linear-gradient(135deg,#0a0a12,#12121e)' : 'linear-gradient(135deg,#d8d8e8,#e8e8f0)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              filter: 'saturate(0.3)',
             }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 36, marginBottom: 8, filter: 'grayscale(1) opacity(0.5)' }}>🎬</div>
-                <div style={{ fontSize: 12, color: isDark ? '#555' : '#999', fontWeight: 500 }}>Plain video frame</div>
-                <div style={{ fontSize: 10, color: isDark ? '#444' : '#bbb', marginTop: 3 }}>No text · No style · No impact</div>
+              <div style={{ textAlign: 'center', opacity: 0.6 }}>
+                <div style={{ fontSize: 40, marginBottom: 10, filter: 'grayscale(1)' }}>🎬</div>
+                <div style={{ fontSize: 13, color: isDark ? '#666' : '#aaa', fontWeight: 600 }}>Plain video frame</div>
+                <div style={{ fontSize: 11, color: isDark ? '#444' : '#ccc', marginTop: 4 }}>No text · No style · No impact</div>
               </div>
-              <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.7)', color: '#888', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>BEFORE</div>
-              <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: '#666', fontSize: 10, padding: '2px 8px', borderRadius: 5 }}>Score: 32/100</div>
+              <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.75)', color: '#888', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, letterSpacing: 1 }}>BEFORE</div>
+              <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.7)', color: '#ef4444', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6 }}>Score: 32/100</div>
             </div>
 
-            {/* AFTER layer — clipped */}
+            {/* AFTER layer — vivid, dramatic */}
             <div style={{
               position: 'absolute', inset: 0,
               clipPath: `inset(0 ${100 - demoSlider}% 0 0)`,
-              transition: demoAnimDone ? 'none' : 'clip-path 0.5s ease',
-              background: 'linear-gradient(135deg,#0d0020,#0a0a1a)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: demoAnimDone ? 'none' : 'clip-path 0.5s cubic-bezier(0.4,0,0.2,1)',
+              background: 'linear-gradient(135deg,#08001a,#0a0a1a)',
             }}>
-              <div style={{ textAlign: 'center', padding: '0 20px' }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#ffff00', textShadow: '0 0 20px rgba(255,255,0,0.6), 0 2px 8px rgba(0,0,0,0.9)', fontFamily: 'Impact, sans-serif', letterSpacing: 2, lineHeight: 1.1 }}>
-                  YOU WON'T<br/>BELIEVE THIS
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(124,58,237,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ textAlign: 'center', padding: '0 16px' }}>
+                  <div style={{ fontSize: 'clamp(16px,3vw,24px)', fontWeight: 900, color: '#ffff00', textShadow: '0 0 30px rgba(255,255,0,0.7), 0 0 60px rgba(255,200,0,0.3), 0 3px 10px rgba(0,0,0,0.9)', fontFamily: 'Impact, sans-serif', letterSpacing: 3, lineHeight: 1.1 }}>
+                    YOU WON'T<br/>BELIEVE THIS
+                  </div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 8, letterSpacing: 1 }}>CONTRAST · GLOW · FACE FOCUS · VIGNETTE</div>
                 </div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>contrast · glow · face focus · vignette</div>
               </div>
-              <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(74,222,128,0.15)', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)' }}>AFTER ⚡</div>
-              <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(74,222,128,0.15)', color: '#4ade80', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)' }}>🔥 Score: 87/100</div>
-              {/* Glow overlay — pulses when after is fully shown */}
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: 'radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.12) 0%, transparent 70%)',
-                pointerEvents: 'none',
-                opacity: demoSlider > 80 ? 1 : 0,
-                transition: 'opacity 0.4s ease',
-                animation: demoSlider > 80 ? 'pulse 2s ease-in-out infinite' : 'none',
-              }} />
+              <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(74,222,128,0.2)', color: '#4ade80', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.4)', letterSpacing: 1 }}>AFTER ⚡</div>
+              <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(74,222,128,0.15)', color: '#4ade80', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', animation: demoSlider > 70 ? 'pulse 2s ease-in-out infinite' : 'none' }}>🔥 Score: 87/100</div>
             </div>
 
             {/* Divider handle */}
+            {/* Divider line — glowing */}
             <div style={{
-              position: 'absolute', top: 0, left: `${demoSlider}%`, width: 2, height: '100%',
-              background: '#fff', boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+              position: 'absolute', top: 0, left: `${demoSlider}%`, width: 3, height: '100%',
+              background: 'linear-gradient(to bottom, transparent, #fff 20%, #fff 80%, transparent)',
               transform: 'translateX(-50%)',
-              transition: demoAnimDone ? 'none' : 'left 0.5s ease',
-              pointerEvents: 'none',
+              transition: demoAnimDone ? 'none' : 'left 0.5s cubic-bezier(0.4,0,0.2,1)',
+              pointerEvents: 'none', boxShadow: '0 0 12px rgba(255,255,255,0.6)',
             }} />
+            {/* Handle */}
             <div style={{
               position: 'absolute', top: '50%', left: `${demoSlider}%`,
               transform: 'translate(-50%,-50%)',
-              width: 32, height: 32, borderRadius: '50%',
-              background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.4)',
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'linear-gradient(135deg,#fff,#f0f0ff)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 0 3px rgba(124,58,237,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, color: '#333', fontWeight: 800,
-              transition: demoAnimDone ? 'none' : 'left 0.5s ease',
+              fontSize: 14, color: '#7c3aed', fontWeight: 900,
+              transition: demoAnimDone ? 'none' : 'left 0.5s cubic-bezier(0.4,0,0.2,1)',
               pointerEvents: 'none',
             }}>⇔</div>
           </div>
-
-          {/* Score context — live count-up */}
-          <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: theme.textMuted }}>
-            {demoAnimDone
-              ? <>Score <strong style={{ color: '#ef4444' }}>32</strong> → <strong style={{ color: '#4ade80' }}>87</strong> · Higher score = better engagement potential</>
-              : <>Score{' '}<strong style={{ color: scoreDisplay < 60 ? '#ef4444' : scoreDisplay < 80 ? '#f59e0b' : '#4ade80', fontSize: 14, transition: 'color 0.3s' }}>{scoreDisplay}</strong>/100 · Higher score = better engagement potential</>
-            }
           </div>
 
-          {/* Feature pills */}
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {[
-              { icon: '🧠', text: 'AI picks best frame' },
-              { icon: '⚡', text: '1-click enhancement' },
-              { icon: '📊', text: 'Live viral score' },
-              { icon: '🔒', text: '100% private' },
-            ].map(f => (
-              <div key={f.text} style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '5px 12px', borderRadius: 20,
-                background: isDark ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.06)',
-                border: `1px solid rgba(124,58,237,0.2)`,
-                fontSize: 11, color: theme.textSecondary,
-              }}>
-                <span>{f.icon}</span>{f.text}
+          {/* Live score + context */}
+          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: scoreDisplay < 60 ? 'rgba(248,113,113,0.15)' : scoreDisplay < 80 ? 'rgba(250,204,21,0.15)' : 'rgba(74,222,128,0.15)',
+                border: `2px solid ${scoreDisplay < 60 ? '#ef4444' : scoreDisplay < 80 ? '#f59e0b' : '#4ade80'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 900,
+                color: scoreDisplay < 60 ? '#ef4444' : scoreDisplay < 80 ? '#f59e0b' : '#4ade80',
+                transition: 'all 0.3s ease',
+              }}>{scoreDisplay}</div>
+              <div style={{ fontSize: 11, color: theme.textMuted }}>
+                <div style={{ fontWeight: 600, color: theme.text }}>Viral Score</div>
+                <div>Higher = better engagement</div>
               </div>
-            ))}
+            </div>
+            <div style={{ width: 1, height: 32, background: theme.border }} />
+            <div style={{ fontSize: 11, color: theme.textMuted, textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: theme.text, marginBottom: 2 }}>1 click changed everything</div>
+              <div>contrast · face focus · glow · vignette</div>
+            </div>
           </div>
         </div>
 
@@ -562,27 +567,6 @@ export default function LandingLayer({ onEnter, onDemo }) {
           <span style={{ fontSize: 11, color: theme.textMuted }}>© 2026 MultiMian · Free forever</span>
         </div>
       </footer>
-
-      {/* Sticky bottom CTA */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
-        borderTop: `1px solid ${theme.border}`,
-        backdropFilter: 'blur(14px)',
-        padding: '10px 20px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
-      }}>
-        <span style={{ fontSize: 12, color: theme.textSecondary }}>🚀 Free · No account · No uploads · 5 platforms</span>
-        <button onClick={() => enter(false)} style={{
-          padding: '8px 22px', borderRadius: 8, border: 'none',
-          background: grad, color: '#fff', fontSize: 12, fontWeight: 700,
-          cursor: 'pointer', boxShadow: '0 3px 12px rgba(124,58,237,0.45)',
-          transition: 'transform 0.15s',
-        }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
-        >Try MianSnap Now →</button>
-      </div>
 
       <style>{`
         @keyframes fadeInDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
