@@ -106,7 +106,7 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, lineHeight: 1.5 }}>
           {dragging
             ? 'Release to load onto canvas'
-            : <>AI picks the best frame automatically · <span style={{ color: accent, fontWeight: 600 }}>or click to browse</span></>
+            : <>AI picks the best frame · <span style={{ color: accent, fontWeight: 600 }}>click to browse</span></>
           }
         </div>
 
@@ -115,27 +115,6 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
           <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <span>🔒</span>
             <span>Stays on your device — nothing uploaded</span>
-          </div>
-        )}
-
-        {/* Flow guide */}
-        {!dragging && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 6, marginBottom: 20, flexWrap: 'wrap',
-          }}>
-            {[
-              { icon: '🧠', label: 'AI picks best frame' },
-              { icon: '⚡', label: 'One click enhances' },
-              { icon: '⬇', label: 'Export instantly' },
-            ].map((s, i) => (
-              <React.Fragment key={s.label}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.textMuted, fontWeight: 500 }}>
-                  <span>{s.icon}</span>{s.label}
-                </span>
-                {i < 2 && <span style={{ color: theme.border, fontSize: 10 }}>→</span>}
-              </React.Fragment>
-            ))}
           </div>
         )}
 

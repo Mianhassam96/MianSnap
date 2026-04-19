@@ -13,13 +13,13 @@ import ShortcutBar from './components/ShortcutBar'
 import Toast from './components/Toast'
 import ContextToolbar from './components/ContextToolbar'
 import VideoLoadingOverlay from './components/VideoLoadingOverlay'
-import MobileTabBar from './components/MobileTabBar'
 import MobileDrawer from './components/MobileDrawer'
 import SmartWarnings from './components/SmartWarnings'
 import DiscoveryHints from './components/DiscoveryHints'
 import FeedbackButton from './components/FeedbackButton'
 import LandingLayer, { shouldShowLanding } from './components/LandingLayer'
 import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
+import FramesStrip from './components/FramesStrip'
 import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides } from './utils/alignmentGuides'
@@ -29,7 +29,12 @@ import { applyImageAsBackground } from './utils/imageUtils'
 import { applyThumbnailStyle } from './utils/thumbnailStyles'
 
 export default function App() {
-  const { theme, setActiveRightPanel, setActiveLeftPanel, showBottomPanel, focusMode, toggleFocusMode } = useUIStore()
+  const { theme, setActiveRightPanel: _setActiveRightPanel, setActiveLeftPanel, showBottomPanel, focusMode, toggleFocusMode } = useUIStore()
+
+  function setActiveRightPanel(panel) {
+    _setActiveRightPanel(panel)
+    setShowRightPanel(true)
+  }
   const { fabricCanvas, setViralScore, viralScore, setPrevScore } = useCanvasStore()
   const { setVideoFile, clearVideo, videoUrl } = useVideoStore()
   const [showLanding, setShowLanding] = useState(() => shouldShowLanding())
@@ -40,6 +45,7 @@ export default function App() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
   const [discoveryHint, setDiscoveryHint] = useState(null)
+  const [showRightPanel, setShowRightPanel] = useState(false)
   const autoRanRef = useRef(false)
 
   useEffect(() => { installAnalytics(); track('app_opened') }, [])
@@ -265,6 +271,9 @@ export default function App() {
           {!focusMode && <LeftSidebar />}
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+            {/* Frames strip — above canvas, only when video loaded */}
+            <FramesStrip />
+
             <div className="ms-canvas-area" style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '16px 20px', overflow: 'hidden',
@@ -375,17 +384,18 @@ export default function App() {
                 title="Auto-enhance: boosts contrast, focuses face, adds glow + vignette, scores your thumbnail"
                 style={{
                   position: 'absolute', bottom: 20, right: 20,
-                  padding: '11px 22px', borderRadius: 10, border: 'none',
+                  padding: '13px 26px', borderRadius: 12, border: 'none',
                   background: viralDone
                     ? 'linear-gradient(135deg,#16a34a,#15803d)'
                     : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-                  color: '#fff', fontSize: 14, fontWeight: 800,
+                  color: '#fff', fontSize: 15, fontWeight: 900,
                   cursor: viralRunning ? 'wait' : 'pointer',
-                  boxShadow: viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 6px 28px rgba(239,68,68,0.5)',
+                  boxShadow: viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 8px 32px rgba(239,68,68,0.6)',
                   transition: 'transform 0.15s, box-shadow 0.15s, background 0.3s',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   zIndex: 10,
-                  animation: !viralRunning && !viralDone ? 'viralPulse 2.5s ease-in-out infinite' : 'none',
+                  animation: !viralRunning && !viralDone ? 'viralPulse 2s ease-in-out infinite' : 'none',
+                  letterSpacing: '-0.3px',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.animation = 'none'
@@ -407,8 +417,8 @@ export default function App() {
 
               <style>{`
                 @keyframes viralPulse {
-                  0%,100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
-                  50% { box-shadow: 0 6px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(239,68,68,0.15); }
+                  0%,100% { box-shadow: 0 8px 32px rgba(239,68,68,0.6); transform: scale(1); }
+                  50% { box-shadow: 0 8px 48px rgba(239,68,68,0.9), 0 0 0 8px rgba(239,68,68,0.12); transform: scale(1.02); }
                 }
                 @keyframes viralFlash {
                   0% { opacity:0; transform:scale(0.95); }
@@ -422,30 +432,43 @@ export default function App() {
             {showBottomPanel && <BottomPanel />}
           </div>
 
-          {!focusMode && <RightSidebar />}
+          {!focusMode && showRightPanel && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowRightPanel(false)}
+                style={{
+                  position: 'absolute', top: 8, right: 8, zIndex: 10,
+                  width: 22, height: 22, borderRadius: 5, border: 'none',
+                  background: 'transparent', color: theme.textMuted,
+                  cursor: 'pointer', fontSize: 12, lineHeight: 1,
+                }}
+                title="Close panel"
+              >✕</button>
+              <RightSidebar />
+            </div>
+          )}
         </div>
 
-        <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
-        {/* Mobile quick actions — Quick Mode as primary floating button */}
+        {/* Mobile quick actions only — no tab bar */}
         <div className="ms-mobile-tabs" style={{
-          position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 198,
-          display: 'flex', gap: 8, padding: '8px 12px',
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 198,
+          display: 'flex', gap: 8, padding: '10px 12px',
           background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
           borderTop: `1px solid ${theme.border}`,
           backdropFilter: 'blur(10px)',
         }}>
-          <button onClick={() => { setMobileDrawerOpen(true); }} style={{
-            flex: 1, padding: '9px 4px', borderRadius: 8, border: `1px solid ${theme.border}`,
+          <button onClick={() => setMobileDrawerOpen(true)} style={{
+            flex: 1, padding: '10px 4px', borderRadius: 8, border: `1px solid ${theme.border}`,
             background: theme.bgTertiary, color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-          }}>✏️ Text</button>
+          }}>✏️ Tools</button>
           <button onClick={handleMakeViral} style={{
-            flex: 3, padding: '9px 4px', borderRadius: 8, border: 'none',
+            flex: 3, padding: '10px 4px', borderRadius: 8, border: 'none',
             background: 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-            color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+            color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer',
             boxShadow: '0 3px 14px rgba(239,68,68,0.4)',
           }}>⚡ Make Viral</button>
           <button onClick={() => window.dispatchEvent(new CustomEvent('miansnap:export'))} style={{
-            flex: 1, padding: '9px 4px', borderRadius: 8, border: 'none',
+            flex: 1, padding: '10px 4px', borderRadius: 8, border: 'none',
             background: theme.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
           }}>⬇ Save</button>
         </div>
