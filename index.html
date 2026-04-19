@@ -13,16 +13,20 @@
     <!-- Open Graph -->
     <meta property="og:title" content="MianSnap — Free AI YouTube Thumbnail Maker" />
     <meta property="og:description" content="Upload video → AI picks best frame → one click makes it viral. Free, no account, no uploads. Used by 10,000+ creators." />
-    <meta property="og:image" content="https://mianhassam96.github.io/MianSnap/favicon.svg" />
+    <meta property="og:image" content="https://mianhassam96.github.io/MianSnap/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
     <meta property="og:url" content="https://mianhassam96.github.io/MianSnap/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MianSnap" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@mianhassam96" />
     <meta name="twitter:title" content="MianSnap — Free AI YouTube Thumbnail Maker" />
     <meta name="twitter:description" content="Upload video → AI picks best frame → one click makes it viral. Free, no account, no uploads." />
-    <meta name="twitter:image" content="https://mianhassam96.github.io/MianSnap/favicon.svg" />
+    <meta name="twitter:image" content="https://mianhassam96.github.io/MianSnap/og-image.svg" />
 
     <title>MianSnap — Free AI YouTube Thumbnail Maker | No Upload Required</title>
 
@@ -125,6 +129,13 @@
       @media (max-width: 480px) {
         .ms-topbar-save { display: none !important; }
         .ms-topbar-projects { display: none !important; }
+      }
+      /* 375px — small phones (iPhone SE, Galaxy A series) */
+      @media (max-width: 390px) {
+        .ms-canvas-area { padding: 4px 4px 76px 4px !important; }
+        .ms-fab { padding: 8px 12px !important; font-size: 11px !important; right: 8px !important; }
+        /* TopBar compact */
+        .ms-topbar { gap: 3px !important; padding: 0 6px !important; }
       }
       /* Tablet: compact layout */
       @media (min-width: 769px) and (max-width: 1024px) {

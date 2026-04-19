@@ -71,8 +71,13 @@ export default function TopBar() {
 
   function handleExport() {
     if (!fabricCanvas) return
+    // Guard: warn if canvas appears blank
+    const hasContent = fabricCanvas.backgroundImage || fabricCanvas.getObjects().length > 0
+    if (!hasContent) {
+      window.showToast?.('⚠️ Canvas is empty — add an image or text first', 'error', 3000)
+      return
+    }
     try {
-      // Add watermark temporarily if enabled
       let wmObj = null
       if (watermark) {
         wmObj = new fabric.Text('Created with MianSnap', {
@@ -94,8 +99,13 @@ export default function TopBar() {
       const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
       const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: fmt === 'jpeg' ? 0.95 : 1, multiplier })
 
-      // Remove watermark after export
       if (wmObj) { fabricCanvas.remove(wmObj); fabricCanvas.renderAll() }
+
+      // Validate output isn't blank
+      if (!dataUrl || dataUrl.length < 1000) {
+        window.showToast?.('❌ Export failed — canvas may be empty', 'error', 3000)
+        return
+      }
 
       const size = CANVAS_SIZES.find(s => s.id === canvasSize)
       const platformSlug = size?.id || 'thumbnail'
@@ -107,7 +117,8 @@ export default function TopBar() {
       window.showToast?.(`✓ Saved as ${filename}${timeToResult ? ` · ⚡ ${timeToResult}s` : ''}`, 'success')
       setExportData({ dataUrl, filename, quality: exportQuality, format: exportFormat, viralScore: viralScore?.score, timeToResult })
     } catch (err) {
-      window.showToast?.('Export failed — try again', 'error')
+      window.showToast?.('❌ Export failed — try again', 'error', 3000)
+      console.error('[MianSnap] Export error:', err)
     }
   }
 
