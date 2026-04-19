@@ -297,6 +297,41 @@ export default function BackgroundPanel() {
           <input type="color" style={{ width: 24, height: 24, borderRadius: 5, border: `1px solid ${theme.border}`, cursor: 'pointer', padding: 1 }}
             onChange={(e) => setSolidBg(e.target.value)} title="Custom color" />
         </div>
+
+        {/* Custom gradient */}
+        <div style={{ ...s.title, marginTop: 8 }}>Custom Gradient</div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+          <input type="color" defaultValue="#7c3aed"
+            id="grad-color1"
+            style={{ width: 32, height: 28, borderRadius: 5, border: `1px solid ${theme.border}`, cursor: 'pointer', padding: 1 }} />
+          <span style={{ fontSize: 10, color: theme.textMuted }}>→</span>
+          <input type="color" defaultValue="#ef4444"
+            id="grad-color2"
+            style={{ width: 32, height: 28, borderRadius: 5, border: `1px solid ${theme.border}`, cursor: 'pointer', padding: 1 }} />
+          <button
+            style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: `1px solid ${theme.border}`, background: theme.bgTertiary, color: theme.text, fontSize: 10, cursor: 'pointer' }}
+            onClick={() => {
+              const c1 = document.getElementById('grad-color1')?.value || '#7c3aed'
+              const c2 = document.getElementById('grad-color2')?.value || '#ef4444'
+              if (!fabricCanvas) return
+              fabricCanvas.getObjects().filter(o => o._bgRect).forEach(o => fabricCanvas.remove(o))
+              fabricCanvas.setBackgroundImage(null, () => {})
+              const grad = new fabric.Gradient({
+                type: 'linear',
+                coords: { x1: 0, y1: 0, x2: fabricCanvas.width, y2: fabricCanvas.height },
+                colorStops: [{ offset: 0, color: c1 }, { offset: 1, color: c2 }],
+              })
+              const rect = new fabric.Rect({
+                left: 0, top: 0, width: fabricCanvas.width, height: fabricCanvas.height,
+                fill: grad, selectable: false, evented: false, _bgRect: true,
+              })
+              fabricCanvas.add(rect)
+              fabricCanvas.sendToBack(rect)
+              fabricCanvas.renderAll()
+              window.showToast?.('🎨 Gradient applied', 'success', 1200)
+            }}
+          >Apply</button>
+        </div>
       </div>
 
       {/* ── Preset Backgrounds ── */}

@@ -159,7 +159,7 @@ export default function TopBar() {
   }
 
   return (
-    <div style={{
+    <div className="ms-topbar" style={{
       display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px',
       height: 46, background: theme.bgSecondary,
       borderBottom: `1px solid ${theme.border}`,

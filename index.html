@@ -118,24 +118,27 @@
         .ms-right-sidebar { display: none !important; }
         .ms-bottom-panel  { display: none !important; }
         .ms-mobile-tabs   { display: flex !important; }
-        .ms-canvas-area   { padding: 8px 8px 80px 8px !important; }
+        .ms-canvas-area   { padding: 4px 4px 76px 4px !important; }
         .ms-topbar-name   { display: none !important; }
         .ms-topbar-selects { display: none !important; }
-        .ms-fab { bottom: 80px !important; right: 12px !important; padding: 10px 16px !important; font-size: 12px !important; }
+        .ms-fab { bottom: 76px !important; right: 10px !important; padding: 10px 16px !important; font-size: 12px !important; }
         .ms-score-badge { top: 6px !important; font-size: 10px !important; padding: 3px 10px !important; }
-        /* Canvas fills full width on mobile */
+        /* Canvas fills full width on mobile — no wasted space */
         .ms-canvas-area > div { max-width: 100% !important; width: 100% !important; }
+        /* TopBar compact */
+        .ms-topbar { height: 40px !important; padding: 0 6px !important; gap: 3px !important; }
+        /* Zoom controls smaller on mobile */
+        .ms-zoom-controls { display: none !important; }
       }
       @media (max-width: 480px) {
         .ms-topbar-save { display: none !important; }
         .ms-topbar-projects { display: none !important; }
       }
-      /* 375px — small phones (iPhone SE, Galaxy A series) */
+      /* Small phones */
       @media (max-width: 390px) {
-        .ms-canvas-area { padding: 4px 4px 76px 4px !important; }
-        .ms-fab { padding: 8px 12px !important; font-size: 11px !important; right: 8px !important; }
-        /* TopBar compact */
-        .ms-topbar { gap: 3px !important; padding: 0 6px !important; }
+        .ms-canvas-area { padding: 2px 2px 76px 2px !important; }
+        .ms-fab { padding: 8px 12px !important; font-size: 11px !important; right: 6px !important; }
+        .ms-topbar { gap: 2px !important; padding: 0 4px !important; }
       }
       /* Tablet: compact layout */
       @media (min-width: 769px) and (max-width: 1024px) {

@@ -22,7 +22,7 @@ import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides } from './utils/alignmentGuides'
-import { makeItViral } from './utils/makeItViral'
+import { makeItViral, removeViralEffects } from './utils/makeItViral'
 import { calculateViralScore } from './utils/viralScore'
 import { applyImageAsBackground } from './utils/imageUtils'
 import { applyThumbnailStyle } from './utils/thumbnailStyles'
@@ -377,7 +377,7 @@ export default function App() {
                 className="ms-fab"
                 onClick={handleMakeViral}
                 disabled={viralRunning}
-                title="Auto-enhance: boosts contrast, focuses face, adds glow + vignette, scores your thumbnail"
+                title="Auto-enhance: smart filters based on image tone, face focus, glow, vignette"
                 style={{
                   position: 'absolute', bottom: 20, right: 20,
                   padding: '13px 26px', borderRadius: 12, border: 'none',
@@ -410,6 +410,22 @@ export default function App() {
                   </span>
                 )}
               </button>
+
+              {/* Remove Effects — shows after viral done */}
+              {viralDone && (
+                <button
+                  onClick={() => { removeViralEffects(fabricCanvas); setViralDone(false) }}
+                  style={{
+                    position: 'absolute', bottom: 20, left: 20,
+                    padding: '8px 14px', borderRadius: 8,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.isDark ? 'rgba(13,13,24,0.92)' : 'rgba(255,255,255,0.92)',
+                    color: theme.textSecondary, fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', zIndex: 10, backdropFilter: 'blur(8px)',
+                    animation: 'fadeInDown 0.2s ease',
+                  }}
+                >✕ Remove Effects</button>
+              )}
 
               <style>{`
                 @keyframes viralPulse {

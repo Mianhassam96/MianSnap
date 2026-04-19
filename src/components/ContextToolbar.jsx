@@ -139,35 +139,38 @@ export default function ContextToolbar() {
           <>
             {/* Image quick actions */}
             <button style={s.btn} onClick={() => {
-              // Fit — whole image visible
               const cw = fabricCanvas.width, ch = fabricCanvas.height
               const scale = Math.min(cw / activeObj.width, ch / activeObj.height)
               activeObj.set({ scaleX: scale, scaleY: scale, left: (cw - activeObj.width * scale) / 2, top: (ch - activeObj.height * scale) / 2 })
               fabricCanvas.renderAll()
               window.showToast?.('Fit applied', 'success', 1200)
-            }}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-            >⊡ Fit</button>
+            }} onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>⊡ Fit</button>
             <div style={s.divider} />
             <button style={s.btn} onClick={() => {
-              // Fill — covers canvas
               const cw = fabricCanvas.width, ch = fabricCanvas.height
               const scale = Math.max(cw / activeObj.width, ch / activeObj.height)
               activeObj.set({ scaleX: scale, scaleY: scale, left: (cw - activeObj.width * scale) / 2, top: (ch - activeObj.height * scale) / 2 })
               fabricCanvas.renderAll()
               window.showToast?.('Fill applied', 'success', 1200)
-            }}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-            >⊠ Fill</button>
+            }} onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>⊠ Fill</button>
             <div style={s.divider} />
             <button style={s.btn} onClick={() => {
-              // Center
               activeObj.set({ left: fabricCanvas.width / 2, top: fabricCanvas.height / 2, originX: 'center', originY: 'center' })
               fabricCanvas.renderAll()
               window.showToast?.('Centered', 'success', 1200)
-            }}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-            >⊕ Center</button>
+            }} onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>⊕ Center</button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={() => {
+              activeObj.set('flipX', !activeObj.flipX)
+              fabricCanvas.renderAll()
+              window.showToast?.('Flipped H', 'success', 1000)
+            }} onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>⇄ Flip H</button>
+            <div style={s.divider} />
+            <button style={s.btn} onClick={() => {
+              activeObj.set('flipY', !activeObj.flipY)
+              fabricCanvas.renderAll()
+              window.showToast?.('Flipped V', 'success', 1000)
+            }} onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>↕ Flip V</button>
             <div style={s.divider} />
             <button style={s.btn} onClick={handleRemoveBg} disabled={running}
               onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
