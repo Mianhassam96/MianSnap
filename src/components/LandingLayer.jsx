@@ -299,44 +299,42 @@ export default function LandingLayer({ onEnter, onDemo }) {
             }}
             onTouchEnd={handleSliderRelease}
           >
-            {/* BEFORE layer — desaturated */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: isDark ? 'linear-gradient(135deg,#0a0a12,#12121e)' : 'linear-gradient(135deg,#d8d8e8,#e8e8f0)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              filter: 'saturate(0.3)',
-            }}>
-              <div style={{ textAlign: 'center', opacity: 0.6 }}>
-                <div style={{ fontSize: 40, marginBottom: 10, filter: 'grayscale(1)' }}>🎬</div>
-                <div style={{ fontSize: 13, color: isDark ? '#666' : '#aaa', fontWeight: 600 }}>Plain video frame</div>
-                <div style={{ fontSize: 11, color: isDark ? '#444' : '#ccc', marginTop: 4 }}>No text · No style · No impact</div>
-              </div>
-              <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.75)', color: '#888', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, letterSpacing: 1 }}>BEFORE</div>
-              <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.7)', color: '#ef4444', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6 }}>Score: 32/100</div>
+            {/* BEFORE layer — left half of real image, desaturated */}
+            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+              <img
+                src="./demo-before-after.jpg"
+                alt="Before MianSnap"
+                style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: 'cover', objectPosition: 'center',
+                  filter: 'saturate(0.15) brightness(0.75)',
+                }}
+              />
+              <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.8)', color: '#aaa', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 6, letterSpacing: 1 }}>BEFORE</div>
+              <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.75)', color: '#ef4444', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6 }}>Score: 32/100</div>
             </div>
 
-            {/* AFTER layer — vivid, dramatic */}
+            {/* AFTER layer — full color real image, clipped */}
             <div style={{
               position: 'absolute', inset: 0,
               clipPath: `inset(0 ${100 - demoSlider}% 0 0)`,
               transition: demoAnimDone ? 'none' : 'clip-path 0.5s cubic-bezier(0.4,0,0.2,1)',
-              background: 'linear-gradient(135deg,#08001a,#0a0a1a)',
+              overflow: 'hidden',
             }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(124,58,237,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ textAlign: 'center', padding: '0 16px' }}>
-                  <div style={{ fontSize: 'clamp(16px,3vw,24px)', fontWeight: 900, color: '#ffff00', textShadow: '0 0 30px rgba(255,255,0,0.7), 0 0 60px rgba(255,200,0,0.3), 0 3px 10px rgba(0,0,0,0.9)', fontFamily: 'Impact, sans-serif', letterSpacing: 3, lineHeight: 1.1 }}>
-                    YOU WON'T<br/>BELIEVE THIS
-                  </div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 8, letterSpacing: 1 }}>CONTRAST · GLOW · FACE FOCUS · VIGNETTE</div>
-                </div>
-              </div>
-              <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(74,222,128,0.2)', color: '#4ade80', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.4)', letterSpacing: 1 }}>AFTER ⚡</div>
+              <img
+                src="./demo-before-after.jpg"
+                alt="After MianSnap"
+                style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: 'cover', objectPosition: 'center',
+                }}
+              />
+              {/* Subtle glow overlay on after */}
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(124,58,237,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(74,222,128,0.2)', color: '#4ade80', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.4)', letterSpacing: 1 }}>AFTER ⚡</div>
               <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(74,222,128,0.15)', color: '#4ade80', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(74,222,128,0.3)', animation: demoSlider > 70 ? 'pulse 2s ease-in-out infinite' : 'none' }}>🔥 Score: 87/100</div>
             </div>
 
-            {/* Divider handle */}
             {/* Divider line — glowing */}
             <div style={{
               position: 'absolute', top: 0, left: `${demoSlider}%`, width: 3, height: '100%',
