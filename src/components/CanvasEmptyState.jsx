@@ -103,12 +103,20 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         </div>
 
         {/* Sub */}
-        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 20, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, lineHeight: 1.5 }}>
           {dragging
             ? 'Release to load onto canvas'
             : <>AI picks the best frame automatically · <span style={{ color: accent, fontWeight: 600 }}>or click to browse</span></>
           }
         </div>
+
+        {/* Trust line — inline, subtle */}
+        {!dragging && (
+          <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span>🔒</span>
+            <span>Stays on your device — nothing uploaded</span>
+          </div>
+        )}
 
         {/* Flow guide */}
         {!dragging && (

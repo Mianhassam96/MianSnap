@@ -289,9 +289,10 @@ export default function App() {
                 {viralFlash && (
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: 8,
-                    background: 'radial-gradient(ellipse at center, rgba(124,58,237,0.35) 0%, rgba(239,68,68,0.2) 50%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at center, rgba(124,58,237,0.5) 0%, rgba(239,68,68,0.3) 40%, transparent 70%)',
                     pointerEvents: 'none', zIndex: 20,
-                    animation: 'viralFlash 0.6s ease-out forwards',
+                    animation: 'viralFlash 0.8s ease-out forwards',
+                    boxShadow: 'inset 0 0 60px rgba(124,58,237,0.4)',
                   }} />
                 )}
               </div>
@@ -410,8 +411,9 @@ export default function App() {
                   50% { box-shadow: 0 6px 40px rgba(239,68,68,0.8), 0 0 0 6px rgba(239,68,68,0.15); }
                 }
                 @keyframes viralFlash {
-                  0% { opacity:1; transform:scale(1); }
-                  40% { opacity:0.9; transform:scale(1.01); }
+                  0% { opacity:0; transform:scale(0.95); }
+                  20% { opacity:1; transform:scale(1.02); }
+                  60% { opacity:0.8; transform:scale(1.01); }
                   100% { opacity:0; transform:scale(1); }
                 }
               `}</style>

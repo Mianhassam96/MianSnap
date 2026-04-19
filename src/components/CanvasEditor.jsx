@@ -30,12 +30,13 @@ export default function CanvasEditor() {
   const [zoom, setZoom] = useState(1)
   const [canvasW, setCanvasW] = useState(CANVAS_W)
   const [canvasH, setCanvasH] = useState(CANVAS_H)
-  const [dragOver, setDragOver] = useState(false)   // drag-to-replace overlay
-  const [dragShift, setDragShift] = useState(false) // shift = add as layer
-  const [bgSelected, setBgSelected] = useState(false) // background selected label
-  const [undoFlash, setUndoFlash] = useState(false)   // undo visibility flash
-  const [snapFlash, setSnapFlash] = useState(false)   // snap feedback
+  const [dragOver, setDragOver] = useState(false)
+  const [dragShift, setDragShift] = useState(false)
+  const [bgSelected, setBgSelected] = useState(false)
+  const [undoFlash, setUndoFlash] = useState(false)
+  const [snapFlash, setSnapFlash] = useState(false)
   const snapCooldown = useRef(false)
+  const [dropChoice, setDropChoice] = useState(null) // { file, url } — pending drop choice
 
   // ── Init canvas — wait for Fabric CDN to load ─────────────────
   useEffect(() => {
@@ -411,20 +412,12 @@ export default function CanvasEditor() {
         if (!file || !fabricCanvas) return
         const url = URL.createObjectURL(file)
         if (file.type.startsWith('image/')) {
-          if (e.shiftKey) {
-            // Add as layer
-            fabric.Image.fromURL(url, (img) => {
-              applyProImageSettings(img, isMobileDevice())
-              img.set({ left: fabricCanvas.width / 2, top: fabricCanvas.height / 2, originX: 'center', originY: 'center' })
-              fabricCanvas.add(img); fabricCanvas.setActiveObject(img); fabricCanvas.renderAll()
-              window.showToast?.('🖼 Added as layer', 'success')
-            })
-          } else {
-            applyImageAsBackground(fabricCanvas, url, 'cover')
-            window.showToast?.('🖼 Background replaced!', 'success')
-          }
+          // Show choice dialog — no Shift key required
+          setDropChoice({ file, url })
         } else if (file.type.startsWith('video/')) {
           window.dispatchEvent(new CustomEvent('miansnap:dropVideo', { detail: { file } }))
+        } else {
+          window.showToast?.('❌ Unsupported file — use image or video', 'error', 3000)
         }
       }}
     >
@@ -432,6 +425,61 @@ export default function CanvasEditor() {
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', touchAction: 'none' }} />
       <canvas ref={overlayRef} width={canvasW} height={canvasH}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', touchAction: 'none' }} />
+
+      {/* ── Drop choice dialog ── */}
+      {dropChoice && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 35,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'rgba(13,13,24,0.97)', borderRadius: 14,
+            border: '1px solid rgba(124,58,237,0.4)',
+            padding: '20px 24px', textAlign: 'center',
+            boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+            animation: 'scaleIn 0.2s ease',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 14 }}>
+              What do you want to do with this image?
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                style={{
+                  flex: 1, padding: '12px 16px', borderRadius: 9, border: 'none',
+                  background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+                  color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+                onClick={() => {
+                  applyImageAsBackground(fabricCanvas, dropChoice.url, 'cover')
+                  window.showToast?.('🖼 Background replaced!', 'success')
+                  setDropChoice(null)
+                }}
+              >🔄 Replace Background</button>
+              <button
+                style={{
+                  flex: 1, padding: '12px 16px', borderRadius: 9,
+                  border: '1px solid rgba(124,58,237,0.4)',
+                  background: 'transparent', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+                onClick={() => {
+                  fabric.Image.fromURL(dropChoice.url, (img) => {
+                    applyProImageSettings(img, isMobileDevice())
+                    img.set({ left: fabricCanvas.width / 2, top: fabricCanvas.height / 2, originX: 'center', originY: 'center' })
+                    fabricCanvas.add(img); fabricCanvas.setActiveObject(img); fabricCanvas.renderAll()
+                    window.showToast?.('🖼 Added as layer', 'success')
+                  })
+                  setDropChoice(null)
+                }}
+              >🖼 Add as Layer</button>
+            </div>
+            <button
+              style={{ marginTop: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => setDropChoice(null)}
+            >Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Drag-to-replace overlay ── */}
       {dragOver && (

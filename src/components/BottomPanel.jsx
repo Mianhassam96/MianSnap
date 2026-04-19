@@ -298,7 +298,7 @@ export default function BottomPanel() {
                   {frames.filter(f => f.isBest).length} recommended · {frames.length} total
                 </span>
                 <span style={{ fontSize: 10, color: theme.accent, fontWeight: 600 }}>
-                  👆 Click any frame to use it
+                  ⭐ Best moment selected (motion + face) · click to use
                 </span>
                 <button
                   onClick={() => { clearFrames(); window.showToast?.('🗑 Gallery cleared', 'info', 1500) }}

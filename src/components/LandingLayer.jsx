@@ -119,6 +119,7 @@ export default function LandingLayer({ onEnter, onDemo }) {
           }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+            title="Applies AI style to a sample thumbnail — no upload needed"
           >Try Demo</button>
           <button onClick={() => enter(false)} style={{
             padding: '7px 20px', borderRadius: 8, border: 'none',
@@ -222,7 +223,7 @@ export default function LandingLayer({ onEnter, onDemo }) {
           }}
             onMouseEnter={(e) => { e.currentTarget.style.color = accent; e.currentTarget.style.textDecorationColor = accent }}
             onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; e.currentTarget.style.textDecorationColor = 'transparent' }}
-          >or try demo — no upload needed →</button>
+          >or try demo — applies AI style to sample thumbnail, no upload needed →</button>
         </div>
 
         {/* ── LIVE DEMO VISUAL — Interactive Before/After Slider ── */}

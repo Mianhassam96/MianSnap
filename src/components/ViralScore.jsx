@@ -69,7 +69,7 @@ export default function ViralScore() {
           <span style={{ fontSize: 18 }}>🔥</span>
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: theme.success }}>CTR Optimized +{ctrBoost}%</div>
-            <div style={{ fontSize: 10, color: theme.textSecondary }}>Estimated vs unenhanced thumbnail</div>
+            <div style={{ fontSize: 10, color: theme.textSecondary }}>Estimated based on contrast, face & text visibility</div>
           </div>
         </div>
       )}
