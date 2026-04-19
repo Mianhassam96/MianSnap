@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import ExportModal from './ExportModal'
@@ -11,6 +11,14 @@ export default function TopBar() {
   const { fabricCanvas, exportQuality, setExportQuality, exportFormat, setExportFormat, canUndo, canRedo, viralScore, prevScore } = useCanvasStore()
   const [exportData, setExportData] = useState(null)
   const [canvasSize, setCanvasSize] = useState('youtube')
+  const [watermark, setWatermark] = useState(false)
+
+  // Listen for mobile export trigger
+  useEffect(() => {
+    const handler = () => handleExport()
+    window.addEventListener('miansnap:export', handler)
+    return () => window.removeEventListener('miansnap:export', handler)
+  }, [fabricCanvas, exportQuality, exportFormat, canvasSize])
 
   function triggerUndo() {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }))
@@ -66,8 +74,6 @@ export default function TopBar() {
     fabricCanvas.renderAll()
     window.showToast?.('🔄 Layout reset', 'info', 1500)
   }
-
-  const [watermark, setWatermark] = useState(false)
 
   function handleExport() {
     if (!fabricCanvas) return

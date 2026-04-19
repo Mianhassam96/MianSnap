@@ -22,12 +22,19 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
 
   const handleDrop = useCallback((e) => {
     e.preventDefault(); e.stopPropagation(); setDragging(false)
-    const file = e.dataTransfer.files[0]
+    const files = e.dataTransfer.files
+    if (!files || files.length === 0) return
+    if (files.length > 1) {
+      window.showToast?.('⚠️ Multiple files detected — using the first one', 'info', 3000)
+    }
+    const file = files[0]
     if (!file) return
     if (file.type.startsWith('video/')) { setVideoFile(file) }
     else if (file.type.startsWith('image/')) {
       applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
       setHasImage(true)
+    } else {
+      window.showToast?.(`❌ Unsupported file type: ${file.type || 'unknown'} — use video or image`, 'error', 4000)
     }
   }, [fabricCanvas, setVideoFile])
 
@@ -86,20 +93,20 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
           {dragging ? '📥' : '🎬'}
         </div>
 
-        {/* Primary */}
+        {/* Primary CTA — ONE dominant action */}
         <div style={{
           fontSize: 21, fontWeight: 900, color: theme.text,
           marginBottom: 5, letterSpacing: '-0.5px',
           fontFamily: "'Montserrat',sans-serif",
         }}>
-          {dragging ? 'Drop it!' : 'Drop video or image here'}
+          {dragging ? 'Drop it!' : '📥 Drop your video here'}
         </div>
 
-        {/* Sub — CTA reinforcement */}
-        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, lineHeight: 1.5 }}>
+        {/* Sub */}
+        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 20, lineHeight: 1.5 }}>
           {dragging
             ? 'Release to load onto canvas'
-            : <>or <span style={{ color: accent, fontWeight: 600 }}>click anywhere</span> to browse · or drop your own frame below</>
+            : <>AI picks the best frame automatically · <span style={{ color: accent, fontWeight: 600 }}>or click to browse</span></>
           }
         </div>
 
@@ -107,7 +114,7 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
         {!dragging && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 6, marginBottom: 24, flexWrap: 'wrap',
+            gap: 6, marginBottom: 20, flexWrap: 'wrap',
           }}>
             {[
               { icon: '🧠', label: 'AI picks best frame' },
@@ -124,54 +131,51 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
           </div>
         )}
 
-        {/* Action cards */}
+        {/* Secondary options — smaller, less prominent */}
         {!dragging && (
           <div
-            style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 14 }}
+            style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}
             onClick={(e) => e.stopPropagation()}
           >
             {[
-              { id: 'video', icon: '🎬', label: 'Upload Video', sub: 'AI picks frames', action: onUploadVideo },
-              { id: 'image', icon: '🖼', label: 'Upload Image', sub: 'Edit directly', action: onUploadImage },
-              { id: 'template', icon: '✨', label: 'Use Template', sub: 'Gaming, Drama...', action: onUseTemplate },
+              { id: 'image', icon: '🖼', label: 'Upload Image', action: onUploadImage },
+              { id: 'template', icon: '✨', label: 'Use Template', action: onUseTemplate },
             ].map(c => (
               <div key={c.id}
                 style={{
-                  padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
                   border: `1px solid ${hovered === c.id ? accent : theme.border}`,
                   background: hovered === c.id ? theme.accentGlow : theme.bgSecondary,
-                  transition: 'all 0.15s',
-                  transform: hovered === c.id ? 'translateY(-2px)' : 'translateY(0)',
-                  minWidth: 88, textAlign: 'center',
+                  transition: 'all 0.15s', fontSize: 11, fontWeight: 600,
+                  color: hovered === c.id ? accent : theme.textSecondary,
+                  display: 'flex', alignItems: 'center', gap: 5,
                 }}
                 onMouseEnter={() => setHovered(c.id)}
                 onMouseLeave={() => setHovered(null)}
                 onClick={c.action}
               >
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{c.icon}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: theme.text }}>{c.label}</div>
-                <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 1 }}>{c.sub}</div>
+                <span>{c.icon}</span>{c.label}
               </div>
             ))}
           </div>
         )}
 
-        {/* Quick Mode */}
+        {/* Quick Mode — secondary */}
         {!dragging && (
           <div
             onClick={(e) => { e.stopPropagation(); onQuickMode?.() }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 18px', borderRadius: 20,
-              background: 'linear-gradient(135deg,#0ea5e9,#6366f1,#7c3aed)',
-              color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 3px 14px rgba(99,102,241,0.35)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              padding: '6px 14px', borderRadius: 16,
+              border: `1px solid ${theme.border}`,
+              background: 'transparent',
+              color: theme.textMuted, fontSize: 11, cursor: 'pointer',
+              transition: 'all 0.15s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 22px rgba(99,102,241,0.5)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 3px 14px rgba(99,102,241,0.35)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMuted }}
           >
-            🚀 Quick Mode — no upload needed
+            🚀 No video? Try Quick Mode
           </div>
         )}
       </div>

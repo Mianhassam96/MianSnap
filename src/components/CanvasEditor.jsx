@@ -503,7 +503,7 @@ export default function CanvasEditor() {
         </div>
       )}
 
-      {/* Fit / Fill toggle */}
+      {/* Fit / Fill toggle — clearer labels */}
       <div style={{
         position: 'absolute', top: 8, right: 8, zIndex: 5,
         display: 'flex', gap: 2,
@@ -511,9 +511,9 @@ export default function CanvasEditor() {
         backdropFilter: 'blur(6px)',
       }}>
         <button style={{ ...fitBtnBase, background: fitMode === 'contain' ? '#7c3aed' : 'transparent', color: fitMode === 'contain' ? '#fff' : 'rgba(255,255,255,0.6)' }}
-          onClick={() => setFitMode('contain')} title="Fit — whole image visible">Fit</button>
+          onClick={() => setFitMode('contain')} title="Show Full Image — whole image visible, no cropping">Full</button>
         <button style={{ ...fitBtnBase, background: fitMode === 'cover' ? '#7c3aed' : 'transparent', color: fitMode === 'cover' ? '#fff' : 'rgba(255,255,255,0.6)' }}
-          onClick={() => setFitMode('cover')} title="Fill — covers canvas, may crop">Fill</button>
+          onClick={() => setFitMode('cover')} title="Fill Canvas — covers entire canvas, may crop edges">Fill</button>
       </div>
 
       <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} onZoomReset={zoomReset} />

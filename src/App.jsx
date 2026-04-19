@@ -335,6 +335,28 @@ export default function App() {
         </div>
 
         <MobileTabBar onOpenPanel={() => setMobileDrawerOpen(true)} />
+        {/* Mobile quick actions — always visible above tab bar */}
+        <div className="ms-mobile-tabs" style={{
+          position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 198,
+          display: 'flex', gap: 8, padding: '8px 12px',
+          background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
+          borderTop: `1px solid ${theme.border}`,
+          backdropFilter: 'blur(10px)',
+        }}>
+          <button onClick={() => { setMobileDrawerOpen(true); }} style={{
+            flex: 1, padding: '9px 4px', borderRadius: 8, border: `1px solid ${theme.border}`,
+            background: theme.bgTertiary, color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}>✏️ Add Text</button>
+          <button onClick={handleMakeViral} style={{
+            flex: 2, padding: '9px 4px', borderRadius: 8, border: 'none',
+            background: 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
+            color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+          }}>⚡ Make Viral</button>
+          <button onClick={() => window.dispatchEvent(new CustomEvent('miansnap:export'))} style={{
+            flex: 1, padding: '9px 4px', borderRadius: 8, border: 'none',
+            background: theme.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}>⬇ Export</button>
+        </div>
         <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} />
         <FeedbackButton />
 
