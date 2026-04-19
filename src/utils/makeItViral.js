@@ -12,6 +12,9 @@ export async function makeItViral(fabricCanvas) {
 
   const steps = []
 
+  // Pause history — entire Make Viral = 1 undo step
+  window.__msHistory?.pauseSnapshot?.()
+
   // 1. Boost background image — always reset first, then apply
   const bg = fabricCanvas.backgroundImage
   if (bg && bg.filters !== undefined) {
@@ -98,5 +101,7 @@ export async function makeItViral(fabricCanvas) {
   steps.push('✓ Vignette applied')
 
   fabricCanvas.renderAll()
+  // Resume history — snapshot the final state as 1 undo step
+  window.__msHistory?.resumeSnapshot?.()
   return { steps }
 }

@@ -233,6 +233,33 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
           >🔄 New</button>
         </div>
 
+        {/* Next step guidance */}
+        <div style={{ padding: '0 22px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 10, color: theme.textMuted, width: '100%', marginBottom: 4, fontWeight: 600 }}>
+            What's next?
+          </div>
+          {[
+            { icon: '▶', label: 'Upload to YouTube', hint: 'Recommended size: 1280×720' },
+            { icon: '🔄', label: 'Try another version', action: onCreateAnother },
+            { icon: '📊', label: 'Check your score', hint: 'See what to improve' },
+          ].map(item => (
+            <button key={item.label}
+              onClick={item.action || onClose}
+              style={{
+                flex: 1, minWidth: 100, padding: '8px 8px', borderRadius: 7,
+                border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                color: theme.textSecondary, fontSize: 10, fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
+            >
+              <div>{item.icon} {item.label}</div>
+              {item.hint && <div style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>{item.hint}</div>}
+            </button>
+          ))}
+        </div>
+
         {/* Share section — viral loop */}
         <div style={{ padding: '12px 22px 16px', borderTop: `1px solid ${theme.border}` }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 10 }}>

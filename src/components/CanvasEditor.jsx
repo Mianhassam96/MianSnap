@@ -147,6 +147,8 @@ export default function CanvasEditor() {
     fabricCanvas.on('object:removed',  syncState)
     fabricCanvas.on('object:modified', syncState)
     const cleanupKeys = setupKeyboardShortcuts(fabricCanvas, history)
+    // Expose history pause/resume globally for grouped undo
+    window.__msHistory = history
     return () => {
       history.destroy()
       cleanupKeys()

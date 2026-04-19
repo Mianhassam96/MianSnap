@@ -53,6 +53,13 @@ export function createHistory(fabricCanvas) {
   function canUndo() { return stack.length > 1 }
   function canRedo() { return future.length > 0 }
 
+  // Pause/resume for grouped actions (Make Viral, Apply Style = 1 undo step)
+  function pauseSnapshot() { paused = true }
+  function resumeSnapshot() {
+    paused = false
+    snapshot() // take one snapshot for the whole group
+  }
+
   function clear() {
     stack = []
     future = []
@@ -72,5 +79,5 @@ export function createHistory(fabricCanvas) {
     future = []
   }
 
-  return { undo, redo, canUndo, canRedo, snapshot, clear, destroy }
+  return { undo, redo, canUndo, canRedo, snapshot, clear, destroy, pauseSnapshot, resumeSnapshot }
 }

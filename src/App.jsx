@@ -38,9 +38,64 @@ export default function App() {
   const [viralDone, setViralDone] = useState(false)
   const [viralFlash, setViralFlash] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
+  const [discoveryHint, setDiscoveryHint] = useState(null)
   const autoRanRef = useRef(false)
 
   useEffect(() => { installAnalytics(); track('app_opened') }, [])
+
+  // Auto-save visual feedback
+  useEffect(() => {
+    if (!fabricCanvas) return
+    let saveTimer = null
+    const onChange = () => {
+      clearTimeout(saveTimer)
+      saveTimer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('miansnap:saved'))
+      }, 2200)
+    }
+    fabricCanvas.on('object:added', onChange)
+    fabricCanvas.on('object:modified', onChange)
+    fabricCanvas.on('object:removed', onChange)
+    return () => {
+      clearTimeout(saveTimer)
+      fabricCanvas.off('object:added', onChange)
+      fabricCanvas.off('object:modified', onChange)
+      fabricCanvas.off('object:removed', onChange)
+    }
+  }, [fabricCanvas])
+
+  // Listen for save event
+  useEffect(() => {
+    const handler = () => { setSavedFlash(true); setTimeout(() => setSavedFlash(false), 2000) }
+    window.addEventListener('miansnap:saved', handler)
+    return () => window.removeEventListener('miansnap:saved', handler)
+  }, [])
+
+  // Feature discovery hint — rotate after 8s inactivity
+  useEffect(() => {
+    const hints = [
+      { icon: '💡', text: 'Try Idea Starter in the Styles tab', action: () => setActiveLeftPanel('styles') },
+      { icon: '🔥', text: 'Try Trending Styles — updates daily', action: () => setActiveLeftPanel('styles') },
+      { icon: '🎬', text: 'Try YouTube Pack — full thumbnail in 1 click', action: () => setActiveLeftPanel('styles') },
+    ]
+    let hintIdx = 0
+    let timer = null
+    const show = () => {
+      setDiscoveryHint(hints[hintIdx % hints.length])
+      hintIdx++
+      setTimeout(() => setDiscoveryHint(null), 5000)
+    }
+    const reset = () => { clearTimeout(timer); timer = setTimeout(show, 12000) }
+    window.addEventListener('mousemove', reset)
+    window.addEventListener('keydown', reset)
+    reset()
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('mousemove', reset)
+      window.removeEventListener('keydown', reset)
+    }
+  }, [])
 
   // Demo mode — apply sample style instantly
   async function handleDemo() {
@@ -244,6 +299,40 @@ export default function App() {
               <ShortcutBar />
               {!viralScore && <SmartWarnings />}
               <DiscoveryHints />
+
+              {/* Auto-save indicator */}
+              {savedFlash && (
+                <div style={{
+                  position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
+                  background: theme.isDark ? 'rgba(13,13,24,0.88)' : 'rgba(255,255,255,0.88)',
+                  border: `1px solid ${theme.border}`, borderRadius: 20,
+                  padding: '4px 12px', fontSize: 10, color: theme.success,
+                  fontWeight: 600, zIndex: 8, pointerEvents: 'none',
+                  backdropFilter: 'blur(8px)', animation: 'fadeInDown 0.2s ease',
+                }}>
+                  ✔ Changes saved locally
+                </div>
+              )}
+
+              {/* Feature discovery hint */}
+              {discoveryHint && (
+                <div style={{
+                  position: 'absolute', bottom: 56, left: '50%', transform: 'translateX(-50%)',
+                  background: 'linear-gradient(135deg,rgba(124,58,237,0.92),rgba(79,70,229,0.92))',
+                  borderRadius: 20, padding: '7px 16px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: 11, color: '#fff', fontWeight: 600,
+                  cursor: 'pointer', zIndex: 8,
+                  animation: 'fadeInDown 0.25s ease',
+                  boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+                }}
+                  onClick={() => { discoveryHint.action?.(); setDiscoveryHint(null) }}
+                >
+                  <span>{discoveryHint.icon}</span>
+                  <span>{discoveryHint.text}</span>
+                  <span style={{ opacity: 0.7, fontSize: 10 }}>→</span>
+                </div>
+              )}
 
               {viralScore && (
                 <div

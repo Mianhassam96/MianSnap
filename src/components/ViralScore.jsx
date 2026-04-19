@@ -84,6 +84,18 @@ export default function ViralScore() {
         <div style={{ position: 'absolute', inset: 0, opacity: 0.04, background: score !== null ? color : 'transparent' }} />
         {score !== null ? (
           <>
+            {/* Human-readable status label — top */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 12px', borderRadius: 20, marginBottom: 10,
+              background: score >= 75 ? 'rgba(74,222,128,0.15)' : score >= 50 ? 'rgba(250,204,21,0.12)' : 'rgba(248,113,113,0.12)',
+              border: `1px solid ${color}44`,
+            }}>
+              <span style={{ fontSize: 14 }}>{score >= 75 ? '🟢' : score >= 50 ? '🟡' : '🔴'}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color }}>
+                {score >= 75 ? 'Strong Thumbnail' : score >= 50 ? 'Needs Improvement' : 'Needs Work'}
+              </span>
+            </div>
             <div>
               <span style={{ fontSize: 52, fontWeight: 900, lineHeight: 1, color, fontFamily: "'Montserrat',sans-serif", letterSpacing: '-2px' }}>{score}</span>
               <span style={{ fontSize: 16, color: theme.textMuted }}>/100</span>
