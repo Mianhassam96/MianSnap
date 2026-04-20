@@ -20,6 +20,8 @@ import FiltersPanel from './FiltersPanel'
 import ColorSystem from './ColorSystem'
 import IdeaStarter from './IdeaStarter'
 import TrendingStyles from './TrendingStyles'
+import AutoMode from './AutoMode'
+import { useAdvancedMode } from './SimplifiedUI'
 
 const TOOLS = [
   { id: 'text',    icon: '𝐓',  label: 'Text' },
@@ -102,6 +104,7 @@ const PRESET_COLORS = [
 export default function LeftSidebar() {
   const { theme, activeLeftPanel, setActiveLeftPanel } = useUIStore()
   const { fabricCanvas } = useCanvasStore()
+  const advancedMode = useAdvancedMode()
   const [textColor, setTextColor] = useState(() => prefs.getBrandColor())
   const [strokeColor, setStrokeColor] = useState(() => prefs.getBrandStroke())
   const [fontSize, setFontSize] = useState(() => prefs.getBrandFontSize())
@@ -520,8 +523,9 @@ export default function LeftSidebar() {
             </div>
 
             {/* AI */}
-            <div style={s.section}>
-              <div style={s.sectionTitle}>AI Tools</div>
+            {advancedMode && (
+              <div style={s.section}>
+                <div style={s.sectionTitle}>AI Tools</div>
 
               {/* Title Generator */}
               <div style={{ marginBottom: 10 }}>
@@ -585,6 +589,7 @@ export default function LeftSidebar() {
                 ↺ Reset Filters
               </button>
             </div>
+            )}
           </>
         )}
 
@@ -597,14 +602,29 @@ export default function LeftSidebar() {
         {activeLeftPanel === 'bg' && <BackgroundPanel />}
         {activeLeftPanel === 'styles' && (
           <>
+            {/* AUTO MODE - HERO FEATURE */}
+            <div style={{ marginBottom: 20, padding: '16px 12px', borderRadius: 12, background: 'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(79,70,229,0.05))', border: `1px solid ${theme.borderHover}` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent, marginBottom: 10, textAlign: 'center', letterSpacing: 1 }}>
+                ⚡ FASTEST WAY
+              </div>
+              <AutoMode />
+              <div style={{ fontSize: 10, color: theme.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
+                Picks best frame · Applies style · Adds text · Enhances
+              </div>
+            </div>
+
             <IdeaStarter />
             <TrendingStyles />
-            <QuickMode />
-            <MakeItViral />
-            <div style={{ marginTop: 4 }}><OneClickStyles /></div>
-            <div style={{ marginTop: 16 }}><SmartTextSuggestions /></div>
-            <div style={{ marginTop: 16 }}><ABGenerator /></div>
-            <div style={{ marginTop: 16 }}><CreatorPacks /></div>
+            {advancedMode && (
+              <>
+                <QuickMode />
+                <MakeItViral />
+                <div style={{ marginTop: 4 }}><OneClickStyles /></div>
+                <div style={{ marginTop: 16 }}><SmartTextSuggestions /></div>
+                <div style={{ marginTop: 16 }}><ABGenerator /></div>
+                <div style={{ marginTop: 16 }}><CreatorPacks /></div>
+              </>
+            )}
           </>
         )}
         {activeLeftPanel === 'assets' && <AssetManager />}

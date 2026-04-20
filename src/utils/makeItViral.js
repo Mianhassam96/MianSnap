@@ -140,6 +140,20 @@ export async function makeItViral(fabricCanvas) {
 
   fabricCanvas.renderAll()
   window.__msHistory?.resumeSnapshot?.()
+  
+  // Dispatch enhanced feedback event
+  window.dispatchEvent(new CustomEvent('miansnap:viralDone', {
+    detail: {
+      steps: [
+        '✨ Face enhanced',
+        '🔥 Contrast boosted',
+        '🎯 Focus optimized',
+        '💫 Glow applied',
+        '🌟 Ready to perform',
+      ]
+    }
+  }))
+  
   return { steps }
 }
 

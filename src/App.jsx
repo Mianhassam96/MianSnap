@@ -19,6 +19,8 @@ import DiscoveryHints from './components/DiscoveryHints'
 import FeedbackButton from './components/FeedbackButton'
 import LandingLayer, { shouldShowLanding } from './components/LandingLayer'
 import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
+import ViralFeedback from './components/ViralFeedback'
+import SimplifiedUI from './components/SimplifiedUI'
 import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides } from './utils/alignmentGuides'
@@ -244,7 +246,8 @@ export default function App() {
   document.body.style.overflow = showLanding ? 'auto' : 'hidden'
 
   return (
-    <>
+    <SimplifiedUI>
+      <ViralFeedback />
       {showLanding && (
         <LandingLayer
           onEnter={() => { setShowLanding(false); if (shouldShowOnboarding()) setShowOnboarding(true) }}
@@ -499,6 +502,6 @@ export default function App() {
           boxShadow: '0 4px 20px rgba(124,58,237,0.5)',
         }}>+ Upload</button>
       </div>
-    </>
+    </SimplifiedUI>
   )
 }
