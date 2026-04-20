@@ -77,13 +77,21 @@ export default function BottomPanel() {
   function applyFrame(frame, idx) {
     setSelectedFrame(frame)
     if (!fabricCanvas) return
+    
+    // Visual feedback
     if (idx !== undefined) {
       setSnapFlash(idx)
-      setTimeout(() => setSnapFlash(null), 500)
+      setTimeout(() => setSnapFlash(null), 1200)
     }
+    
     // Use the shared fitMode from store — respects user's Fit/Fill toggle
+    // 'cover' fills canvas (may crop), 'contain' shows full image (may letterbox)
     applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
-      window.showToast?.('🖼 Frame applied to canvas', 'success', 1200)
+      window.showToast?.('🖼 Frame applied — use Fit/Fill toggle to adjust', 'success', 2000)
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { 
+        detail: { frame, fitMode } 
+      }))
     })
   }
 
@@ -119,7 +127,14 @@ export default function BottomPanel() {
   function captureCurrentFrame() {
     const video = videoRef.current
     if (!video || !fabricCanvas) return
-    applyFrame({ time: video.currentTime, dataUrl: captureFrame(video) })
+    const captured = { 
+      time: video.currentTime, 
+      dataUrl: captureFrame(video),
+      width: video.videoWidth || 1280,
+      height: video.videoHeight || 720,
+    }
+    applyFrame(captured)
+    window.showToast?.('📸 Frame captured at ' + fmt(video.currentTime), 'success', 1500)
   }
 
   function togglePlay() {
@@ -319,7 +334,7 @@ export default function BottomPanel() {
                   {frames.filter(f => f.isBest).length} recommended · {frames.length} total
                 </span>
                 <span style={{ fontSize: 10, color: theme.accent, fontWeight: 600 }}>
-                  ⭐ Best moment selected (motion + face) · click to use
+                  👆 Click any frame to use it · ⭐ = Best moment
                 </span>
                 <button
                   onClick={() => { clearFrames(); window.showToast?.('🗑 Gallery cleared', 'info', 1500) }}

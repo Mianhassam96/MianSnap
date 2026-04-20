@@ -39,34 +39,47 @@ export function scaleImageToCanvas(img, canvasW, canvasH, mode = 'cover') {
 
 /**
  * Apply image to canvas background with correct scaling.
- * Auto-detects aspect ratio and always covers canvas perfectly.
+ * Respects user's fit mode preference (cover/contain).
  */
 export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', onDone) {
   if (!fabricCanvas || !dataUrl) return
   if (!fabric) return
+  
   // Don't use crossOrigin for data URLs — it causes CORS errors
   const opts = dataUrl.startsWith('data:') ? {} : { crossOrigin: 'anonymous' }
+  
   fabric.Image.fromURL(dataUrl, (img) => {
     if (!img || !img.width) {
       // Retry without crossOrigin if image failed to load
       fabric.Image.fromURL(dataUrl, (img2) => {
-        if (!img2) return
-        const props = scaleImageToCanvas(img2, fabricCanvas.width, fabricCanvas.height, mode)
-        img2.set(props)
-        fabricCanvas.setBackgroundImage(img2, () => {
-          fabricCanvas.renderAll()
-          onDone?.()
-        })
+        if (!img2) {
+          console.warn('[imageUtils] Failed to load image:', dataUrl.substring(0, 50))
+          return
+        }
+        applyImageToCanvas(img2, fabricCanvas, mode, onDone)
       })
       return
     }
-    const props = scaleImageToCanvas(img, fabricCanvas.width, fabricCanvas.height, mode)
-    img.set(props)
-    fabricCanvas.setBackgroundImage(img, () => {
-      fabricCanvas.renderAll()
-      onDone?.()
-    })
+    applyImageToCanvas(img, fabricCanvas, mode, onDone)
   }, opts)
+}
+
+function applyImageToCanvas(img, fabricCanvas, mode, onDone) {
+  // Calculate proper scaling based on mode
+  const props = scaleImageToCanvas(img, fabricCanvas.width, fabricCanvas.height, mode)
+  
+  // Apply properties
+  img.set({
+    ...props,
+    selectable: false,
+    evented: false,
+  })
+  
+  // Set as background
+  fabricCanvas.setBackgroundImage(img, () => {
+    fabricCanvas.renderAll()
+    onDone?.()
+  })
 }
 
 /**

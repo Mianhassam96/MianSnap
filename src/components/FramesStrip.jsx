@@ -18,10 +18,18 @@ export default function FramesStrip() {
   function applyFrame(frame, idx) {
     setSelectedFrame(frame)
     if (!fabricCanvas) return
+    
+    // Visual feedback
     setSnapFlash(idx)
     setTimeout(() => setSnapFlash(null), 1700)
+    
+    // Apply with proper fit mode
     applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
-      window.showToast?.('🖼 Frame applied', 'success', 1000)
+      window.showToast?.('🖼 Frame applied — use Fit/Fill toggle to adjust', 'success', 2000)
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { 
+        detail: { frame, fitMode } 
+      }))
     })
   }
 
