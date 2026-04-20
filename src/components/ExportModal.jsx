@@ -227,10 +227,51 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
           >{copied ? '✓ Copied!' : '📋 Copy Image'}</button>
-          <button style={s.btn(false)} onClick={onCreateAnother || onClose}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textSecondary }}
-          >🔄 New</button>
+        </div>
+
+        {/* Retention Loop — Create Another / Try Different Style */}
+        <div style={{ padding: '0 22px 16px', display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCreateAnother || onClose}
+            style={{
+              flex: 1,
+              padding: '12px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'linear-gradient(135deg,#0ea5e9,#6366f1)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
+          >
+            🔄 Create Another
+          </button>
+          <button
+            onClick={() => {
+              onClose()
+              window.dispatchEvent(new CustomEvent('miansnap:tryDifferentStyle'))
+            }}
+            style={{
+              flex: 1,
+              padding: '12px',
+              borderRadius: 8,
+              border: `1px solid ${theme.accent}`,
+              background: 'transparent',
+              color: theme.accent,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+          >
+            🎨 Try Different Style
+          </button>
         </div>
 
         {/* Next step guidance */}

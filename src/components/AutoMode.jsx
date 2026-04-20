@@ -7,6 +7,7 @@ import { calculateViralScore } from '../utils/viralScore'
 import { applyThumbnailStyle } from '../utils/thumbnailStyles'
 import { generateTitles } from '../utils/titleGenerator'
 import { fabric } from '../lib/fabric'
+import FrameSelector from './FrameSelector'
 
 export default function AutoMode() {
   const { theme } = useUIStore()
@@ -15,6 +16,14 @@ export default function AutoMode() {
   const [running, setRunning] = useState(false)
   const [step, setStep] = useState('')
   const [progress, setProgress] = useState(0)
+  const [showFrameSelector, setShowFrameSelector] = useState(false)
+
+  // Show frame selector after auto mode completes
+  React.useEffect(() => {
+    const handler = () => setShowFrameSelector(true)
+    window.addEventListener('miansnap:autoModeComplete', handler)
+    return () => window.removeEventListener('miansnap:autoModeComplete', handler)
+  }, [])
 
   async function runAutoMode() {
     if (!fabricCanvas || frames.length === 0) {
@@ -26,49 +35,92 @@ export default function AutoMode() {
     setProgress(0)
 
     try {
-      // Step 1: Pick best frame
-      setStep('🎯 Analyzing frames...')
-      setProgress(20)
-      await sleep(400)
+      // Step 1: Analyzing
+      setStep('🧠 Analyzing your video...')
+      setProgress(15)
+      await sleep(800)
+
+      // Step 2: Pick best frame
+      setStep('🎯 Selecting best moment...')
+      setProgress(30)
+      await sleep(600)
       const bestFrame = frames.find(f => f.isBest) || frames[0]
 
-      // Step 2: Apply frame
-      setStep('🖼 Loading best moment...')
-      setProgress(40)
-      await sleep(300)
+      // Step 3: Apply frame
+      setStep('🖼 Loading frame...')
+      setProgress(45)
+      await sleep(400)
       await applyFrameToCanvas(bestFrame)
 
-      // Step 3: Apply style
-      setStep('🎨 Applying viral style...')
+      // Step 4: Designing
+      setStep('🎨 Designing thumbnail...')
       setProgress(60)
-      await sleep(400)
+      await sleep(700)
       const style = pickBestStyle()
       await applyThumbnailStyle(fabricCanvas, style)
 
-      // Step 4: Add text
-      setStep('✍️ Generating title...')
+      // Step 5: Add text
+      setStep('✍️ Adding viral title...')
       setProgress(75)
-      await sleep(300)
+      await sleep(500)
       const title = generateTitles('reaction', 1)[0]
       addAutoText(title)
 
-      // Step 5: Make Viral
-      setStep('⚡ Enhancing...')
+      // Step 6: AI Enhancement
+      setStep('⚡ Enhancing with MianSnap AI...')
       setProgress(90)
-      await sleep(400)
+      await sleep(600)
       await makeItViral(fabricCanvas)
 
-      // Step 6: Calculate score
+      // Step 7: Finalizing
+      setStep('✨ Finalizing...')
       setProgress(100)
+      await sleep(400)
+
+      // Calculate score
       const score = calculateViralScore(fabricCanvas)
       setViralScore(score)
 
-      // Success animation
-      setStep('🔥 Thumbnail ready!')
+      // STAGED REVEAL with emotional pause
+      setStep('🎉 Your thumbnail is ready!')
+      await sleep(600)
+
+      // Blur canvas
+      if (fabricCanvas) {
+        const canvasEl = fabricCanvas.getElement()
+        if (canvasEl) {
+          canvasEl.style.filter = 'blur(20px)'
+          canvasEl.style.transition = 'filter 0.8s ease'
+        }
+      }
+
+      await sleep(400)
+
+      // Reveal with animation
+      window.dispatchEvent(new CustomEvent('miansnap:stagedReveal', { detail: { score: score?.score } }))
+
       await sleep(800)
 
+      // Unblur
+      if (fabricCanvas) {
+        const canvasEl = fabricCanvas.getElement()
+        if (canvasEl) {
+          canvasEl.style.filter = 'blur(0px)'
+        }
+      }
+
+      await sleep(400)
+
       window.dispatchEvent(new CustomEvent('miansnap:autoModeComplete', { detail: { score: score?.score } }))
-      window.showToast?.('🚀 Your viral thumbnail is ready!', 'success', 3000)
+      
+      // Show CTR potential instead of score
+      const ctrMessage = score?.score >= 80 
+        ? '🔥 High CTR Potential — Ready to perform!'
+        : score?.score >= 60
+        ? '⚡ Good CTR Potential — Strong thumbnail!'
+        : '💡 Moderate CTR — Try "Edit" to improve'
+      
+      window.showToast?.(ctrMessage, 'success', 4000)
 
     } catch (err) {
       console.error('[AutoMode] Error:', err)
@@ -192,10 +244,25 @@ export default function AutoMode() {
             <div style={s.progress} />
           </>
         ) : (
-          '🚀 Auto Create Thumbnail'
+          <>
+            <div>🚀 Auto Create Thumbnail</div>
+            <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4, fontWeight: 500 }}>
+              ✨ Enhanced with MianSnap AI
+            </div>
+          </>
         )}
       </button>
       {step && <div style={s.step}>{step}</div>}
+      
+      {showFrameSelector && (
+        <FrameSelector
+          onFrameSelect={(frame) => {
+            setShowFrameSelector(false)
+            // Re-run auto mode with selected frame
+            runAutoMode()
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -21,6 +21,8 @@ import LandingLayer, { shouldShowLanding } from './components/LandingLayer'
 import Onboarding, { shouldShowOnboarding } from './components/Onboarding'
 import ViralFeedback from './components/ViralFeedback'
 import SimplifiedUI from './components/SimplifiedUI'
+import ZeroUIMode from './components/ZeroUIMode'
+import StagedReveal from './components/StagedReveal'
 import { installAnalytics, track, trackUpload } from './utils/analytics'
 import { setupAutoSave } from './utils/autoSave'
 import { setupAlignmentGuides } from './utils/alignmentGuides'
@@ -246,9 +248,11 @@ export default function App() {
   document.body.style.overflow = showLanding ? 'auto' : 'hidden'
 
   return (
-    <SimplifiedUI>
-      <ViralFeedback />
-      {showLanding && (
+    <ZeroUIMode onExitZeroMode={() => {}}>
+      <SimplifiedUI>
+        <ViralFeedback />
+        <StagedReveal />
+        {showLanding && (
         <LandingLayer
           onEnter={() => { setShowLanding(false); if (shouldShowOnboarding()) setShowOnboarding(true) }}
           onDemo={handleDemo}
@@ -503,5 +507,6 @@ export default function App() {
         }}>+ Upload</button>
       </div>
     </SimplifiedUI>
+    </ZeroUIMode>
   )
 }
