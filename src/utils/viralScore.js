@@ -5,7 +5,8 @@
 export function calculateViralScore(fabricCanvas) {
   if (!fabricCanvas) return null
 
-  const objects = fabricCanvas.getObjects().filter(o => !o._isGuide && !o._viralGlow && !o._viralVignette && !o._vignette && !o._bgRect && !o._depthGlow && !o._depthShadow)
+  try {
+    const objects = (fabricCanvas.getObjects() || []).filter(o => !o._isGuide && !o._viralGlow && !o._viralVignette && !o._vignette && !o._bgRect && !o._depthGlow && !o._depthShadow && !o._viralEdge)
   const canvasW = fabricCanvas.width
   const canvasH = fabricCanvas.height
   const totalPixels = canvasW * canvasH
@@ -140,6 +141,9 @@ export function calculateViralScore(fabricCanvas) {
 
   score = Math.max(0, Math.min(100, score))
   return { score, categories }
+  } catch (_) {
+    return null
+  }
 }
 
 function estimateContrast(data) {

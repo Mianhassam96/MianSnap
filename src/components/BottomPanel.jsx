@@ -16,10 +16,16 @@ export default function BottomPanel() {
   } = useVideoStore()
   const { fabricCanvas } = useCanvasStore()
   const videoRef = useRef(null)
+  const isMountedRef = useRef(true)
   const [playing, setPlaying] = useState(false)
   const [autoRan, setAutoRan] = useState(false)
   const [snapFlash, setSnapFlash] = useState(null)
   const [playbackRate, setPlaybackRate] = useState(1)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => { isMountedRef.current = false }
+  }, [])
 
   useEffect(() => {
     const video = videoRef.current
@@ -38,25 +44,34 @@ export default function BottomPanel() {
   async function runSmartPick() {
     if (!videoUrl) return
     setIsExtracting(true)
-    const suggested = await getSuggestedFrames(videoUrl, 20)
-    setFrames(suggested)
-    setIsExtracting(false)
-    const best = suggested.find(f => f.isBest) || suggested[0]
-    if (best && fabricCanvas) applyFrame(best, 0)
-    // Auto-highlight best frame index for pulse
-    const bestIdx = suggested.findIndex(f => f.isBest)
-    if (bestIdx >= 0) {
-      setTimeout(() => setSnapFlash(bestIdx), 300)
-      setTimeout(() => setSnapFlash(null), 1700)
+    try {
+      const suggested = await getSuggestedFrames(videoUrl, 20)
+      if (!isMountedRef.current) return
+      setFrames(suggested)
+      setIsExtracting(false)
+      const best = suggested.find(f => f.isBest) || suggested[0]
+      if (best && fabricCanvas) applyFrame(best, 0)
+      const bestIdx = suggested.findIndex(f => f.isBest)
+      if (bestIdx >= 0) {
+        setTimeout(() => { if (isMountedRef.current) setSnapFlash(bestIdx) }, 300)
+        setTimeout(() => { if (isMountedRef.current) setSnapFlash(null) }, 1700)
+      }
+    } catch (err) {
+      if (!isMountedRef.current) return
+      setIsExtracting(false)
+      window.showToast?.('⚠️ Frame extraction failed — try again', 'error', 3000)
     }
   }
 
   async function handleExtractAll() {
     if (!videoUrl) return
     setIsExtracting(true)
-    const extracted = await extractFrames(videoUrl, 20)
-    setFrames(extracted)
-    setIsExtracting(false)
+    try {
+      const extracted = await extractFrames(videoUrl, 20)
+      if (!isMountedRef.current) return
+      setFrames(extracted)
+    } catch (_) {}
+    if (isMountedRef.current) setIsExtracting(false)
   }
 
   function applyFrame(frame, idx) {

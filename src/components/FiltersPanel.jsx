@@ -244,7 +244,7 @@ export default function FiltersPanel() {
         <div style={s.suggestionBanner}>
           <div style={s.suggestionTitle}>🎨 Matching colors detected</div>
           <div style={s.suggestionColors}>
-            {colorSuggestion.preset.suggestColors.map(c => (
+            {(colorSuggestion?.preset?.suggestColors || []).map(c => (
               <div key={c} style={s.suggestionDot(c)} />
             ))}
             <span style={{ fontSize: 10, color: theme.textSecondary }}>
