@@ -21,6 +21,7 @@ export default function BottomPanel() {
   const [autoRan, setAutoRan] = useState(false)
   const [snapFlash, setSnapFlash] = useState(null)
   const [playbackRate, setPlaybackRate] = useState(1)
+  const [showAiReason, setShowAiReason] = useState(false)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -56,6 +57,9 @@ export default function BottomPanel() {
         setTimeout(() => { if (isMountedRef.current) setSnapFlash(bestIdx) }, 300)
         setTimeout(() => { if (isMountedRef.current) setSnapFlash(null) }, 1700)
       }
+      // Show AI reason after smart pick
+      setTimeout(() => { if (isMountedRef.current) setShowAiReason(true) }, 1800)
+      setTimeout(() => { if (isMountedRef.current) setShowAiReason(false) }, 6000)
     } catch (err) {
       if (!isMountedRef.current) return
       setIsExtracting(false)
@@ -77,30 +81,20 @@ export default function BottomPanel() {
   function applyFrame(frame, idx) {
     setSelectedFrame(frame)
     if (!fabricCanvas) return
-    
-    // Visual feedback
     if (idx !== undefined) {
       setSnapFlash(idx)
       setTimeout(() => setSnapFlash(null), 1200)
     }
-    
-    // Use the shared fitMode from store — respects user's Fit/Fill toggle
-    // 'cover' fills canvas (may crop), 'contain' shows full image (may letterbox)
     applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
       window.showToast?.('🖼 Frame applied — use Fit/Fill toggle to adjust', 'success', 2000)
-      // Dispatch event for other components
-      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { 
-        detail: { frame, fitMode } 
-      }))
+      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame, fitMode } }))
     })
   }
 
   function snapAndAutoText(frame, idx) {
     applyFrame(frame, idx)
-    // Wait for background to load then add bold text
     setTimeout(() => {
       if (!fabricCanvas) return
-      // Remove previous auto-text
       fabricCanvas.getObjects().filter(o => o._autoText).forEach(o => fabricCanvas.remove(o))
       const cw = fabricCanvas.width
       const ch = fabricCanvas.height
@@ -127,8 +121,8 @@ export default function BottomPanel() {
   function captureCurrentFrame() {
     const video = videoRef.current
     if (!video || !fabricCanvas) return
-    const captured = { 
-      time: video.currentTime, 
+    const captured = {
+      time: video.currentTime,
       dataUrl: captureFrame(video),
       width: video.videoWidth || 1280,
       height: video.videoHeight || 720,
@@ -162,7 +156,6 @@ export default function BottomPanel() {
     stepFrame(video, fps, dir)
   }
 
-  // ── Keyboard seeking + Space play/pause ──────────────────────
   useEffect(() => {
     if (!videoUrl) return
     const onKey = (e) => {
@@ -172,9 +165,7 @@ export default function BottomPanel() {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const obj = window.__fabricCanvas?.getActiveObject?.()
       if (obj && (obj.type === 'i-text' || obj.type === 'textbox') && obj.isEditing) return
-
       if (e.code === 'Space') {
-        // Only handle Space for video if bottom panel is visible
         e.preventDefault()
         if (video.paused) { video.play(); setPlaying(true) }
         else { video.pause(); setPlaying(false) }
@@ -193,7 +184,7 @@ export default function BottomPanel() {
   function handleDrop(e) {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
-    if (file?.type.startsWith('video/')) {
+    if (file?.type && file.type.startsWith('video/')) {
       if (file.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 5000)
       setAutoRan(false); setVideoFile(file)
     }
@@ -222,11 +213,35 @@ export default function BottomPanel() {
     e.currentTarget.style.background = on ? theme.accentGlow : theme.bgTertiary
   }
 
+  // Best frame for AI reason display
+  const bestFrame = frames.find(f => f.isBest)
+
   return (
     <div style={{
       background: theme.bgSecondary, borderTop: `1px solid ${theme.border}`,
       display: 'flex', flexDirection: 'column', flexShrink: 0,
     }} className="ms-bottom-panel">
+
+      {/* ── AI Trust Banner — shows after Smart Pick ── */}
+      {showAiReason && bestFrame && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '7px 14px',
+          background: 'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(79,70,229,0.06))',
+          borderBottom: `1px solid rgba(124,58,237,0.2)`,
+          animation: 'fadeInDown 0.3s ease',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 13 }}>🧠</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: theme.accent }}>AI selected this frame because:</span>
+          <span style={{ fontSize: 10, color: theme.textSecondary, display: 'flex', gap: 8 }}>
+            <span>✔ Face detected</span>
+            <span>✔ High motion</span>
+            <span>✔ Good lighting</span>
+          </span>
+          <button onClick={() => setShowAiReason(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: 11 }}>✕</button>
+        </div>
+      )}
 
       {/* ── Controls row ── */}
       <div style={{
@@ -236,23 +251,17 @@ export default function BottomPanel() {
         <span style={{ fontSize: 10, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 1, flexShrink: 0 }}>
           🎬 Video
         </span>
-
-        {/* Playback */}
         <button style={btn} onClick={() => handleStep(-1)} title="Step back"
           onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>⏮</button>
         <button style={{ ...btn, background: theme.accent, color: '#fff', border: 'none' }}
           onClick={togglePlay}>{playing ? '⏸' : '▶'}</button>
         <button style={btn} onClick={() => handleStep(1)} title="Step forward"
           onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>⏭</button>
-
-        {/* Scrubber */}
         <input type="range" style={{ flex: 1, accentColor: theme.accent, minWidth: 80 }}
           min={0} max={duration || 100} step={0.01} value={currentTime} onChange={handleSeek} />
         <span style={{ fontSize: 10, color: theme.textMuted, minWidth: 72, textAlign: 'center' }}>
           {fmt(currentTime)} / {fmt(duration)}
         </span>
-
-        {/* Actions */}
         <button style={btn} onClick={captureCurrentFrame} disabled={!videoUrl} title="Capture this frame"
           onMouseEnter={(e) => hov(e, true)} onMouseLeave={(e) => hov(e, false)}>📸 Capture</button>
         <button style={{ ...btn, background: theme.accent, color: '#fff', border: 'none' }}
@@ -268,21 +277,17 @@ export default function BottomPanel() {
             Space play/pause · ← → seek · Shift+← → ±5s
           </span>
         )}
-
-        {/* Playback speed */}
         {videoUrl && (
           <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
             {[0.25, 0.5, 1, 2].map(rate => (
               <button key={rate}
                 style={{
-                  ...btn,
-                  padding: '3px 7px', fontSize: 10,
+                  ...btn, padding: '3px 7px', fontSize: 10,
                   background: playbackRate === rate ? theme.accent : theme.bgTertiary,
                   color: playbackRate === rate ? '#fff' : theme.textSecondary,
                   border: `1px solid ${playbackRate === rate ? theme.accent : theme.border}`,
                 }}
                 onClick={() => changePlaybackRate(rate)}
-                title={`${rate}x speed`}
               >{rate}x</button>
             ))}
           </div>
@@ -290,16 +295,26 @@ export default function BottomPanel() {
       </div>
 
       {/* ── Body: video preview + frames ── */}
-      <div style={{ display: 'flex', height: 160 }}>
+      <div style={{ display: 'flex', height: 200 }}>
 
         {/* Video preview or dropzone */}
         {videoUrl ? (
-          <div style={{ width: 220, flexShrink: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 240, flexShrink: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} muted playsInline />
+            {/* Selected frame big preview overlay label */}
+            {selectedFrame && (
+              <div style={{
+                position: 'absolute', bottom: 6, left: 0, right: 0, textAlign: 'center',
+                fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: 600,
+                background: 'rgba(0,0,0,0.5)', padding: '2px 0',
+              }}>
+                ⭐ Best moment selected — click frame to change
+              </div>
+            )}
           </div>
         ) : (
           <div style={{
-            width: 220, flexShrink: 0, border: `2px dashed ${theme.border}`,
+            width: 240, flexShrink: 0, border: `2px dashed ${theme.border}`,
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', cursor: 'pointer', gap: 5,
             transition: 'border-color 0.15s, background 0.15s',
@@ -309,8 +324,8 @@ export default function BottomPanel() {
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.background = theme.accentGlow }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = 'transparent' }}
           >
-            <span style={{ fontSize: 28 }}>🎬</span>
-            <span style={{ fontSize: 12, color: theme.textMuted, fontWeight: 600 }}>Drop video here</span>
+            <span style={{ fontSize: 32 }}>🎬</span>
+            <span style={{ fontSize: 13, color: theme.text, fontWeight: 800 }}>📥 DROP VIDEO TO START</span>
             <span style={{ fontSize: 10, color: theme.textMuted }}>or click to browse</span>
           </div>
         )}
@@ -320,21 +335,22 @@ export default function BottomPanel() {
 
           {/* Frames header */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px',
+            display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px',
             borderBottom: `1px solid ${theme.border}`, flexShrink: 0,
+            background: frames.length > 0 ? (theme.isDark ? 'rgba(124,58,237,0.06)' : 'rgba(124,58,237,0.04)') : 'transparent',
           }}>
             {isExtracting ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: theme.accent }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: theme.accent, animation: 'pulse 1s infinite' }} />
-                Analyzing frames...
+                <span style={{ fontWeight: 600 }}>⚡ Creating your thumbnail...</span>
               </div>
             ) : frames.length > 0 ? (
               <>
+                <span style={{ fontSize: 11, fontWeight: 700, color: theme.accent }}>
+                  ⭐ Best moment selected — click any frame to change
+                </span>
                 <span style={{ fontSize: 10, color: theme.textMuted }}>
                   {frames.filter(f => f.isBest).length} recommended · {frames.length} total
-                </span>
-                <span style={{ fontSize: 10, color: theme.accent, fontWeight: 600 }}>
-                  👆 Click any frame to use it · ⭐ = Best moment
                 </span>
                 <button
                   onClick={() => { clearFrames(); window.showToast?.('🗑 Gallery cleared', 'info', 1500) }}
@@ -345,19 +361,18 @@ export default function BottomPanel() {
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.danger; e.currentTarget.style.color = theme.danger }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMuted }}
-                  title="Clear all frames from memory"
                 >🗑 Clear</button>
               </>
             ) : (
-              <span style={{ fontSize: 10, color: theme.textMuted }}>
-                {videoUrl ? 'Processing...' : 'Upload a video to extract frames'}
+              <span style={{ fontSize: 11, color: theme.textMuted, fontWeight: 600 }}>
+                {videoUrl ? '⚡ Creating your thumbnail...' : '📥 Upload a video — AI picks the best frame automatically'}
               </span>
             )}
           </div>
 
-          {/* ALL frames — scrollable, bigger thumbnails */}
+          {/* Frames — bigger thumbnails, 2× height */}
           <div style={{
-            flex: 1, display: 'flex', gap: 6, padding: '6px 10px',
+            flex: 1, display: 'flex', gap: 8, padding: '8px 12px',
             overflowX: 'auto', alignItems: 'center',
           }}>
             {frames.map((f, i) => (
@@ -366,10 +381,9 @@ export default function BottomPanel() {
                 transition: 'transform 0.15s',
                 transform: snapFlash === i ? 'scale(0.92)' : 'scale(1)',
               }}>
-                {/* Snap flash overlay */}
                 {snapFlash === i && (
                   <div style={{
-                    position: 'absolute', inset: 0, zIndex: 5, borderRadius: 6,
+                    position: 'absolute', inset: 0, zIndex: 5, borderRadius: 8,
                     background: 'rgba(124,58,237,0.45)',
                     border: '2px solid rgba(124,58,237,0.8)',
                     animation: 'pulse 0.7s ease-in-out 2',
@@ -380,54 +394,64 @@ export default function BottomPanel() {
                   src={f.dataUrl}
                   alt={fmt(f.time)}
                   style={{
-                    height: 108,
+                    height: 140,
                     aspectRatio: `${f.width || 16} / ${f.height || 9}`,
                     objectFit: 'cover',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     cursor: 'pointer',
                     display: 'block',
-                    border: `2px solid ${selectedFrame?.time === f.time ? theme.accent : f.isBest ? '#facc15' : theme.border}`,
-                    boxShadow: selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}, 0 0 12px rgba(124,58,237,0.4)` : 'none',
-                    transition: 'border-color 0.15s, transform 0.12s',
+                    border: `3px solid ${selectedFrame?.time === f.time ? theme.accent : f.isBest ? '#facc15' : theme.border}`,
+                    boxShadow: selectedFrame?.time === f.time
+                      ? `0 0 0 3px ${theme.accentGlow}, 0 0 20px rgba(124,58,237,0.5)`
+                      : f.isBest ? '0 0 12px rgba(250,204,21,0.4)' : 'none',
+                    transition: 'border-color 0.15s, transform 0.12s, box-shadow 0.15s',
                   }}
                   onClick={() => applyFrame(f, i)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.04)'
-                    e.currentTarget.style.boxShadow = `0 4px 16px rgba(0,0,0,0.4)`
+                    e.currentTarget.style.transform = 'scale(1.05) translateY(-3px)'
+                    e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.5)`
                     const btn = e.currentTarget.parentElement?.querySelector('.ms-snap-text-btn')
                     if (btn) btn.style.opacity = '1'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)'
-                    e.currentTarget.style.boxShadow = selectedFrame?.time === f.time ? `0 0 0 2px ${theme.accentGlow}` : 'none'
+                    e.currentTarget.style.transform = 'scale(1) translateY(0)'
+                    e.currentTarget.style.boxShadow = selectedFrame?.time === f.time ? `0 0 0 3px ${theme.accentGlow}` : 'none'
                     const btn = e.currentTarget.parentElement?.querySelector('.ms-snap-text-btn')
                     if (btn) btn.style.opacity = '0'
                   }}
-                  title={`${fmt(f.time)}${f.isBest ? ' — Recommended' : ''}`}
+                  title={`${fmt(f.time)}${f.isBest ? ' — AI recommended' : ''}`}
                 />
                 {f.isBest && (
                   <div style={{
-                    position: 'absolute', top: 4, left: 4,
+                    position: 'absolute', top: 5, left: 5,
                     background: 'linear-gradient(135deg,#f59e0b,#ef4444)',
-                    color: '#fff', fontSize: 8, fontWeight: 700,
-                    padding: '1px 5px', borderRadius: 3,
+                    color: '#fff', fontSize: 9, fontWeight: 800,
+                    padding: '2px 7px', borderRadius: 4,
+                    boxShadow: '0 2px 8px rgba(245,158,11,0.5)',
                   }}>⭐ BEST</div>
                 )}
+                {selectedFrame?.time === f.time && (
+                  <div style={{
+                    position: 'absolute', top: 5, right: 5,
+                    background: theme.accent,
+                    color: '#fff', fontSize: 9, fontWeight: 800,
+                    padding: '2px 7px', borderRadius: 4,
+                  }}>✓ USING</div>
+                )}
                 <div style={{
-                  position: 'absolute', bottom: 4, right: 4,
-                  background: 'rgba(0,0,0,0.7)', color: '#fff',
-                  fontSize: 9, padding: '1px 4px', borderRadius: 3,
+                  position: 'absolute', bottom: 5, right: 5,
+                  background: 'rgba(0,0,0,0.75)', color: '#fff',
+                  fontSize: 9, padding: '2px 5px', borderRadius: 3,
                 }}>{fmt(f.time)}</div>
-                {/* Snap + Auto-Text button — shows on hover */}
                 <div style={{
-                  position: 'absolute', bottom: 4, left: 4,
+                  position: 'absolute', bottom: 5, left: 5,
                   opacity: 0, transition: 'opacity 0.15s',
                 }} className="ms-snap-text-btn">
                   <button
                     style={{
-                      padding: '2px 6px', borderRadius: 4, border: 'none',
+                      padding: '3px 8px', borderRadius: 5, border: 'none',
                       background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-                      color: '#fff', fontSize: 8, fontWeight: 700, cursor: 'pointer',
+                      color: '#fff', fontSize: 9, fontWeight: 700, cursor: 'pointer',
                     }}
                     onClick={(e) => { e.stopPropagation(); snapAndAutoText(f, i) }}
                     title="Snap frame + add text box"

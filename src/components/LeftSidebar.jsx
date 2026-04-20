@@ -460,67 +460,106 @@ export default function LeftSidebar() {
                 activeColor={textColor}
                 onColorSelect={updateSelectedTextColor}
               />
-              <ColorSystem
-                label="Stroke Color"
-                activeColor={strokeColor}
-                onColorSelect={updateSelectedStrokeColor}
-              />
-              <div style={s.sectionTitle}>Font Size</div>
-              <div style={s.row}>
-                <input type="range" style={s.sizeRange} min={12} max={200} value={fontSize}
-                  onChange={(e) => updateFontSize(+e.target.value)} />
-                <input type="number" style={{ ...s.sizeInput, width: 52 }} min={12} max={400}
-                  value={fontSize} onChange={(e) => updateFontSize(+e.target.value)} />
+
+              {/* Font dropdown — single select instead of long list */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={s.sectionTitle}>Font</div>
+                <select
+                  style={{
+                    width: '100%', padding: '7px 10px', borderRadius: 7,
+                    border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                    color: theme.text, fontSize: 12, cursor: 'pointer', outline: 'none',
+                  }}
+                  onChange={(e) => addText(e.target.value)}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Choose font to add text…</option>
+                  {FONT_CATEGORIES.map(cat => (
+                    <optgroup key={cat.label} label={cat.label}>
+                      {cat.fonts.map(f => (
+                        <option key={f.name} value={f.name}>{f.preview}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
 
-              {/* Stroke width */}
-              <div style={s.sectionTitle}>Stroke Width <span style={{ color: theme.textMuted, fontWeight: 400 }}>(outline)</span></div>
-              <div style={s.row}>
-                <input type="range" style={s.sizeRange} min={0} max={20} value={strokeWidth}
-                  onChange={(e) => updateStrokeWidth(+e.target.value)} />
-                <input type="number" style={{ ...s.sizeInput, width: 52 }} min={0} max={20}
-                  value={strokeWidth} onChange={(e) => updateStrokeWidth(+e.target.value)} />
-              </div>
-
-              {/* Shadow blur */}
-              <div style={s.sectionTitle}>Shadow Blur <span style={{ color: theme.textMuted, fontWeight: 400 }}>(drop shadow)</span></div>
-              <div style={s.row}>
-                <input type="range" style={s.sizeRange} min={0} max={60} value={shadowBlur}
-                  onChange={(e) => updateShadowBlur(+e.target.value)} />
-                <input type="number" style={{ ...s.sizeInput, width: 52 }} min={0} max={60}
-                  value={shadowBlur} onChange={(e) => updateShadowBlur(+e.target.value)} />
-              </div>
-            </div>
-
-            {/* Font categories */}
-            <div style={s.section}>
-              <div style={s.sectionTitle}>35 Premium Fonts</div>
-              {FONT_CATEGORIES.map((cat, ci) => (
-                <div key={ci} style={{ marginBottom: 6 }}>
-                  <div style={s.catHeader(openCategory === ci)} onClick={() => setOpenCategory(openCategory === ci ? -1 : ci)}>
-                    <span>{cat.label}</span>
-                    <span>{openCategory === ci ? '▲' : '▼'}</span>
+              {/* Advanced controls — collapsed by default */}
+              <details style={{ marginBottom: 8 }}>
+                <summary style={{
+                  fontSize: 10, color: theme.textMuted, cursor: 'pointer',
+                  padding: '5px 0', userSelect: 'none', fontWeight: 600,
+                  letterSpacing: 0.5,
+                }}>
+                  ⚙ Advanced (size · stroke · shadow)
+                </summary>
+                <div style={{ paddingTop: 8 }}>
+                  <ColorSystem
+                    label="Stroke Color"
+                    activeColor={strokeColor}
+                    onColorSelect={updateSelectedStrokeColor}
+                  />
+                  <div style={s.sectionTitle}>Font Size</div>
+                  <div style={s.row}>
+                    <input type="range" style={s.sizeRange} min={12} max={200} value={fontSize}
+                      onChange={(e) => updateFontSize(+e.target.value)} />
+                    <input type="number" style={{ ...s.sizeInput, width: 52 }} min={12} max={400}
+                      value={fontSize} onChange={(e) => updateFontSize(+e.target.value)} />
                   </div>
-                  {openCategory === ci && (
-                    <div style={{ paddingLeft: 2 }}>
-                      {cat.fonts.map((f) => {
-                        const isRTL = cat.label.includes('Arabic') || cat.label.includes('Urdu')
-                        return (
-                          <button key={f.name} style={{ ...s.fontBtn(f.name), direction: isRTL ? 'rtl' : 'ltr', textAlign: isRTL ? 'right' : 'left' }}
-                            onClick={() => addText(f.name)}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.borderHover }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = theme.bg; e.currentTarget.style.borderColor = theme.border }}
-                          >
-                            <span style={{ fontSize: isRTL ? 15 : 13 }}>{f.preview}</span>
-                            <span style={{ fontSize: 9, color: theme.textMuted, fontFamily: 'Inter, sans-serif', direction: 'ltr' }}>+</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
+                  <div style={s.sectionTitle}>Stroke Width</div>
+                  <div style={s.row}>
+                    <input type="range" style={s.sizeRange} min={0} max={20} value={strokeWidth}
+                      onChange={(e) => updateStrokeWidth(+e.target.value)} />
+                    <input type="number" style={{ ...s.sizeInput, width: 52 }} min={0} max={20}
+                      value={strokeWidth} onChange={(e) => updateStrokeWidth(+e.target.value)} />
+                  </div>
+                  <div style={s.sectionTitle}>Shadow Blur</div>
+                  <div style={s.row}>
+                    <input type="range" style={s.sizeRange} min={0} max={60} value={shadowBlur}
+                      onChange={(e) => updateShadowBlur(+e.target.value)} />
+                    <input type="number" style={{ ...s.sizeInput, width: 52 }} min={0} max={60}
+                      value={shadowBlur} onChange={(e) => updateShadowBlur(+e.target.value)} />
+                  </div>
                 </div>
-              ))}
+              </details>
             </div>
+
+            {/* Font categories — collapsed behind details */}
+            <details style={{ marginBottom: 10 }}>
+              <summary style={{
+                fontSize: 10, color: theme.textMuted, cursor: 'pointer',
+                padding: '5px 0', userSelect: 'none', fontWeight: 600, letterSpacing: 0.5,
+              }}>
+                🔤 Browse 35 Premium Fonts
+              </summary>
+              <div style={{ paddingTop: 6 }}>
+                {FONT_CATEGORIES.map((cat, ci) => (
+                  <div key={ci} style={{ marginBottom: 6 }}>
+                    <div style={s.catHeader(openCategory === ci)} onClick={() => setOpenCategory(openCategory === ci ? -1 : ci)}>
+                      <span>{cat.label}</span>
+                      <span>{openCategory === ci ? '▲' : '▼'}</span>
+                    </div>
+                    {openCategory === ci && (
+                      <div style={{ paddingLeft: 2 }}>
+                        {cat.fonts.map((f) => {
+                          const isRTL = cat.label.includes('Arabic') || cat.label.includes('Urdu')
+                          return (
+                            <button key={f.name} style={{ ...s.fontBtn(f.name), direction: isRTL ? 'rtl' : 'ltr', textAlign: isRTL ? 'right' : 'left' }}
+                              onClick={() => addText(f.name)}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = theme.accentGlow; e.currentTarget.style.borderColor = theme.borderHover }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = theme.bg; e.currentTarget.style.borderColor = theme.border }}
+                            >
+                              <span style={{ fontSize: isRTL ? 15 : 13 }}>{f.preview}</span>
+                              <span style={{ fontSize: 9, color: theme.textMuted, fontFamily: 'Inter, sans-serif', direction: 'ltr' }}>+</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </details>
 
             {/* AI */}
             {advancedMode && (

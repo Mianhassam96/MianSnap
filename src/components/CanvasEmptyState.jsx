@@ -95,18 +95,20 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
 
         {/* Primary CTA — ONE dominant action */}
         <div style={{
-          fontSize: 28, fontWeight: 900, color: theme.text,
-          marginBottom: 8, letterSpacing: '-0.5px',
+          fontSize: dragging ? 32 : 36, fontWeight: 900,
+          color: dragging ? '#7c3aed' : theme.text,
+          marginBottom: 8, letterSpacing: '-1px',
           fontFamily: "'Montserrat',sans-serif",
+          lineHeight: 1.1,
         }}>
-          {dragging ? 'Drop it!' : 'Drop your video here'}
+          {dragging ? '📥 Drop it!' : '📥 DROP VIDEO TO START'}
         </div>
 
         {/* Sub — brutally clear */}
         <div style={{ fontSize: 15, color: theme.textSecondary, marginBottom: 12, lineHeight: 1.5, fontWeight: 600 }}>
           {dragging
-            ? 'Release to start'
-            : 'We do the rest — AI picks best frame + makes it viral'
+            ? 'Release to start — AI does the rest'
+            : 'AI picks best frame · makes it viral · ready in 10s'
           }
         </div>
 

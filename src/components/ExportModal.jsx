@@ -274,6 +274,32 @@ export default function ExportModal({ onClose, onCreateAnother, dataUrl, filenam
           </button>
         </div>
 
+        {/* Advanced mode nudge — context-based discovery */}
+        <div style={{
+          margin: '0 22px 16px',
+          padding: '10px 14px', borderRadius: 8,
+          background: theme.isDark ? 'rgba(124,58,237,0.08)' : 'rgba(124,58,237,0.05)',
+          border: `1px solid ${theme.borderHover}`,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{ fontSize: 16 }}>✨</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent }}>Want more control?</div>
+            <div style={{ fontSize: 10, color: theme.textSecondary }}>Try advanced editing — layers, filters, custom fonts</div>
+          </div>
+          <button
+            onClick={() => {
+              onClose()
+              window.dispatchEvent(new CustomEvent('miansnap:manualEdit'))
+            }}
+            style={{
+              padding: '5px 12px', borderRadius: 6, border: 'none',
+              background: theme.accent, color: '#fff',
+              fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+            }}
+          >Try it →</button>
+        </div>
+
         {/* Next step guidance */}
         <div style={{ padding: '0 22px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <div style={{ fontSize: 10, color: theme.textMuted, width: '100%', marginBottom: 4, fontWeight: 600 }}>

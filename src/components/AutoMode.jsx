@@ -202,21 +202,22 @@ export default function AutoMode() {
   const s = {
     btn: {
       width: '100%',
-      padding: '20px 24px',
+      padding: '22px 24px',
       borderRadius: 16,
       border: 'none',
       background: running
         ? 'linear-gradient(135deg,#6d28d9,#4c1d95)'
         : 'linear-gradient(135deg,#7c3aed,#4f46e5)',
       color: '#fff',
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: 900,
       cursor: running ? 'not-allowed' : 'pointer',
-      boxShadow: '0 8px 32px rgba(124,58,237,0.5)',
+      boxShadow: running ? '0 4px 16px rgba(124,58,237,0.3)' : '0 10px 40px rgba(124,58,237,0.6)',
       transition: 'all 0.2s',
       position: 'relative',
       overflow: 'hidden',
-      letterSpacing: '-0.3px',
+      letterSpacing: '-0.5px',
+      animation: !running ? 'autoModePulse 3s ease-in-out infinite' : 'none',
     },
     progress: {
       position: 'absolute',
@@ -224,15 +225,18 @@ export default function AutoMode() {
       left: 0,
       height: 4,
       width: `${progress}%`,
-      background: 'rgba(255,255,255,0.4)',
+      background: 'rgba(255,255,255,0.5)',
       transition: 'width 0.3s ease',
+      borderRadius: '0 2px 2px 0',
     },
     step: {
       fontSize: 12,
-      color: theme.textMuted,
+      color: theme.accent,
       textAlign: 'center',
-      marginTop: 8,
+      marginTop: 10,
       minHeight: 18,
+      fontWeight: 600,
+      animation: 'fadeIn 0.3s ease',
     },
   }
 
@@ -244,30 +248,44 @@ export default function AutoMode() {
         disabled={running}
         onMouseEnter={(e) => {
           if (!running) {
-            e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 12px 40px rgba(124,58,237,0.6)'
+            e.currentTarget.style.animation = 'none'
+            e.currentTarget.style.transform = 'translateY(-3px)'
+            e.currentTarget.style.boxShadow = '0 16px 48px rgba(124,58,237,0.7)'
           }
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,58,237,0.5)'
+          e.currentTarget.style.boxShadow = running ? '0 4px 16px rgba(124,58,237,0.3)' : '0 10px 40px rgba(124,58,237,0.6)'
+          if (!running) e.currentTarget.style.animation = 'autoModePulse 3s ease-in-out infinite'
         }}
       >
         {running ? (
           <>
-            <span>⚡ Creating...</span>
+            <div>⚡ Creating...</div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4, fontWeight: 500 }}>{step || 'Working...'}</div>
             <div style={s.progress} />
           </>
         ) : (
           <>
             <div>🚀 Auto Create Thumbnail</div>
-            <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4, fontWeight: 500 }}>
-              ✨ Enhanced with MianSnap AI
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 5, fontWeight: 600 }}>
+              ✨ Drop video → AI does everything
             </div>
           </>
         )}
       </button>
-      {step && <div style={s.step}>{step}</div>}
+
+      {/* Progress step shown below button when running */}
+      {running && step && (
+        <div style={s.step}>{step}</div>
+      )}
+
+      <style>{`
+        @keyframes autoModePulse {
+          0%,100% { box-shadow: 0 10px 40px rgba(124,58,237,0.6); }
+          50% { box-shadow: 0 10px 56px rgba(124,58,237,0.85), 0 0 0 8px rgba(124,58,237,0.1); }
+        }
+      `}</style>
       
       {showFrameSelector && (
         <FrameSelector

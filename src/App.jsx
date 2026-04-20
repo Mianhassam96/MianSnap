@@ -387,33 +387,39 @@ export default function App() {
                 title="Auto-enhance: smart filters based on image tone, face focus, glow, vignette"
                 style={{
                   position: 'absolute', bottom: 20, right: 20,
-                  padding: '13px 26px', borderRadius: 12, border: 'none',
+                  padding: '14px 28px', borderRadius: 14, border: 'none',
                   background: viralDone
                     ? 'linear-gradient(135deg,#16a34a,#15803d)'
                     : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-                  color: '#fff', fontSize: 15, fontWeight: 900,
+                  color: '#fff', fontSize: 16, fontWeight: 900,
                   cursor: viralRunning ? 'wait' : 'pointer',
-                  boxShadow: viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 8px 32px rgba(239,68,68,0.6)',
+                  boxShadow: viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 8px 36px rgba(239,68,68,0.7)',
                   transition: 'transform 0.15s, box-shadow 0.15s, background 0.3s',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                   zIndex: 10,
                   animation: !viralRunning && !viralDone ? 'viralPulse 2s ease-in-out infinite' : 'none',
                   letterSpacing: '-0.3px',
+                  minWidth: 160,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.animation = 'none'
-                  if (!viralRunning) { e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(239,68,68,0.7)' }
+                  if (!viralRunning) { e.currentTarget.style.transform = 'translateY(-3px) scale(1.06)'; e.currentTarget.style.boxShadow = '0 14px 44px rgba(239,68,68,0.8)' }
                 }}
                 onMouseLeave={(e) => {
                   if (!viralRunning && !viralDone) e.currentTarget.style.animation = 'viralPulse 2.5s ease-in-out infinite'
                   e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                  e.currentTarget.style.boxShadow = viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 6px 28px rgba(239,68,68,0.5)'
+                  e.currentTarget.style.boxShadow = viralDone ? '0 4px 20px rgba(22,163,74,0.5)' : '0 8px 36px rgba(239,68,68,0.7)'
                 }}
               >
                 <span>{viralRunning ? '⏳ Enhancing...' : viralDone ? '✓ Done!' : '⚡ Make Viral'}</span>
                 {!viralRunning && !viralDone && (
-                  <span style={{ fontSize: 9, opacity: 0.85, fontWeight: 400, letterSpacing: 0.3 }}>
-                    MianSnap AI · auto-enhance + score
+                  <span style={{ fontSize: 10, opacity: 0.9, fontWeight: 600, letterSpacing: 0.2 }}>
+                    1 click = better thumbnail
+                  </span>
+                )}
+                {viralDone && (
+                  <span style={{ fontSize: 10, opacity: 0.9, fontWeight: 600 }}>
+                    🔥 This thumbnail is ready to perform
                   </span>
                 )}
               </button>
