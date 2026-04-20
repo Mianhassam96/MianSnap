@@ -86,7 +86,7 @@ Real-time 0–100 score updates as you edit:
 ### 🎭 11 One-Click Styles
 Dramatic Reaction · Gaming Highlight · Breaking News · Viral Pop · MrBeast Style · Sports Hype · Horror · Tutorial · Money · Clean Minimal · Sports
 
-### 🗂 Layer System
+### 🗂 Layer System 
 - Photoshop-style layer panel (right sidebar)
 - Visibility toggle · lock · reorder ↑↓
 - Rename layers inline · delete individual layers
