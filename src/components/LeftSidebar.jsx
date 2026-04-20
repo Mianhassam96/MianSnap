@@ -254,9 +254,9 @@ export default function LeftSidebar() {
     const bg = fabricCanvas.backgroundImage
     if (!bg) { window.showToast?.('Load an image first', 'info', 2000); return }
     // Boost brightness + contrast on background to emphasize face
-    const existing = (bg.filters || []).filter(f =>
-      f.type !== 'Brightness' && f.type !== 'Contrast' && f.type !== 'Saturation'
-    )
+    const existing = Array.isArray(bg.filters)
+      ? bg.filters.filter(f => f && f.type !== 'Brightness' && f.type !== 'Contrast' && f.type !== 'Saturation')
+      : []
     bg.filters = [
       ...existing,
       new fabric.Image.filters.Brightness({ brightness: 0.1 }),

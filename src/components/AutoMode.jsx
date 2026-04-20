@@ -17,12 +17,20 @@ export default function AutoMode() {
   const [step, setStep] = useState('')
   const [progress, setProgress] = useState(0)
   const [showFrameSelector, setShowFrameSelector] = useState(false)
+  const [showRetry, setShowRetry] = useState(false)
 
   // Show frame selector after auto mode completes
   React.useEffect(() => {
     const handler = () => setShowFrameSelector(true)
     window.addEventListener('miansnap:autoModeComplete', handler)
     return () => window.removeEventListener('miansnap:autoModeComplete', handler)
+  }, [])
+
+  // Show retry button after auto mode
+  React.useEffect(() => {
+    const handler = () => setShowRetry(true)
+    window.addEventListener('miansnap:showRetry', handler)
+    return () => window.removeEventListener('miansnap:showRetry', handler)
   }, [])
 
   async function runAutoMode() {
@@ -115,12 +123,19 @@ export default function AutoMode() {
       
       // Show CTR potential instead of score
       const ctrMessage = score?.score >= 80 
-        ? '🔥 High CTR Potential — Ready to perform!'
+        ? '🔥 This thumbnail is ready to perform — upload it now!'
         : score?.score >= 60
-        ? '⚡ Good CTR Potential — Strong thumbnail!'
-        : '💡 Moderate CTR — Try "Edit" to improve'
+        ? '⚡ Strong thumbnail! Want even better? Try "Edit" for fine-tuning'
+        : '💡 Good start! Click "Edit" to boost your score'
       
-      window.showToast?.(ctrMessage, 'success', 4000)
+      window.showToast?.(ctrMessage, 'success', 5000)
+
+      // Show retry option
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('miansnap:showRetry', { 
+          detail: { score: score?.score } 
+        }))
+      }, 2000)
 
     } catch (err) {
       console.error('[AutoMode] Error:', err)
@@ -258,10 +273,52 @@ export default function AutoMode() {
         <FrameSelector
           onFrameSelect={(frame) => {
             setShowFrameSelector(false)
+            setShowRetry(false)
             // Re-run auto mode with selected frame
             runAutoMode()
           }}
         />
+      )}
+
+      {/* Retry button — appears after first result */}
+      {showRetry && !running && (
+        <button
+          onClick={() => {
+            setShowRetry(false)
+            setShowFrameSelector(false)
+            runAutoMode()
+          }}
+          style={{
+            width: '100%',
+            padding: '14px 20px',
+            borderRadius: 12,
+            border: `1px solid ${theme.border}`,
+            background: theme.bgTertiary,
+            color: theme.text,
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            marginTop: 12,
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = theme.accent
+            e.currentTarget.style.background = theme.accentGlow
+            e.currentTarget.style.color = theme.accent
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = theme.border
+            e.currentTarget.style.background = theme.bgTertiary
+            e.currentTarget.style.color = theme.text
+          }}
+        >
+          <span>🔁</span>
+          <span>Try Another Version</span>
+        </button>
       )}
     </div>
   )

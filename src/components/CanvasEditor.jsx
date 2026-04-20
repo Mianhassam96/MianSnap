@@ -411,10 +411,10 @@ export default function CanvasEditor() {
         const file = e.dataTransfer.files[0]
         if (!file || !fabricCanvas) return
         const url = URL.createObjectURL(file)
-        if (file.type.startsWith('image/')) {
+        if (file.type && file.type.startsWith('image/')) {
           // Show choice dialog — no Shift key required
           setDropChoice({ file, url })
-        } else if (file.type.startsWith('video/')) {
+        } else if (file.type && file.type.startsWith('video/')) {
           window.dispatchEvent(new CustomEvent('miansnap:dropVideo', { detail: { file } }))
         } else {
           window.showToast?.('❌ Unsupported file — use image or video', 'error', 3000)

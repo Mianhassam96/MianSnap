@@ -25,7 +25,7 @@ export default function Toast() {
 
     // Global error handler — catch unhandled errors
     const onError = (event) => {
-      const msg = event?.message || 'Something went wrong'
+      const msg = String(event?.message || 'Something went wrong')
       // Filter out noisy browser errors
       if (msg.includes('ResizeObserver') || msg.includes('Script error')) return
       addToast(`⚠️ ${msg.slice(0, 80)}`, 'error', 5000)
@@ -33,7 +33,7 @@ export default function Toast() {
 
     // Unhandled promise rejections
     const onUnhandled = (event) => {
-      const msg = event?.reason?.message || 'An error occurred — try again'
+      const msg = String(event?.reason?.message || 'An error occurred — try again')
       if (msg.includes('ResizeObserver') || msg.includes('AbortError')) return
       addToast(`⚠️ ${msg.slice(0, 80)}`, 'error', 5000)
       event.preventDefault()

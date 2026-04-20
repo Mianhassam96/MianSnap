@@ -14,7 +14,7 @@ export default function OneClickStyles() {
   function saveState() {
     if (!fabricCanvas || savedState.current) return
     const bg = fabricCanvas.backgroundImage
-    savedState.current = bg ? [...(bg.filters || [])] : null
+    savedState.current = bg ? [...(Array.isArray(bg.filters) ? bg.filters : [])] : null
   }
 
   function onHover(key) {

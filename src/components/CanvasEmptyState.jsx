@@ -29,8 +29,8 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
     }
     const file = files[0]
     if (!file) return
-    if (file.type.startsWith('video/')) { setVideoFile(file) }
-    else if (file.type.startsWith('image/')) {
+    if (file.type && file.type.startsWith('video/')) { setVideoFile(file) }
+    else if (file.type && file.type.startsWith('image/')) {
       applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
       setHasImage(true)
     } else {
@@ -43,8 +43,8 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
     input.type = 'file'; input.accept = 'video/*,image/*'
     input.onchange = (e) => {
       const file = e.target.files[0]; if (!file) return
-      if (file.type.startsWith('video/')) { setVideoFile(file) }
-      else if (file.type.startsWith('image/')) {
+      if (file.type && file.type.startsWith('video/')) { setVideoFile(file) }
+      else if (file.type && file.type.startsWith('image/')) {
         applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover')
         setHasImage(true)
       }
@@ -95,26 +95,26 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
 
         {/* Primary CTA — ONE dominant action */}
         <div style={{
-          fontSize: 21, fontWeight: 900, color: theme.text,
-          marginBottom: 5, letterSpacing: '-0.5px',
+          fontSize: 28, fontWeight: 900, color: theme.text,
+          marginBottom: 8, letterSpacing: '-0.5px',
           fontFamily: "'Montserrat',sans-serif",
         }}>
-          {dragging ? 'Drop it!' : '📥 Drop your video here'}
+          {dragging ? 'Drop it!' : 'Drop your video here'}
         </div>
 
-        {/* Sub */}
-        <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, lineHeight: 1.5 }}>
+        {/* Sub — brutally clear */}
+        <div style={{ fontSize: 15, color: theme.textSecondary, marginBottom: 12, lineHeight: 1.5, fontWeight: 600 }}>
           {dragging
-            ? 'Release to load onto canvas'
-            : <>AI picks the best frame · <span style={{ color: accent, fontWeight: 600 }}>click to browse</span></>
+            ? 'Release to start'
+            : 'We do the rest — AI picks best frame + makes it viral'
           }
         </div>
 
         {/* Trust line — inline, subtle */}
         {!dragging && (
-          <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <div style={{ fontSize: 12, color: theme.textMuted, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span>🔒</span>
-            <span>Stays on your device — nothing uploaded</span>
+            <span>100% private — nothing uploaded</span>
           </div>
         )}
 

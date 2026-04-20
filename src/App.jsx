@@ -209,7 +209,7 @@ export default function App() {
     input.onchange = (e) => {
       const f = e.target.files[0]
       if (!f) return
-      if (!f.type.startsWith('video/')) {
+      if (!f.type || !f.type.startsWith('video/')) {
         window.showToast?.('❌ Unsupported file type. Please upload a video (MP4, MOV, WebM)', 'error', 4000)
         return
       }
@@ -227,7 +227,7 @@ export default function App() {
       const file = e.target.files[0]
       if (!file) return
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type || !file.type.startsWith('image/')) {
         window.showToast?.('❌ Unsupported file type. Please upload an image (JPG, PNG, WebP, GIF)', 'error', 4000)
         return
       }
