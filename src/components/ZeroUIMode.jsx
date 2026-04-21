@@ -23,7 +23,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const { videoUrl, setVideoFile, frames, setFrames, setIsExtracting } = useVideoStore()
 
   const [zeroMode, setZeroMode] = useState(true)
-  const [phase, setPhase] = useState('upload') // 'upload' | 'creating' | 'result' | 'done'
+  const [phase, setPhase] = useState('upload') // 'upload' | 'intent' | 'creating' | 'result' | 'done'
   const [dragging, setDragging] = useState(false)
   const [step, setStep] = useState('')
   const [progress, setProgress] = useState(0)
@@ -40,6 +40,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const [aiPersonality, setAiPersonality] = useState('')
   const [autoImproveRan, setAutoImproveRan] = useState(false)
   const [steeringChoice, setSteeringChoice] = useState(null)
+  const [intent, setIntent] = useState(null) // 'viral' | 'clean' | 'gaming'
+  const [calmMode, setCalmMode] = useState(false) // silence after steering
   const beforeSnapshotRef = useRef(null)
 
   // Restore preference
@@ -56,11 +58,10 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     onExitZeroMode?.()
   }
 
-  // ── Auto-generate as soon as video is ready ──────────────────
+  // ── Show intent choice after upload, before auto-generate ──
   useEffect(() => {
     if (!videoUrl || !fabricCanvas || phase !== 'upload') return
-    setPhase('creating')
-    runAutoGenerate()
+    setPhase('intent')
   }, [videoUrl, fabricCanvas])
 
   async function sleep(ms) {
@@ -85,10 +86,15 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       await applyFrame(best)
       await sleep(300)
 
-      // Apply style
+      // Apply style — based on user's intent
       setProgress(55); setStep('🎨 Designing thumbnail...')
-      const styles = ['dramatic', 'gaming', 'viral', 'mrbeast']
-      applyThumbnailStyle(fabricCanvas, styles[Math.floor(Math.random() * styles.length)])
+      const intentStyles = {
+        viral:  ['dramatic', 'viral', 'mrbeast'],
+        clean:  ['minimal', 'tutorial'],
+        gaming: ['gaming', 'sports'],
+      }
+      const stylePool = intentStyles[intent] || ['dramatic', 'gaming', 'viral', 'mrbeast']
+      applyThumbnailStyle(fabricCanvas, stylePool[Math.floor(Math.random() * stylePool.length)])
       await sleep(400)
 
       // Add text
@@ -221,35 +227,42 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
 
   function handleSteeringA(choice) {
     setSteeringChoice(null)
-    if (choice.a.label.includes('extreme') || choice.a.label.includes('aggressive')) {
-      // Apply more aggressive style
-      const styles = ['dramatic', 'gaming', 'viral']
-      applyThumbnailStyle(fabricCanvas, styles[Math.floor(Math.random() * styles.length)])
-      runViralImprovement()
-    } else if (choice.a.label.includes('boost')) {
-      runViralImprovement()
-    }
+    setCalmMode(true) // brief calm before next action
+    setTimeout(() => {
+      setCalmMode(false)
+      if (choice.a.label.includes('extreme') || choice.a.label.includes('aggressive')) {
+        const styles = ['dramatic', 'gaming', 'viral']
+        applyThumbnailStyle(fabricCanvas, styles[Math.floor(Math.random() * styles.length)])
+        runViralImprovement(true)
+      } else if (choice.a.label.includes('boost')) {
+        runViralImprovement(true)
+      }
+    }, 600)
   }
 
   function handleSteeringB(choice) {
     setSteeringChoice(null)
-    if (choice.b.label.includes('clean')) {
-      // Apply cleaner style
-      applyThumbnailStyle(fabricCanvas, 'minimal')
-      runViralImprovement()
-    } else if (choice.b.label.includes('Lock') || choice.b.label.includes('Download')) {
-      handleExport()
-    }
+    setCalmMode(true)
+    setTimeout(() => {
+      setCalmMode(false)
+      if (choice.b.label.includes('clean')) {
+        applyThumbnailStyle(fabricCanvas, 'minimal')
+        runViralImprovement(true)
+      } else if (choice.b.label.includes('Lock') || choice.b.label.includes('Download')) {
+        handleExport()
+      }
+    }, 400)
   }
 
   function getAiVoice(count) {
     return AI_VOICES[Math.min(count, AI_VOICES.length - 1)]
   }
 
-  function runViralImprovement() {
+  function runViralImprovement(isManual = true) {
     if (viralRunning || !fabricCanvas) return
     setViralRunning(true)
-    setSteeringChoice(null) // clear previous steering
+    setSteeringChoice(null)
+    setCalmMode(false)
     setPrevScore(s => s || score)
     window.dispatchEvent(new CustomEvent('miansnap:makeViral'))
     const done = () => {
@@ -257,20 +270,23 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       if (s) { setViralScore(s); setScore(s) }
       setViralCount(c => {
         const next = c + 1
-        setAiPersonality(getAiVoice(next))
-        // Clear personality after 3s, then show steering choice
-        setTimeout(() => {
-          setAiPersonality('')
-          // Show steering moment — user nudges direction
-          const sc = s?.score ?? 0
-          if (sc < 88) {
-            const choices = STEERING_CHOICES[Math.min(next - 1, STEERING_CHOICES.length - 1)]
-            setSteeringChoice(choices)
-          } else {
-            // System declares completion
-            setTimeout(() => setPhase('done'), 1000)
-          }
-        }, 2800)
+        // Only show personality + steering on manual clicks, not auto-improve
+        if (isManual) {
+          setAiPersonality(getAiVoice(next))
+          setTimeout(() => {
+            setAiPersonality('')
+            if ((s?.score ?? 0) >= 88) {
+              setTimeout(() => setPhase('done'), 800)
+            } else {
+              // Show steering card — then enter calm state after dismiss
+              const choices = STEERING_CHOICES[Math.min(next - 1, STEERING_CHOICES.length - 1)]
+              setSteeringChoice(choices)
+            }
+          }, 2500)
+        } else {
+          // Auto-improve: just update score silently, enter calm state
+          setCalmMode(true)
+        }
         return next
       })
       setViralRunning(false)
@@ -280,36 +296,30 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     setTimeout(() => { setViralRunning(false); window.removeEventListener('miansnap:viralDone', done) }, 8000)
   }
 
-  function handleMakeViral() { runViralImprovement() }
+  function handleMakeViral() { runViralImprovement(true) }
 
   function handleExport() {
     window.dispatchEvent(new CustomEvent('miansnap:export'))
   }
 
-  // ── AUTO-IMPROVE once, 1.5s after result appears — no click needed ──
+  // ── AUTO-IMPROVE once, 1.5s after result — silent, no steering ──
   useEffect(() => {
     if (phase !== 'result' || autoImproveRan || !fabricCanvas) return
     const sc = score?.score ?? 0
-    if (sc >= 80) return // already great, don't auto-improve
+    if (sc >= 80) return
     const timer = setTimeout(() => {
       setAutoImproveRan(true)
-      setAiPersonality("Let's make this go viral 🔥")
-      runViralImprovement()
+      runViralImprovement(false) // silent — no personality, no steering
     }, 1500)
     return () => clearTimeout(timer)
   }, [phase, fabricCanvas])
 
-  // ── Proactive nudge — fires after 5s inactivity ──
+  // ── Calm state: after steering dismissed, no interruptions for 10s ──
   useEffect(() => {
-    if (phase !== 'result') return
-    const timer = setTimeout(() => {
-      if (viralRunning) return
-      const sc = score?.score ?? 0
-      if (sc < 75) setProactiveNudge({ icon: '⚡', text: 'AI can push this higher — tap Improve', action: 'viral' })
-      else setProactiveNudge({ icon: '🚀', text: 'This is ready — upload it now!', action: 'export' })
-    }, 5000)
+    if (!calmMode) return
+    const timer = setTimeout(() => setCalmMode(false), 10000)
     return () => clearTimeout(timer)
-  }, [phase, score, viralCount])
+  }, [calmMode])
 
   // ── Auto Fix Everything — 1 smart button, AI decides ──
   function handleAutoFixEverything() {
@@ -324,7 +334,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       }
       fabricCanvas.renderAll()
     }
-    runViralImprovement()
+    runViralImprovement(true)
     window.showToast?.('🤖 AI is fixing everything...', 'info', 2000)
   }
 
@@ -360,18 +370,13 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
 
   function handleNewFile() {
     setPhase('upload')
-    setProgress(0)
-    setStep('')
-    setScore(null)
-    setPrevScore(null)
-    setViralDone(false)
-    setViralCount(0)
-    setSuggestion(null)
-    setShowReveal(false)
-    setAiPersonality('')
-    setAutoImproveRan(false)
-    setSteeringChoice(null)
-    setProactiveNudge(null)
+    setProgress(0); setStep('')
+    setScore(null); setPrevScore(null)
+    setViralDone(false); setViralCount(0)
+    setSuggestion(null); setShowReveal(false)
+    setAiPersonality(''); setAutoImproveRan(false)
+    setSteeringChoice(null); setProactiveNudge(null)
+    setIntent(null); setCalmMode(false)
     window.dispatchEvent(new CustomEvent('miansnap:resetCanvas'))
   }
 
@@ -533,8 +538,81 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       )}
 
       {/* ══════════════════════════════════════════════════════
-          PHASE 2 — CREATING (full-screen AI overlay)
+          PHASE 1b — INTENT CHOICE (after upload, before creating)
       ══════════════════════════════════════════════════════ */}
+      {phase === 'intent' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 600,
+          background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(245,245,255,0.97)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+          animation: 'fadeIn 0.3s ease',
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>🎯</div>
+          <div style={{
+            fontSize: 'clamp(18px,3vw,24px)', fontWeight: 900,
+            color: theme.text, marginBottom: 6,
+            fontFamily: "'Montserrat',sans-serif", letterSpacing: '-0.5px',
+          }}>What are you making?</div>
+          <div style={{ fontSize: 13, color: theme.textMuted, marginBottom: 28 }}>
+            AI will design around your goal
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 'min(340px, 88vw)' }}>
+            {[
+              { id: 'viral',  icon: '🔥', label: 'Viral Click Thumbnail', desc: 'Bold, dramatic, high contrast — max CTR' },
+              { id: 'clean',  icon: '✨', label: 'Clean Professional',     desc: 'Minimal, polished, brand-safe' },
+              { id: 'gaming', icon: '🎮', label: 'Gaming / Action',        desc: 'Neon, intense, high energy' },
+            ].map(opt => (
+              <button key={opt.id}
+                onClick={() => {
+                  setIntent(opt.id)
+                  setPhase('creating')
+                  runAutoGenerate()
+                }}
+                style={{
+                  padding: '16px 20px', borderRadius: 14,
+                  border: `1px solid ${theme.border}`,
+                  background: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)',
+                  color: theme.text, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  textAlign: 'left', transition: 'all 0.15s',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#7c3aed'
+                  e.currentTarget.style.background = theme.isDark ? 'rgba(124,58,237,0.12)' : 'rgba(124,58,237,0.06)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(124,58,237,0.2)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = theme.border
+                  e.currentTarget.style.background = theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'
+                }}
+              >
+                <span style={{ fontSize: 28, flexShrink: 0 }}>{opt.icon}</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>{opt.label}</div>
+                  <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>{opt.desc}</div>
+                </div>
+                <span style={{ marginLeft: 'auto', color: theme.textMuted, fontSize: 16 }}>→</span>
+              </button>
+            ))}
+          </div>
+
+          <button onClick={() => { setIntent('viral'); setPhase('creating'); runAutoGenerate() }}
+            style={{
+              marginTop: 16, background: 'none', border: 'none',
+              color: theme.textMuted, fontSize: 11, cursor: 'pointer',
+            }}>
+            skip — surprise me
+          </button>
+        </div>
+      )}
       {phase === 'creating' && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 600,
@@ -626,7 +704,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
-          {/* ── DONE STATE — system-declared completion ── */}
+          {/* ── DONE STATE — system-declared completion + ownership ── */}
           {phase === 'done' && (
             <div style={{
               position: 'fixed', inset: 0, zIndex: 650,
@@ -638,24 +716,28 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               animation: 'fadeIn 0.4s ease',
             }}>
               <div style={{ fontSize: 80, marginBottom: 20, animation: 'revealPop 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>🏆</div>
+
+              {/* Ownership moment — user is the creator */}
               <div style={{
-                fontSize: 'clamp(22px,3.5vw,32px)', fontWeight: 900, color: theme.text,
+                fontSize: 11, fontWeight: 700, color: theme.accent,
+                letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10,
+              }}>You created this</div>
+
+              <div style={{
+                fontSize: 'clamp(20px,3.5vw,28px)', fontWeight: 900, color: theme.text,
                 marginBottom: 8, letterSpacing: '-0.8px', fontFamily: "'Montserrat',sans-serif",
                 textAlign: 'center',
               }}>This thumbnail is optimized.</div>
-              <div style={{
-                fontSize: 14, color: theme.textSecondary, marginBottom: 8,
-                textAlign: 'center', lineHeight: 1.6, maxWidth: 360,
-              }}>
+              <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, textAlign: 'center', lineHeight: 1.6 }}>
                 No further improvements needed.
               </div>
               <div style={{
                 fontSize: 12, color: '#4ade80', marginBottom: 32,
-                padding: '6px 16px', borderRadius: 20,
+                padding: '5px 14px', borderRadius: 20,
                 background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)',
                 fontWeight: 600,
               }}>
-                {score ? `${score.score}/100 viral score · Maximum CTR potential` : 'Maximum CTR potential reached'}
+                {score ? `${score.score}/100 · Maximum CTR potential` : 'Maximum CTR potential reached'}
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button onClick={() => { handleExport(); setPhase('result') }} style={{
@@ -663,7 +745,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                   background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
                   color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer',
                   boxShadow: '0 8px 32px rgba(124,58,237,0.5)',
-                }}>⬇ Download Now</button>
+                }}>⬇ Download Your Thumbnail</button>
                 <button onClick={handleNewFile} style={{
                   padding: '16px 28px', borderRadius: 12,
                   border: `1px solid ${theme.border}`, background: theme.bgTertiary,
@@ -809,33 +891,6 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
-          {/* Proactive nudge — fires after inactivity */}
-          {phase === 'result' && proactiveNudge && !aiPersonality && !steeringChoice && (
-            <div style={{
-              position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
-              zIndex: 499,
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '9px 18px', borderRadius: 20,
-              background: theme.isDark ? 'rgba(124,58,237,0.18)' : 'rgba(124,58,237,0.1)',
-              border: '1px solid rgba(124,58,237,0.35)',
-              backdropFilter: 'blur(10px)',
-              animation: 'fadeInDown 0.3s ease',
-              cursor: 'pointer', whiteSpace: 'nowrap',
-            }}
-              onClick={() => {
-                if (proactiveNudge.action === 'viral') handleMakeViral()
-                else handleExport()
-                setProactiveNudge(null)
-              }}
-            >
-              <span>{proactiveNudge.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{proactiveNudge.text}</span>
-              <span style={{ fontSize: 10, color: theme.textMuted }}>tap →</span>
-              <button onClick={(e) => { e.stopPropagation(); setProactiveNudge(null) }}
-                style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: 10 }}>✕</button>
-            </div>
-          )}
-
           {/* Quick Fix panel — 1 smart button + 2 targeted options */}
           {phase === 'result' && showQuickFix && (
             <div style={{
@@ -894,7 +949,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               backdropFilter: 'blur(16px)',
               boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
             }}>
-              {/* Curiosity loop line — escalates */}
+              {/* Curiosity loop line — calm when in calm state */}
               <div style={{
                 padding: '6px 16px 0', fontSize: 11, textAlign: 'center', fontWeight: 600,
                 color: viralCount >= 3 ? '#4ade80' : viralCount >= 1 ? theme.accent : theme.textMuted,
@@ -902,6 +957,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               }}>
                 {viralRunning
                   ? '⚡ AI is improving your thumbnail...'
+                  : calmMode
+                  ? '' // silence — let user observe
                   : viralCount === 0
                   ? '✨ We made this for you — now make it yours'
                   : viralCount === 1
