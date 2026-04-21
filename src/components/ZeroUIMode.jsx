@@ -42,6 +42,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const [steeringChoice, setSteeringChoice] = useState(null)
   const [intent, setIntent] = useState(null) // 'viral' | 'clean' | 'gaming'
   const [calmMode, setCalmMode] = useState(false) // silence after steering
+  const [showIntentCard, setShowIntentCard] = useState(false) // post-result direction card
   const beforeSnapshotRef = useRef(null)
 
   // Restore preference
@@ -58,10 +59,11 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     onExitZeroMode?.()
   }
 
-  // ── Show intent choice after upload, before auto-generate ──
+  // ── Auto-generate immediately on upload — no gate ──
   useEffect(() => {
     if (!videoUrl || !fabricCanvas || phase !== 'upload') return
-    setPhase('intent')
+    setPhase('creating')
+    runAutoGenerate()
   }, [videoUrl, fabricCanvas])
 
   async function sleep(ms) {
@@ -125,11 +127,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       setPhase('result')
       setViralDone(true)
 
-      // Guided suggestion based on score
-      const sc = s?.score ?? 0
-      if (sc < 60) setSuggestion({ icon: '⚡', text: 'Boost your CTR — hit Make Viral again', action: 'viral' })
-      else if (sc < 80) setSuggestion({ icon: '✏️', text: 'Edit your title to make it more punchy', action: 'edit' })
-      else setSuggestion({ icon: '⬇', text: 'Looking great — download and upload it now!', action: 'export' })
+      // Show intent card 3s after result — user has seen output first
+      setTimeout(() => setShowIntentCard(true), 3000)
 
     } catch (err) {
       console.error('[ZeroUIMode] Auto-generate failed:', err)
@@ -314,12 +313,29 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     return () => clearTimeout(timer)
   }, [phase, fabricCanvas])
 
-  // ── Calm state: after steering dismissed, no interruptions for 10s ──
+  // ── Calm state: 4s silence after steering — intentional, not passive ──
   useEffect(() => {
     if (!calmMode) return
-    const timer = setTimeout(() => setCalmMode(false), 10000)
+    const timer = setTimeout(() => setCalmMode(false), 4000)
     return () => clearTimeout(timer)
   }, [calmMode])
+
+  // ── Wild Version — surprise variant, restores exploration ──
+  function handleWildVersion() {
+    setShowIntentCard(false)
+    setSteeringChoice(null)
+    // Pick a completely random unexpected style
+    const wildStyles = ['horror', 'gaming', 'news', 'sports', 'viral', 'mrbeast', 'dramatic']
+    const randomStyle = wildStyles[Math.floor(Math.random() * wildStyles.length)]
+    applyThumbnailStyle(fabricCanvas, randomStyle)
+    // Also randomize the title
+    const styles = ['gaming', 'drama', 'news', 'motivational', 'curiosity']
+    const randomTitleStyle = styles[Math.floor(Math.random() * styles.length)]
+    const titles = generateTitles(randomTitleStyle, 1)
+    addText(titles[0])
+    runViralImprovement(true)
+    window.showToast?.('🎲 Wild version applied!', 'success', 2000)
+  }
 
   // ── Auto Fix Everything — 1 smart button, AI decides ──
   function handleAutoFixEverything() {
@@ -377,6 +393,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     setAiPersonality(''); setAutoImproveRan(false)
     setSteeringChoice(null); setProactiveNudge(null)
     setIntent(null); setCalmMode(false)
+    setShowIntentCard(false)
     window.dispatchEvent(new CustomEvent('miansnap:resetCanvas'))
   }
 
@@ -537,82 +554,6 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════
-          PHASE 1b — INTENT CHOICE (after upload, before creating)
-      ══════════════════════════════════════════════════════ */}
-      {phase === 'intent' && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 600,
-          background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(245,245,255,0.97)',
-          backdropFilter: 'blur(12px)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
-          animation: 'fadeIn 0.3s ease',
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 16 }}>🎯</div>
-          <div style={{
-            fontSize: 'clamp(18px,3vw,24px)', fontWeight: 900,
-            color: theme.text, marginBottom: 6,
-            fontFamily: "'Montserrat',sans-serif", letterSpacing: '-0.5px',
-          }}>What are you making?</div>
-          <div style={{ fontSize: 13, color: theme.textMuted, marginBottom: 28 }}>
-            AI will design around your goal
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: 'min(340px, 88vw)' }}>
-            {[
-              { id: 'viral',  icon: '🔥', label: 'Viral Click Thumbnail', desc: 'Bold, dramatic, high contrast — max CTR' },
-              { id: 'clean',  icon: '✨', label: 'Clean Professional',     desc: 'Minimal, polished, brand-safe' },
-              { id: 'gaming', icon: '🎮', label: 'Gaming / Action',        desc: 'Neon, intense, high energy' },
-            ].map(opt => (
-              <button key={opt.id}
-                onClick={() => {
-                  setIntent(opt.id)
-                  setPhase('creating')
-                  runAutoGenerate()
-                }}
-                style={{
-                  padding: '16px 20px', borderRadius: 14,
-                  border: `1px solid ${theme.border}`,
-                  background: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)',
-                  color: theme.text, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  textAlign: 'left', transition: 'all 0.15s',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#7c3aed'
-                  e.currentTarget.style.background = theme.isDark ? 'rgba(124,58,237,0.12)' : 'rgba(124,58,237,0.06)'
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(124,58,237,0.2)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = theme.border
-                  e.currentTarget.style.background = theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'
-                }}
-              >
-                <span style={{ fontSize: 28, flexShrink: 0 }}>{opt.icon}</span>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{opt.label}</div>
-                  <div style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>{opt.desc}</div>
-                </div>
-                <span style={{ marginLeft: 'auto', color: theme.textMuted, fontSize: 16 }}>→</span>
-              </button>
-            ))}
-          </div>
-
-          <button onClick={() => { setIntent('viral'); setPhase('creating'); runAutoGenerate() }}
-            style={{
-              marginTop: 16, background: 'none', border: 'none',
-              color: theme.textMuted, fontSize: 11, cursor: 'pointer',
-            }}>
-            skip — surprise me
-          </button>
-        </div>
-      )}
       {phase === 'creating' && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 600,
@@ -810,7 +751,55 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
-          {/* AI personality voice — appears after each improvement */}
+          {/* ── Post-result direction card — shown 3s after result, dismissable ── */}
+          {phase === 'result' && showIntentCard && !viralRunning && !steeringChoice && !aiPersonality && (
+            <div style={{
+              position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 499,
+              background: theme.isDark ? 'rgba(13,13,24,0.97)' : 'rgba(255,255,255,0.97)',
+              border: `1px solid rgba(124,58,237,0.25)`,
+              borderRadius: 16, padding: '14px 16px',
+              boxShadow: '0 8px 32px rgba(124,58,237,0.15)',
+              backdropFilter: 'blur(16px)',
+              animation: 'fadeInDown 0.3s ease',
+              width: 'min(300px, 88vw)',
+            }}>
+              <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 10, textAlign: 'center' }}>
+                Want a different direction?
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                {[
+                  { id: 'viral',  icon: '🔥', label: 'More Viral' },
+                  { id: 'clean',  icon: '✨', label: 'Cleaner' },
+                  { id: 'gaming', icon: '🎮', label: 'Gaming' },
+                ].map(opt => (
+                  <button key={opt.id}
+                    onClick={() => {
+                      setIntent(opt.id)
+                      setShowIntentCard(false)
+                      const styleMap = { viral: ['dramatic','viral','mrbeast'], clean: ['minimal','tutorial'], gaming: ['gaming','sports'] }
+                      const pool = styleMap[opt.id]
+                      applyThumbnailStyle(fabricCanvas, pool[Math.floor(Math.random() * pool.length)])
+                      runViralImprovement(true)
+                    }}
+                    style={{
+                      flex: 1, padding: '8px 6px', borderRadius: 8,
+                      border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                      color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+                  >{opt.icon} {opt.label}</button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowIntentCard(false)}
+                style={{ width: '100%', background: 'none', border: 'none', color: theme.textMuted, fontSize: 10, cursor: 'pointer' }}
+              >this is perfect ✓</button>
+            </div>
+          )}
+          {/* AI personality voice — appears after each manual improvement */}
           {phase === 'result' && aiPersonality && !viralRunning && (
             <div style={{
               position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
@@ -1003,9 +992,22 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                   boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
                 }}>⬇ Export</button>
 
-                {/* Fix — 1 button, opens smart panel */}
+                {/* Wild Version — surprise exploration */}
+                <button onClick={handleWildVersion} disabled={viralRunning} style={{
+                  flex: 1, padding: '14px 8px', borderRadius: 12,
+                  border: `1px solid rgba(250,204,21,0.4)`,
+                  background: 'rgba(250,204,21,0.08)',
+                  color: '#facc15', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                  title="Try a completely unexpected style"
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(250,204,21,0.15)'; e.currentTarget.style.borderColor = '#facc15' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(250,204,21,0.08)'; e.currentTarget.style.borderColor = 'rgba(250,204,21,0.4)' }}
+                >🎲</button>
+
+                {/* Fix — smart panel */}
                 <button onClick={() => setShowQuickFix(q => !q)} style={{
-                  flex: 1, padding: '14px 10px', borderRadius: 12,
+                  flex: 1, padding: '14px 8px', borderRadius: 12,
                   border: `1px solid ${showQuickFix ? '#7c3aed' : theme.border}`,
                   background: showQuickFix ? 'rgba(124,58,237,0.1)' : theme.bgTertiary,
                   color: showQuickFix ? '#7c3aed' : theme.text,
