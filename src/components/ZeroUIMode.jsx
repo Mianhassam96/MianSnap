@@ -23,7 +23,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const { videoUrl, setVideoFile, frames, setFrames, setIsExtracting } = useVideoStore()
 
   const [zeroMode, setZeroMode] = useState(true)
-  const [phase, setPhase] = useState('upload') // 'upload' | 'creating' | 'reveal' | 'result'
+  const [phase, setPhase] = useState('upload') // 'upload' | 'creating' | 'result' | 'done'
   const [dragging, setDragging] = useState(false)
   const [step, setStep] = useState('')
   const [progress, setProgress] = useState(0)
@@ -34,6 +34,9 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const [viralRunning, setViralRunning] = useState(false)
   const [suggestion, setSuggestion] = useState(null)
   const [showReveal, setShowReveal] = useState(false)
+  const [showQuickFix, setShowQuickFix] = useState(false)
+  const [proactiveNudge, setProactiveNudge] = useState(null)
+  const [inactivityTimer, setInactivityTimer] = useState(null)
   const beforeSnapshotRef = useRef(null)
 
   // Restore preference
@@ -209,6 +212,61 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
 
   function handleExport() {
     window.dispatchEvent(new CustomEvent('miansnap:export'))
+  }
+
+  // Proactive AI nudge — fires after 6s inactivity on result screen
+  useEffect(() => {
+    if (phase !== 'result') return
+    const timer = setTimeout(() => {
+      if (!score) return
+      const sc = score.score
+      if (sc < 55) setProactiveNudge({ icon: '⚡', text: 'Your text could be bigger — tap Make Viral to auto-fix', action: 'viral' })
+      else if (sc < 75) setProactiveNudge({ icon: '🎯', text: 'One more enhancement could push this to viral', action: 'viral' })
+      else setProactiveNudge({ icon: '🚀', text: 'This thumbnail is ready — upload it now!', action: 'export' })
+    }, 6000)
+    return () => clearTimeout(timer)
+  }, [phase, score])
+
+  // Quick Fix actions — targeted, not full editor
+  function handleQuickFixText() {
+    if (!fabricCanvas) return
+    const objs = fabricCanvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'textbox')
+    if (objs.length === 0) {
+      // Add a text if none exists
+      if (!fabric) return
+      const t = new fabric.IText('YOUR TITLE HERE', {
+        left: fabricCanvas.width / 2, top: fabricCanvas.height * 0.82,
+        originX: 'center', originY: 'center',
+        fontFamily: 'Impact', fontSize: 88,
+        fill: '#ffff00', stroke: '#000000', strokeWidth: 4,
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 24, offsetX: 2, offsetY: 3 }),
+      })
+      fabricCanvas.add(t)
+      fabricCanvas.setActiveObject(t)
+      t.enterEditing(); t.selectAll()
+      fabricCanvas.renderAll()
+      window.showToast?.('✏️ Click the text to edit it', 'info', 2500)
+    } else {
+      // Select first text and enter edit mode
+      fabricCanvas.setActiveObject(objs[0])
+      objs[0].enterEditing()
+      objs[0].selectAll()
+      fabricCanvas.renderAll()
+      window.showToast?.('✏️ Edit your title — double-click when done', 'info', 2500)
+    }
+    setShowQuickFix(false)
+  }
+
+  function handleQuickFixStyle() {
+    const styles = ['dramatic', 'gaming', 'viral', 'mrbeast', 'sports']
+    const s = styles[Math.floor(Math.random() * styles.length)]
+    applyThumbnailStyle(fabricCanvas, s)
+    window.showToast?.(`🎨 Style changed to ${s}`, 'success', 2000)
+    setShowQuickFix(false)
+  }
+
+  function handleDone() {
+    setPhase('done')
   }
 
   function handleNewFile() {
@@ -446,7 +504,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       {/* ══════════════════════════════════════════════════════
           PHASE 3 — RESULT (canvas visible, action bar)
       ══════════════════════════════════════════════════════ */}
-      {phase === 'result' && (
+      {(phase === 'result' || phase === 'done') && (
         <>
           {/* ── Dramatic reveal overlay ── */}
           {showReveal && (
@@ -469,158 +527,256 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               }}>
                 {(score?.score ?? 0) >= 75 ? 'Your click-winning thumbnail!' : 'Your thumbnail is ready!'}
               </div>
-              <div style={{
-                fontSize: 16, color: 'rgba(255,255,255,0.75)', fontWeight: 500,
-                animation: 'fadeIn 0.4s ease 0.3s both',
-              }}>
-                {(score?.score ?? 0) >= 75
-                  ? `🔥 ${score.score}/100 viral score — ready to upload`
-                  : 'Hit Make Viral to boost your CTR score'}
+              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.75)', fontWeight: 500, animation: 'fadeIn 0.4s ease 0.3s both' }}>
+                {(score?.score ?? 0) >= 75 ? `🔥 ${score.score}/100 — ready to upload` : 'Hit Make Viral to boost your CTR'}
               </div>
             </div>
           )}
 
-          {/* Top bar */}
-          <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 500,
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 16px',
-            background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
-            borderBottom: `1px solid ${theme.border}`,
-            backdropFilter: 'blur(12px)',
-          }}>
-            <span style={{
-              fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px',
-              background: grad, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              fontFamily: "'Montserrat',sans-serif", flexShrink: 0,
-            }}>MianSnap</span>
-
-            {/* Score — with improvement indicator */}
-            {score && (
+          {/* ── DONE STATE — true finality moment ── */}
+          {phase === 'done' && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 650,
+              background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(245,245,255,0.97)',
+              backdropFilter: 'blur(16px)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+              animation: 'fadeIn 0.4s ease',
+            }}>
+              <div style={{ fontSize: 80, marginBottom: 20, animation: 'revealPop 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>🚀</div>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px', borderRadius: 20,
-                background: `${scoreColor}18`, border: `1px solid ${scoreColor}44`,
-                flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 12 }}>{score.score >= 75 ? '🔥' : score.score >= 50 ? '⚡' : '💡'}</span>
-                <span style={{ fontSize: 13, fontWeight: 900, color: scoreColor }}>{score.score}/100</span>
-                {prevScore && score.score > prevScore.score && (
-                  <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 700 }}>
-                    +{score.score - prevScore.score} ↑
-                  </span>
-                )}
-                <span style={{ fontSize: 10, color: theme.textMuted }}>
-                  {score.score >= 75 ? 'Viral Ready' : score.score >= 50 ? 'Good CTR' : 'Needs boost'}
-                </span>
+                fontSize: 'clamp(22px,3.5vw,32px)', fontWeight: 900, color: theme.text,
+                marginBottom: 8, letterSpacing: '-0.8px', fontFamily: "'Montserrat',sans-serif",
+              }}>Your thumbnail is ready to publish!</div>
+              <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 32, textAlign: 'center', lineHeight: 1.6 }}>
+                {score ? `${score.score}/100 viral score · ` : ''}Download it and upload to YouTube, TikTok, or Instagram
               </div>
-            )}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button onClick={() => { handleExport(); setPhase('result') }} style={{
+                  padding: '16px 40px', borderRadius: 12, border: 'none',
+                  background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+                  color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer',
+                  boxShadow: '0 8px 32px rgba(124,58,237,0.5)',
+                }}>⬇ Download Now</button>
+                <button onClick={handleNewFile} style={{
+                  padding: '16px 28px', borderRadius: 12,
+                  border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                  color: theme.text, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                }}>🔄 Create Another</button>
+              </div>
+              <button onClick={() => setPhase('result')} style={{
+                marginTop: 16, background: 'none', border: 'none',
+                color: theme.textMuted, fontSize: 12, cursor: 'pointer',
+              }}>← Back to thumbnail</button>
+            </div>
+          )}
 
-            <div style={{ flex: 1 }} />
+          {/* Top bar — only in result phase */}
+          {phase === 'result' && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, zIndex: 500,
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 16px',
+              background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
+              borderBottom: `1px solid ${theme.border}`,
+              backdropFilter: 'blur(12px)',
+            }}>
+              <span style={{
+                fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px',
+                background: grad, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                fontFamily: "'Montserrat',sans-serif", flexShrink: 0,
+              }}>MianSnap</span>
 
-            <button onClick={handleNewFile} style={{
-              padding: '6px 12px', borderRadius: 7,
-              border: `1px solid ${theme.border}`, background: 'transparent',
-              color: theme.textMuted, fontSize: 11, cursor: 'pointer',
-            }}>🔄 New</button>
-            <button onClick={exitZeroMode} style={{
-              padding: '6px 14px', borderRadius: 7,
-              border: `1px solid ${theme.border}`, background: theme.bgTertiary,
-              color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-            }}>✏️ Full Editor</button>
-          </div>
+              {score && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '4px 12px', borderRadius: 20,
+                  background: `${scoreColor}18`, border: `1px solid ${scoreColor}44`,
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 12 }}>{score.score >= 75 ? '🔥' : score.score >= 50 ? '⚡' : '💡'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 900, color: scoreColor }}>{score.score}/100</span>
+                  {prevScore && score.score > prevScore.score && (
+                    <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 700 }}>+{score.score - prevScore.score} ↑</span>
+                  )}
+                  <span style={{ fontSize: 10, color: theme.textMuted }}>
+                    {score.score >= 75 ? 'Viral Ready' : score.score >= 50 ? 'Good CTR' : 'Needs boost'}
+                  </span>
+                </div>
+              )}
 
-          {/* Guided next step — ONE suggestion */}
-          {suggestion && (
+              <div style={{ flex: 1 }} />
+              <button onClick={handleNewFile} style={{
+                padding: '6px 12px', borderRadius: 7,
+                border: `1px solid ${theme.border}`, background: 'transparent',
+                color: theme.textMuted, fontSize: 11, cursor: 'pointer',
+              }}>🔄 New</button>
+              <button onClick={exitZeroMode} style={{
+                padding: '6px 14px', borderRadius: 7,
+                border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              }}>✏️ Full Editor</button>
+            </div>
+          )}
+
+          {/* Proactive AI nudge — fires after inactivity */}
+          {phase === 'result' && proactiveNudge && (
             <div style={{
               position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
               zIndex: 499,
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '8px 18px', borderRadius: 20,
-              background: theme.isDark ? 'rgba(124,58,237,0.18)' : 'rgba(124,58,237,0.1)',
-              border: '1px solid rgba(124,58,237,0.35)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 20px rgba(124,58,237,0.2)',
+              padding: '9px 20px', borderRadius: 20,
+              background: 'linear-gradient(135deg,rgba(124,58,237,0.92),rgba(79,70,229,0.92))',
+              boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
               animation: 'fadeInDown 0.3s ease',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              cursor: 'pointer', whiteSpace: 'nowrap',
             }}
               onClick={() => {
-                if (suggestion.action === 'viral') handleMakeViral()
-                else if (suggestion.action === 'export') handleExport()
-                else if (suggestion.action === 'edit') exitZeroMode()
-                setSuggestion(null)
+                if (proactiveNudge.action === 'viral') handleMakeViral()
+                else if (proactiveNudge.action === 'export') handleExport()
+                setProactiveNudge(null)
               }}
             >
-              <span style={{ fontSize: 14 }}>{suggestion.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{suggestion.text}</span>
-              <span style={{ fontSize: 11, color: theme.textMuted }}>→</span>
+              <span style={{ fontSize: 14 }}>{proactiveNudge.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{proactiveNudge.text}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>→</span>
+              <button onClick={(e) => { e.stopPropagation(); setProactiveNudge(null) }}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 11, padding: '0 0 0 4px' }}>✕</button>
             </div>
           )}
 
-          {/* Bottom action bar */}
-          <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
-            display: 'flex', flexDirection: 'column', gap: 0,
-            background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
-            borderTop: `1px solid ${theme.border}`,
-            backdropFilter: 'blur(16px)',
-            boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
-          }}>
-            {/* Ownership line */}
+          {/* Quick Fix panel — 3 targeted actions, not full editor */}
+          {phase === 'result' && showQuickFix && (
             <div style={{
-              padding: '8px 16px 0',
-              fontSize: 11, color: theme.textMuted, textAlign: 'center',
-              fontWeight: 500,
+              position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 501,
+              background: theme.isDark ? 'rgba(13,13,24,0.98)' : 'rgba(255,255,255,0.98)',
+              border: `1px solid ${theme.border}`,
+              borderRadius: 16, padding: '16px',
+              boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
+              backdropFilter: 'blur(16px)',
+              animation: 'fadeInDown 0.2s ease',
+              width: 'min(360px, 90vw)',
             }}>
-              {viralCount === 0
-                ? '✨ We made this for you — now make it yours'
-                : viralCount === 1
-                ? '⚡ Getting better — hit Make Viral again to push higher'
-                : `🔥 ${viralCount} enhancements applied — looking great!`}
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted, marginBottom: 12, textAlign: 'center', letterSpacing: 0.5 }}>
+                QUICK FIX — no tools needed
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button onClick={handleQuickFixText} style={{
+                  padding: '12px 16px', borderRadius: 10,
+                  border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                  color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+                  transition: 'all 0.15s',
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+                >
+                  <span style={{ fontSize: 20 }}>✏️</span>
+                  <div>
+                    <div>Edit Title Text</div>
+                    <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400 }}>Click to edit your headline directly</div>
+                  </div>
+                </button>
+                <button onClick={handleQuickFixStyle} style={{
+                  padding: '12px 16px', borderRadius: 10,
+                  border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                  color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+                  transition: 'all 0.15s',
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+                >
+                  <span style={{ fontSize: 20 }}>🎨</span>
+                  <div>
+                    <div>Try Different Style</div>
+                    <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400 }}>Randomly applies a new visual style</div>
+                  </div>
+                </button>
+                <button onClick={exitZeroMode} style={{
+                  padding: '12px 16px', borderRadius: 10,
+                  border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                  color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+                  transition: 'all 0.15s',
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
+                >
+                  <span style={{ fontSize: 20 }}>🛠</span>
+                  <div>
+                    <div>Open Full Editor</div>
+                    <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400 }}>All tools — layers, filters, fonts</div>
+                  </div>
+                </button>
+              </div>
+              <button onClick={() => setShowQuickFix(false)} style={{
+                marginTop: 10, width: '100%', background: 'none', border: 'none',
+                color: theme.textMuted, fontSize: 11, cursor: 'pointer', padding: '4px',
+              }}>✕ Close</button>
             </div>
+          )}
 
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: 10, padding: '10px 16px 12px' }}>
-              {/* Make Viral — THE dominant action */}
-              <button
-                onClick={handleMakeViral}
-                disabled={viralRunning}
-                style={{
-                  flex: 3, padding: '15px 20px', borderRadius: 12, border: 'none',
-                  background: viralRunning
-                    ? 'linear-gradient(135deg,#6d28d9,#4c1d95)'
-                    : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-                  color: '#fff', fontSize: 16, fontWeight: 900,
+          {/* Bottom action bar — only in result phase */}
+          {phase === 'result' && (
+            <div style={{
+              position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
+              display: 'flex', flexDirection: 'column',
+              background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
+              borderTop: `1px solid ${theme.border}`,
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+            }}>
+              {/* Story arc line */}
+              <div style={{
+                padding: '7px 16px 0', fontSize: 11, textAlign: 'center', fontWeight: 500,
+                color: viralCount >= 2 ? '#4ade80' : theme.textMuted,
+              }}>
+                {viralCount === 0
+                  ? '✨ We made this for you — now make it yours'
+                  : viralCount === 1
+                  ? '⚡ Getting better — one more boost could push it to viral'
+                  : `🔥 ${viralCount} enhancements applied — this is your click-winning thumbnail`}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, padding: '8px 12px 10px' }}>
+                {/* Make Viral — dominant */}
+                <button onClick={handleMakeViral} disabled={viralRunning} style={{
+                  flex: 3, padding: '14px 16px', borderRadius: 12, border: 'none',
+                  background: viralRunning ? 'linear-gradient(135deg,#6d28d9,#4c1d95)' : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
+                  color: '#fff', fontSize: 15, fontWeight: 900,
                   cursor: viralRunning ? 'wait' : 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   boxShadow: viralRunning ? 'none' : '0 6px 28px rgba(239,68,68,0.5)',
                   animation: !viralRunning ? 'viralPulse 2.5s ease-in-out infinite' : 'none',
-                  letterSpacing: '-0.3px', transition: 'all 0.2s',
-                }}
-              >
-                <span>{viralRunning ? '⏳ Enhancing...' : viralCount > 0 ? '⚡ Improve Again' : '⚡ Make Viral'}</span>
-                <span style={{ fontSize: 10, opacity: 0.9, fontWeight: 500 }}>
-                  {viralRunning ? 'AI is working...' : '1 click = better CTR'}
-                </span>
-              </button>
+                  transition: 'all 0.2s',
+                }}>
+                  <span>{viralRunning ? '⏳ Enhancing...' : viralCount > 0 ? '⚡ Improve Again' : '⚡ Make Viral'}</span>
+                  <span style={{ fontSize: 9, opacity: 0.85, fontWeight: 400 }}>
+                    {viralRunning ? 'AI working...' : '1 click = better CTR'}
+                  </span>
+                </button>
 
-              {/* Export */}
-              <button onClick={handleExport} style={{
-                flex: 2, padding: '15px 16px', borderRadius: 12, border: 'none',
-                background: grad, color: '#fff',
-                fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
-              }}>⬇ Export</button>
+                {/* Export */}
+                <button onClick={handleExport} style={{
+                  flex: 2, padding: '14px 12px', borderRadius: 12, border: 'none',
+                  background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+                }}>⬇ Export</button>
 
-              {/* Edit */}
-              <button onClick={exitZeroMode} style={{
-                flex: 1, padding: '15px 12px', borderRadius: 12,
-                border: `1px solid ${theme.border}`, background: theme.bgTertiary,
-                color: theme.text, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}>✏️ Edit</button>
+                {/* Quick Fix — replaces "Edit" */}
+                <button onClick={() => setShowQuickFix(q => !q)} style={{
+                  flex: 1, padding: '14px 10px', borderRadius: 12,
+                  border: `1px solid ${showQuickFix ? '#7c3aed' : theme.border}`,
+                  background: showQuickFix ? 'rgba(124,58,237,0.1)' : theme.bgTertiary,
+                  color: showQuickFix ? '#7c3aed' : theme.text,
+                  fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                }}>✏️ Fix</button>
+              </div>
             </div>
-          </div>
+          )}
 
           <style>{`
             @keyframes viralPulse {
