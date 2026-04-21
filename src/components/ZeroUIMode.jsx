@@ -37,6 +37,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const [showQuickFix, setShowQuickFix] = useState(false)
   const [proactiveNudge, setProactiveNudge] = useState(null)
   const [inactivityTimer, setInactivityTimer] = useState(null)
+  const [aiPersonality, setAiPersonality] = useState('')
+  const [autoImproveRan, setAutoImproveRan] = useState(false)
   const beforeSnapshotRef = useRef(null)
 
   // Restore preference
@@ -188,51 +190,95 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     handleFileSelect(e.dataTransfer.files[0])
   }
 
-  function handleMakeViral() {
-    if (viralRunning) return
+  // AI personality messages — escalate with each improvement
+  const AI_VOICES = [
+    "Let's make this go viral 🔥",
+    "Getting dangerous (in a good way) ⚡",
+    "Okay this one might break CTR limits 🚀",
+    "This thumbnail is becoming unstoppable 💀",
+    "Maximum viral potential reached 🏆",
+  ]
+
+  function getAiVoice(count) {
+    return AI_VOICES[Math.min(count, AI_VOICES.length - 1)]
+  }
+
+  function runViralImprovement() {
+    if (viralRunning || !fabricCanvas) return
     setViralRunning(true)
-    setPrevScore(score)
+    setPrevScore(s => s || score)
     window.dispatchEvent(new CustomEvent('miansnap:makeViral'))
-    // Listen for completion
     const done = () => {
       const s = calculateViralScore(fabricCanvas)
       if (s) { setViralScore(s); setScore(s) }
-      setViralCount(c => c + 1)
+      setViralCount(c => {
+        const next = c + 1
+        setAiPersonality(getAiVoice(next))
+        // System-declared completion at high score
+        if ((s?.score ?? 0) >= 88) {
+          setTimeout(() => setPhase('done'), 2000)
+        }
+        return next
+      })
       setViralRunning(false)
-      // Update suggestion
-      const sc = s?.score ?? 0
-      if (sc >= 80) setSuggestion({ icon: '⬇', text: 'Score is high — download and upload now!', action: 'export' })
-      else setSuggestion({ icon: '🔁', text: 'Hit Make Viral again to push it higher', action: 'viral' })
       window.removeEventListener('miansnap:viralDone', done)
     }
     window.addEventListener('miansnap:viralDone', done)
-    // Fallback timeout
     setTimeout(() => { setViralRunning(false); window.removeEventListener('miansnap:viralDone', done) }, 8000)
   }
+
+  function handleMakeViral() { runViralImprovement() }
 
   function handleExport() {
     window.dispatchEvent(new CustomEvent('miansnap:export'))
   }
 
-  // Proactive AI nudge — fires after 6s inactivity on result screen
+  // ── AUTO-IMPROVE once, 1.5s after result appears — no click needed ──
+  useEffect(() => {
+    if (phase !== 'result' || autoImproveRan || !fabricCanvas) return
+    const sc = score?.score ?? 0
+    if (sc >= 80) return // already great, don't auto-improve
+    const timer = setTimeout(() => {
+      setAutoImproveRan(true)
+      setAiPersonality("Let's make this go viral 🔥")
+      runViralImprovement()
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [phase, fabricCanvas])
+
+  // ── Proactive nudge — fires after 5s inactivity ──
   useEffect(() => {
     if (phase !== 'result') return
     const timer = setTimeout(() => {
-      if (!score) return
-      const sc = score.score
-      if (sc < 55) setProactiveNudge({ icon: '⚡', text: 'Your text could be bigger — tap Make Viral to auto-fix', action: 'viral' })
-      else if (sc < 75) setProactiveNudge({ icon: '🎯', text: 'One more enhancement could push this to viral', action: 'viral' })
-      else setProactiveNudge({ icon: '🚀', text: 'This thumbnail is ready — upload it now!', action: 'export' })
-    }, 6000)
+      if (viralRunning) return
+      const sc = score?.score ?? 0
+      if (sc < 75) setProactiveNudge({ icon: '⚡', text: 'AI can push this higher — tap Improve', action: 'viral' })
+      else setProactiveNudge({ icon: '🚀', text: 'This is ready — upload it now!', action: 'export' })
+    }, 5000)
     return () => clearTimeout(timer)
-  }, [phase, score])
+  }, [phase, score, viralCount])
 
-  // Quick Fix actions — targeted, not full editor
+  // ── Auto Fix Everything — 1 smart button, AI decides ──
+  function handleAutoFixEverything() {
+    setShowQuickFix(false)
+    // AI decides: if text is small → boost it, then run viral
+    if (fabricCanvas) {
+      const textObjs = fabricCanvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'textbox')
+      textObjs.forEach(t => { if (t.fontSize < 72) t.set('fontSize', 80) })
+      if (textObjs.length === 0 && fabric) {
+        const titles = generateTitles('reaction', 1)
+        addText(titles[0])
+      }
+      fabricCanvas.renderAll()
+    }
+    runViralImprovement()
+    window.showToast?.('🤖 AI is fixing everything...', 'info', 2000)
+  }
+
   function handleQuickFixText() {
     if (!fabricCanvas) return
     const objs = fabricCanvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'textbox')
     if (objs.length === 0) {
-      // Add a text if none exists
       if (!fabric) return
       const t = new fabric.IText('YOUR TITLE HERE', {
         left: fabricCanvas.width / 2, top: fabricCanvas.height * 0.82,
@@ -241,32 +287,22 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
         fill: '#ffff00', stroke: '#000000', strokeWidth: 4,
         shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 24, offsetX: 2, offsetY: 3 }),
       })
-      fabricCanvas.add(t)
-      fabricCanvas.setActiveObject(t)
-      t.enterEditing(); t.selectAll()
-      fabricCanvas.renderAll()
+      fabricCanvas.add(t); fabricCanvas.setActiveObject(t)
+      t.enterEditing(); t.selectAll(); fabricCanvas.renderAll()
       window.showToast?.('✏️ Click the text to edit it', 'info', 2500)
     } else {
-      // Select first text and enter edit mode
       fabricCanvas.setActiveObject(objs[0])
-      objs[0].enterEditing()
-      objs[0].selectAll()
-      fabricCanvas.renderAll()
-      window.showToast?.('✏️ Edit your title — double-click when done', 'info', 2500)
+      objs[0].enterEditing(); objs[0].selectAll(); fabricCanvas.renderAll()
+      window.showToast?.('✏️ Edit your title', 'info', 2500)
     }
     setShowQuickFix(false)
   }
 
   function handleQuickFixStyle() {
     const styles = ['dramatic', 'gaming', 'viral', 'mrbeast', 'sports']
-    const s = styles[Math.floor(Math.random() * styles.length)]
-    applyThumbnailStyle(fabricCanvas, s)
-    window.showToast?.(`🎨 Style changed to ${s}`, 'success', 2000)
+    applyThumbnailStyle(fabricCanvas, styles[Math.floor(Math.random() * styles.length)])
+    window.showToast?.('🎨 New style applied', 'success', 2000)
     setShowQuickFix(false)
-  }
-
-  function handleDone() {
-    setPhase('done')
   }
 
   function handleNewFile() {
@@ -533,7 +569,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
-          {/* ── DONE STATE — true finality moment ── */}
+          {/* ── DONE STATE — system-declared completion ── */}
           {phase === 'done' && (
             <div style={{
               position: 'fixed', inset: 0, zIndex: 650,
@@ -544,13 +580,25 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
               animation: 'fadeIn 0.4s ease',
             }}>
-              <div style={{ fontSize: 80, marginBottom: 20, animation: 'revealPop 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>🚀</div>
+              <div style={{ fontSize: 80, marginBottom: 20, animation: 'revealPop 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>🏆</div>
               <div style={{
                 fontSize: 'clamp(22px,3.5vw,32px)', fontWeight: 900, color: theme.text,
                 marginBottom: 8, letterSpacing: '-0.8px', fontFamily: "'Montserrat',sans-serif",
-              }}>Your thumbnail is ready to publish!</div>
-              <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 32, textAlign: 'center', lineHeight: 1.6 }}>
-                {score ? `${score.score}/100 viral score · ` : ''}Download it and upload to YouTube, TikTok, or Instagram
+                textAlign: 'center',
+              }}>This thumbnail is optimized.</div>
+              <div style={{
+                fontSize: 14, color: theme.textSecondary, marginBottom: 8,
+                textAlign: 'center', lineHeight: 1.6, maxWidth: 360,
+              }}>
+                No further improvements needed.
+              </div>
+              <div style={{
+                fontSize: 12, color: '#4ade80', marginBottom: 32,
+                padding: '6px 16px', borderRadius: 20,
+                background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)',
+                fontWeight: 600,
+              }}>
+                {score ? `${score.score}/100 viral score · Maximum CTR potential` : 'Maximum CTR potential reached'}
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button onClick={() => { handleExport(); setPhase('result') }} style={{
@@ -588,20 +636,23 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                 fontFamily: "'Montserrat',sans-serif", flexShrink: 0,
               }}>MianSnap</span>
 
+              {/* Score with animated climb */}
               {score && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '4px 12px', borderRadius: 20,
+                  padding: '4px 14px', borderRadius: 20,
                   background: `${scoreColor}18`, border: `1px solid ${scoreColor}44`,
-                  flexShrink: 0,
+                  flexShrink: 0, transition: 'all 0.4s ease',
                 }}>
-                  <span style={{ fontSize: 12 }}>{score.score >= 75 ? '🔥' : score.score >= 50 ? '⚡' : '💡'}</span>
-                  <span style={{ fontSize: 13, fontWeight: 900, color: scoreColor }}>{score.score}/100</span>
+                  <span style={{ fontSize: 13 }}>{score.score >= 88 ? '🏆' : score.score >= 75 ? '🔥' : score.score >= 50 ? '⚡' : '💡'}</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: scoreColor, transition: 'color 0.4s' }}>{score.score}/100</span>
                   {prevScore && score.score > prevScore.score && (
-                    <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 700 }}>+{score.score - prevScore.score} ↑</span>
+                    <span style={{ fontSize: 11, color: '#4ade80', fontWeight: 800, animation: 'revealPop 0.4s ease' }}>
+                      +{score.score - prevScore.score} ↑
+                    </span>
                   )}
                   <span style={{ fontSize: 10, color: theme.textMuted }}>
-                    {score.score >= 75 ? 'Viral Ready' : score.score >= 50 ? 'Good CTR' : 'Needs boost'}
+                    {score.score >= 88 ? 'Maximum CTR' : score.score >= 75 ? 'Viral Ready' : score.score >= 50 ? 'Good CTR' : 'Needs boost'}
                   </span>
                 </div>
               )}
@@ -620,106 +671,99 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
-          {/* Proactive AI nudge — fires after inactivity */}
-          {phase === 'result' && proactiveNudge && (
+          {/* AI personality voice — appears after each improvement */}
+          {phase === 'result' && aiPersonality && !viralRunning && (
             <div style={{
               position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
               zIndex: 499,
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 20px', borderRadius: 20,
-              background: 'linear-gradient(135deg,rgba(124,58,237,0.92),rgba(79,70,229,0.92))',
+              padding: '8px 20px', borderRadius: 20,
+              background: 'linear-gradient(135deg,rgba(124,58,237,0.9),rgba(239,68,68,0.8))',
               boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
+              fontSize: 12, fontWeight: 700, color: '#fff',
+              animation: 'fadeInDown 0.3s ease',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+            }}>
+              {aiPersonality}
+            </div>
+          )}
+
+          {/* Proactive nudge — fires after inactivity */}
+          {phase === 'result' && proactiveNudge && !aiPersonality && (
+            <div style={{
+              position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 499,
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '9px 18px', borderRadius: 20,
+              background: theme.isDark ? 'rgba(124,58,237,0.18)' : 'rgba(124,58,237,0.1)',
+              border: '1px solid rgba(124,58,237,0.35)',
+              backdropFilter: 'blur(10px)',
               animation: 'fadeInDown 0.3s ease',
               cursor: 'pointer', whiteSpace: 'nowrap',
             }}
               onClick={() => {
                 if (proactiveNudge.action === 'viral') handleMakeViral()
-                else if (proactiveNudge.action === 'export') handleExport()
+                else handleExport()
                 setProactiveNudge(null)
               }}
             >
-              <span style={{ fontSize: 14 }}>{proactiveNudge.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{proactiveNudge.text}</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>→</span>
+              <span>{proactiveNudge.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{proactiveNudge.text}</span>
+              <span style={{ fontSize: 10, color: theme.textMuted }}>tap →</span>
               <button onClick={(e) => { e.stopPropagation(); setProactiveNudge(null) }}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 11, padding: '0 0 0 4px' }}>✕</button>
+                style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: 10 }}>✕</button>
             </div>
           )}
 
-          {/* Quick Fix panel — 3 targeted actions, not full editor */}
+          {/* Quick Fix panel — 1 smart button + 2 targeted options */}
           {phase === 'result' && showQuickFix && (
             <div style={{
-              position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+              position: 'fixed', bottom: 88, left: '50%', transform: 'translateX(-50%)',
               zIndex: 501,
               background: theme.isDark ? 'rgba(13,13,24,0.98)' : 'rgba(255,255,255,0.98)',
               border: `1px solid ${theme.border}`,
-              borderRadius: 16, padding: '16px',
+              borderRadius: 16, padding: '14px',
               boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
               backdropFilter: 'blur(16px)',
               animation: 'fadeInDown 0.2s ease',
-              width: 'min(360px, 90vw)',
+              width: 'min(340px, 90vw)',
             }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted, marginBottom: 12, textAlign: 'center', letterSpacing: 0.5 }}>
-                QUICK FIX — no tools needed
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* ONE smart button — AI decides everything */}
+              <button onClick={handleAutoFixEverything} style={{
+                width: '100%', padding: '14px', borderRadius: 10, border: 'none',
+                background: 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
+                color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                marginBottom: 10,
+                boxShadow: '0 4px 20px rgba(239,68,68,0.4)',
+              }}>
+                🤖 Auto Fix Everything
+                <div style={{ fontSize: 10, opacity: 0.85, fontWeight: 400, marginTop: 2 }}>AI decides what to improve</div>
+              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={handleQuickFixText} style={{
-                  padding: '12px 16px', borderRadius: 10,
+                  flex: 1, padding: '10px 8px', borderRadius: 8,
                   border: `1px solid ${theme.border}`, background: theme.bgTertiary,
-                  color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-                  transition: 'all 0.15s',
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
-                >
-                  <span style={{ fontSize: 20 }}>✏️</span>
-                  <div>
-                    <div>Edit Title Text</div>
-                    <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400 }}>Click to edit your headline directly</div>
-                  </div>
-                </button>
+                  color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                }}>✏️ Edit Text</button>
                 <button onClick={handleQuickFixStyle} style={{
-                  padding: '12px 16px', borderRadius: 10,
+                  flex: 1, padding: '10px 8px', borderRadius: 8,
                   border: `1px solid ${theme.border}`, background: theme.bgTertiary,
-                  color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-                  transition: 'all 0.15s',
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
-                >
-                  <span style={{ fontSize: 20 }}>🎨</span>
-                  <div>
-                    <div>Try Different Style</div>
-                    <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400 }}>Randomly applies a new visual style</div>
-                  </div>
-                </button>
+                  color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                }}>🎨 New Style</button>
                 <button onClick={exitZeroMode} style={{
-                  padding: '12px 16px', borderRadius: 10,
+                  flex: 1, padding: '10px 8px', borderRadius: 8,
                   border: `1px solid ${theme.border}`, background: theme.bgTertiary,
-                  color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-                  transition: 'all 0.15s',
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.background = theme.bgTertiary }}
-                >
-                  <span style={{ fontSize: 20 }}>🛠</span>
-                  <div>
-                    <div>Open Full Editor</div>
-                    <div style={{ fontSize: 10, color: theme.textMuted, fontWeight: 400 }}>All tools — layers, filters, fonts</div>
-                  </div>
-                </button>
+                  color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                }}>🛠 Editor</button>
               </div>
               <button onClick={() => setShowQuickFix(false)} style={{
-                marginTop: 10, width: '100%', background: 'none', border: 'none',
-                color: theme.textMuted, fontSize: 11, cursor: 'pointer', padding: '4px',
+                marginTop: 8, width: '100%', background: 'none', border: 'none',
+                color: theme.textMuted, fontSize: 10, cursor: 'pointer',
               }}>✕ Close</button>
             </div>
           )}
 
-          {/* Bottom action bar — only in result phase */}
+          {/* Bottom action bar */}
           {phase === 'result' && (
             <div style={{
               position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
@@ -729,23 +773,32 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               backdropFilter: 'blur(16px)',
               boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
             }}>
-              {/* Story arc line */}
+              {/* Curiosity loop line — escalates */}
               <div style={{
-                padding: '7px 16px 0', fontSize: 11, textAlign: 'center', fontWeight: 500,
-                color: viralCount >= 2 ? '#4ade80' : theme.textMuted,
+                padding: '6px 16px 0', fontSize: 11, textAlign: 'center', fontWeight: 600,
+                color: viralCount >= 3 ? '#4ade80' : viralCount >= 1 ? theme.accent : theme.textMuted,
+                transition: 'color 0.4s',
               }}>
-                {viralCount === 0
+                {viralRunning
+                  ? '⚡ AI is improving your thumbnail...'
+                  : viralCount === 0
                   ? '✨ We made this for you — now make it yours'
                   : viralCount === 1
-                  ? '⚡ Getting better — one more boost could push it to viral'
-                  : `🔥 ${viralCount} enhancements applied — this is your click-winning thumbnail`}
+                  ? '⚡ Getting dangerous (in a good way) — click again?'
+                  : viralCount === 2
+                  ? '🔥 This is getting seriously viral — one more push?'
+                  : `🏆 ${viralCount} improvements — can it reach 100?`}
               </div>
 
               <div style={{ display: 'flex', gap: 8, padding: '8px 12px 10px' }}>
-                {/* Make Viral — dominant */}
+                {/* Improve — dominant, curiosity-driven label */}
                 <button onClick={handleMakeViral} disabled={viralRunning} style={{
                   flex: 3, padding: '14px 16px', borderRadius: 12, border: 'none',
-                  background: viralRunning ? 'linear-gradient(135deg,#6d28d9,#4c1d95)' : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
+                  background: viralRunning
+                    ? 'linear-gradient(135deg,#6d28d9,#4c1d95)'
+                    : viralCount >= 2
+                    ? 'linear-gradient(135deg,#ef4444,#f59e0b,#7c3aed)'
+                    : 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
                   color: '#fff', fontSize: 15, fontWeight: 900,
                   cursor: viralRunning ? 'wait' : 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -753,9 +806,15 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                   animation: !viralRunning ? 'viralPulse 2.5s ease-in-out infinite' : 'none',
                   transition: 'all 0.2s',
                 }}>
-                  <span>{viralRunning ? '⏳ Enhancing...' : viralCount > 0 ? '⚡ Improve Again' : '⚡ Make Viral'}</span>
+                  <span>
+                    {viralRunning ? '⏳ Improving...'
+                      : viralCount === 0 ? '⚡ Make Viral'
+                      : viralCount === 1 ? '⚡ Push It Higher'
+                      : viralCount === 2 ? '🔥 Make It Dangerous'
+                      : '🏆 Max It Out'}
+                  </span>
                   <span style={{ fontSize: 9, opacity: 0.85, fontWeight: 400 }}>
-                    {viralRunning ? 'AI working...' : '1 click = better CTR'}
+                    {viralRunning ? 'AI working...' : score ? `${score.score}/100 → can go higher` : '1 click = better CTR'}
                   </span>
                 </button>
 
@@ -766,7 +825,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                   boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
                 }}>⬇ Export</button>
 
-                {/* Quick Fix — replaces "Edit" */}
+                {/* Fix — 1 button, opens smart panel */}
                 <button onClick={() => setShowQuickFix(q => !q)} style={{
                   flex: 1, padding: '14px 10px', borderRadius: 12,
                   border: `1px solid ${showQuickFix ? '#7c3aed' : theme.border}`,
