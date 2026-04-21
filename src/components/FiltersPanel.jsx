@@ -101,11 +101,11 @@ export default function FiltersPanel() {
   function onHoverPreset(preset) {
     const bg = fabricCanvas?.backgroundImage
     if (!bg || bg.filters === undefined) return
-    // Save current filters once
+    // Save current filters once — but only if not already saved
     if (!savedFiltersRef.current) {
-      savedFiltersRef.current = [...(bg.filters || [])]
+      // Store a clean copy — only preset-type filters, not viral overlays
+      savedFiltersRef.current = Array.isArray(bg.filters) ? [...bg.filters] : []
     }
-    // Debounce 180ms so fast mouse moves don't flicker
     clearTimeout(hoverTimerRef.current)
     hoverTimerRef.current = setTimeout(() => {
       const f = preset.filters
@@ -116,10 +116,11 @@ export default function FiltersPanel() {
   function onLeavePreset() {
     clearTimeout(hoverTimerRef.current)
     const bg = fabricCanvas?.backgroundImage
-    if (!bg || !savedFiltersRef.current) return
-    // Only revert if this preset isn't the active one
+    if (!bg) return
+    // Only revert if no active preset is committed
     if (!activePreset) {
-      bg.filters = savedFiltersRef.current
+      // Restore saved filters — or clear if nothing was saved
+      bg.filters = savedFiltersRef.current || []
       bg.applyFilters()
       fabricCanvas.renderAll()
       savedFiltersRef.current = null

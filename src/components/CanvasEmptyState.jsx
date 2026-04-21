@@ -77,15 +77,26 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
       onDrop={handleDrop}
       onClick={handleClick}
     >
+      {/* Ghost pulse ring — visual anchor so canvas never feels "broken" */}
+      {!dragging && (
+        <div style={{
+          position: 'absolute', inset: 24, borderRadius: 12,
+          border: '2px dashed rgba(124,58,237,0.18)',
+          pointerEvents: 'none',
+          animation: 'ghostRing 3s ease-in-out infinite',
+        }} />
+      )}
+
       <div style={{
         textAlign: 'center', maxWidth: 400, padding: '0 24px',
         animation: 'fadeIn 0.35s ease',
         pointerEvents: 'none',
+        position: 'relative', zIndex: 1,
       }}>
 
-        {/* Icon with bounce when idle */}
+        {/* Icon with bounce */}
         <div style={{
-          fontSize: 48, marginBottom: 10,
+          fontSize: 52, marginBottom: 12,
           filter: dragging ? `drop-shadow(0 0 14px ${accent})` : 'none',
           animation: !dragging ? 'iconBounce 2s ease-in-out infinite' : 'none',
           transition: 'filter 0.2s',
@@ -93,24 +104,48 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
           {dragging ? '📥' : '🎬'}
         </div>
 
-        {/* Primary CTA — ONE dominant action */}
+        {/* Primary CTA */}
         <div style={{
-          fontSize: dragging ? 32 : 36, fontWeight: 900,
+          fontSize: dragging ? 28 : 32, fontWeight: 900,
           color: dragging ? '#7c3aed' : theme.text,
-          marginBottom: 8, letterSpacing: '-1px',
+          marginBottom: 8, letterSpacing: '-0.8px',
           fontFamily: "'Montserrat',sans-serif",
-          lineHeight: 1.1,
+          lineHeight: 1.15,
         }}>
-          {dragging ? '📥 Drop it!' : '📥 DROP VIDEO TO START'}
+          {dragging ? '📥 Drop it!' : 'Drop your video here'}
         </div>
 
-        {/* Sub — brutally clear */}
-        <div style={{ fontSize: 15, color: theme.textSecondary, marginBottom: 12, lineHeight: 1.5, fontWeight: 600 }}>
+        {/* Ghost instruction — always visible, never ambiguous */}
+        <div style={{
+          fontSize: 13, color: theme.textMuted, marginBottom: 6,
+          lineHeight: 1.6, fontWeight: 500,
+        }}>
           {dragging
             ? 'Release to start — AI does the rest'
-            : 'AI picks best frame · makes it viral · ready in 10s'
+            : 'or click anywhere to browse files'
           }
         </div>
+
+        {/* What happens next — removes "is it loading?" confusion */}
+        {!dragging && (
+          <div style={{
+            fontSize: 11, color: theme.textMuted, marginBottom: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 8, flexWrap: 'wrap',
+          }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ color: accent }}>①</span> AI picks best frame
+            </span>
+            <span style={{ color: theme.border }}>·</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ color: accent }}>②</span> Makes it viral
+            </span>
+            <span style={{ color: theme.border }}>·</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ color: accent }}>③</span> Ready in 10s
+            </span>
+          </div>
+        )}
 
         {/* Trust line — inline, subtle */}
         {!dragging && (
@@ -173,11 +208,15 @@ export default function CanvasEmptyState({ onUploadVideo, onUploadImage, onUseTe
       <style>{`
         @keyframes emptyPulse {
           0%,100% { border-color: transparent; }
-          50% { border-color: rgba(124,58,237,0.2); }
+          50% { border-color: rgba(124,58,237,0.25); }
+        }
+        @keyframes ghostRing {
+          0%,100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.01); }
         }
         @keyframes iconBounce {
           0%,100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
+          50% { transform: translateY(-8px); }
         }
       `}</style>
     </div>

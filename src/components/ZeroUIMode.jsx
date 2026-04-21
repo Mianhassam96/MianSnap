@@ -413,7 +413,6 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
         .ms-fab           { display: none !important; }
         .ms-zoom-controls { display: none !important; }
       `}</style>
-
       {/* Canvas always renders underneath */}
       {children}
 
@@ -430,6 +429,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+            touchAction: 'none', // prevent page scroll conflict on mobile
           }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false) }}
@@ -562,6 +562,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
           alignItems: 'center', justifyContent: 'center',
           fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
           animation: 'fadeIn 0.3s ease',
+          touchAction: 'none',
         }}>
           {/* Pulsing icon */}
           <div style={{
