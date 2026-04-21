@@ -27,15 +27,22 @@ function publishSnapshot(fabricCanvas) {
   window.__msLastViralSnapshot = snapshotViralState(fabricCanvas)
 }
 
+// Running lock — prevents concurrent calls from stacking effects
+let _viralRunning = false
+
 export async function makeItViral(fabricCanvas) {
   if (!fabricCanvas) return { steps: [] }
+  if (_viralRunning) return { steps: [] }
+  _viralRunning = true
 
   const steps = []
   const F = window.fabric
-  if (!F) return { steps: [] }
+  if (!F) { _viralRunning = false; return { steps: [] } }
 
   window.__msHistory?.pauseSnapshot?.()
   publishSnapshot(fabricCanvas)
+
+  try {
 
   const bg = fabricCanvas.backgroundImage
   const cw = fabricCanvas.width
@@ -121,7 +128,7 @@ export async function makeItViral(fabricCanvas) {
 
   // ── 5. CINEMATIC OVERLAYS ───────────────────────────────────
   if (isDark) {
-    // Dual-color edge glow — cinematic split-tone
+    // Dual-color edge glow — cinematic split-tone (dark/gaming content only)
     const leftGlow = new F.Rect({
       left: 0, top: 0, width: cw * 0.35, height: ch,
       fill: new F.Gradient({
@@ -170,34 +177,37 @@ export async function makeItViral(fabricCanvas) {
     steps.push('✓ Subject spotlight')
   }
 
-  // ── 6. CHROMATIC ABERRATION BARS (top + bottom) ─────────────
-  // Subtle color bars at top/bottom — cinematic letterbox feel
-  const topBar = new F.Rect({
-    left: 0, top: 0, width: cw, height: ch * 0.06,
-    fill: new F.Gradient({
-      type: 'linear',
-      coords: { x1: 0, y1: 0, x2: 0, y2: ch * 0.06 },
-      colorStops: [
-        { offset: 0, color: 'rgba(0,0,0,0.55)' },
-        { offset: 1, color: 'rgba(0,0,0,0)' },
-      ],
-    }),
-    selectable: false, evented: false, _viralChrome: true,
-  })
-  const bottomBar = new F.Rect({
-    left: 0, top: ch * 0.94, width: cw, height: ch * 0.06,
-    fill: new F.Gradient({
-      type: 'linear',
-      coords: { x1: 0, y1: 0, x2: 0, y2: ch * 0.06 },
-      colorStops: [
-        { offset: 0, color: 'rgba(0,0,0,0)' },
-        { offset: 1, color: 'rgba(0,0,0,0.6)' },
-      ],
-    }),
-    selectable: false, evented: false, _viralChrome: true,
-  })
-  fabricCanvas.add(topBar); fabricCanvas.sendToBack(topBar)
-  fabricCanvas.add(bottomBar); fabricCanvas.sendToBack(bottomBar)
+  // ── 6. CINEMATIC BARS — only for dark/action content ───────
+  // Avoid over-dramatizing bright/clean images
+  if (isDark || (!isBright && avgSaturation < 0.35)) {
+    const topBar = new F.Rect({
+      left: 0, top: 0, width: cw, height: ch * 0.06,
+      fill: new F.Gradient({
+        type: 'linear',
+        coords: { x1: 0, y1: 0, x2: 0, y2: ch * 0.06 },
+        colorStops: [
+          { offset: 0, color: 'rgba(0,0,0,0.55)' },
+          { offset: 1, color: 'rgba(0,0,0,0)' },
+        ],
+      }),
+      selectable: false, evented: false, _viralChrome: true,
+    })
+    const bottomBar = new F.Rect({
+      left: 0, top: ch * 0.94, width: cw, height: ch * 0.06,
+      fill: new F.Gradient({
+        type: 'linear',
+        coords: { x1: 0, y1: 0, x2: 0, y2: ch * 0.06 },
+        colorStops: [
+          { offset: 0, color: 'rgba(0,0,0,0)' },
+          { offset: 1, color: 'rgba(0,0,0,0.6)' },
+        ],
+      }),
+      selectable: false, evented: false, _viralChrome: true,
+    })
+    fabricCanvas.add(topBar); fabricCanvas.sendToBack(topBar)
+    fabricCanvas.add(bottomBar); fabricCanvas.sendToBack(bottomBar)
+    steps.push('✓ Cinematic bars')
+  }
 
   // ── 7. DEEP VIGNETTE ────────────────────────────────────────
   const vignette = new F.Rect({
@@ -218,13 +228,20 @@ export async function makeItViral(fabricCanvas) {
   steps.push('✓ Deep vignette + cinematic bars')
 
   fabricCanvas.renderAll()
-  window.__msHistory?.resumeSnapshot?.()
 
   window.dispatchEvent(new CustomEvent('miansnap:viralDone', {
     detail: { steps: ['✨ Color graded', '🔥 Contrast maxed', '🎯 Face focused', '💫 Cinematic glow', '🌟 Ready to perform'] }
   }))
 
   return { steps }
+  } catch (err) {
+    console.warn('[makeItViral] Error during enhancement:', err)
+    return { steps }
+  } finally {
+    // Always release lock — even if enhancement threw
+    _viralRunning = false
+    window.__msHistory?.resumeSnapshot?.()
+  }
 }
 
 // Remove all viral effects (filters + overlays) — always safe to call

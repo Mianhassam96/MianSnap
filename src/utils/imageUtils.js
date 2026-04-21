@@ -4,6 +4,11 @@
  */
 import { fabric } from '../lib/fabric'
 
+/** True only when both Fabric CDN and the canvas instance are fully ready */
+export function isCanvasReady(fabricCanvas) {
+  return !!(fabricCanvas && fabricCanvas.width && window.fabric?.Image?.fromURL)
+}
+
 /**
  * Scale modes:
  * 'cover' — fills canvas, may crop edges (best for thumbnails)
@@ -44,24 +49,22 @@ export function scaleImageToCanvas(img, canvasW, canvasH, mode = 'cover') {
 export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', onDone) {
   if (!fabricCanvas || !dataUrl) return
 
-  // Wait for Fabric.js to be ready — poll up to 3s
+  // State gate — both canvas AND Fabric must be ready before applying
   function tryApply(attempts = 0) {
-    const F = window.fabric
-    if (!F?.Image?.fromURL) {
-      if (attempts > 30) {
-        console.warn('[imageUtils] Fabric not ready after 3s')
+    if (!isCanvasReady(fabricCanvas)) {
+      if (attempts > 40) {
+        console.warn('[imageUtils] Canvas or Fabric not ready after 4s — aborting')
         return
       }
       setTimeout(() => tryApply(attempts + 1), 100)
       return
     }
 
-    // Don't use crossOrigin for data URLs — it causes CORS errors
+    const F = window.fabric
     const opts = dataUrl.startsWith('data:') ? {} : { crossOrigin: 'anonymous' }
 
     F.Image.fromURL(dataUrl, (img) => {
       if (!img || !img.width) {
-        // Retry once without options
         F.Image.fromURL(dataUrl, (img2) => {
           if (!img2 || !img2.width) {
             console.warn('[imageUtils] Failed to load image')

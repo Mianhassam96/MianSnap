@@ -4,7 +4,7 @@ import useVideoStore from '../store/useVideoStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { extractFrames, captureFrame, stepFrame } from '../utils/frameExtractor'
 import { getSuggestedFrames } from '../utils/frameSuggestions'
-import { applyImageAsBackground } from '../utils/imageUtils'
+import { applyImageAsBackground, isCanvasReady } from '../utils/imageUtils'
 import { fabric } from '../lib/fabric'
 
 export default function BottomPanel() {
@@ -80,13 +80,17 @@ export default function BottomPanel() {
 
   function applyFrame(frame, idx) {
     setSelectedFrame(frame)
-    if (!fabricCanvas) return
+    // State gate — don't attempt if canvas or Fabric not ready
+    if (!isCanvasReady(fabricCanvas)) {
+      window.showToast?.('⏳ Canvas loading — try again in a moment', 'info', 2000)
+      return
+    }
     if (idx !== undefined) {
       setSnapFlash(idx)
       setTimeout(() => setSnapFlash(null), 1200)
     }
     applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
-      window.showToast?.('🖼 Frame applied — use Fit/Fill toggle to adjust', 'success', 2000)
+      window.showToast?.('🖼 Frame applied', 'success', 1500)
       window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame, fitMode } }))
     })
   }
