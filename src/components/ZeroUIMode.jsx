@@ -128,9 +128,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
 
       setPhase('result')
       setViralDone(true)
-
-      // Show intent card at 0.8s — before emotional judgment solidifies
-      setTimeout(() => setShowIntentCard(true), 800)
+      // No auto-interruption — let user absorb the result first
 
     } catch (err) {
       console.error('[ZeroUIMode] Auto-generate failed:', err)
@@ -271,18 +269,10 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       if (s) { setViralScore(s); setScore(s) }
       setViralCount(c => {
         const next = c + 1
-        // Track journey narrative
-        const stepLabel = isWild ? '🎲 Wild version' : `⚡ Enhancement #${next}`
-        setJourneySteps(prev => [...prev.slice(-4), stepLabel]) // keep last 5
-
         if (isManual) {
           if (isWild) {
-            // Wild: show keep/back card instead of normal steering
             setAiPersonality('🎲 Wild version applied!')
-            setTimeout(() => {
-              setAiPersonality('')
-              setWildJustRan(true)
-            }, 2000)
+            setTimeout(() => { setAiPersonality(''); setWildJustRan(true) }, 2000)
           } else {
             setAiPersonality(getAiVoice(next))
             setTimeout(() => {
@@ -311,10 +301,6 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
 
   function handleExport() {
     window.dispatchEvent(new CustomEvent('miansnap:export'))
-    // After export, show done state as arc completion if journey has steps
-    if (journeySteps.length >= 2 || (score?.score ?? 0) >= 70) {
-      setTimeout(() => setPhase('done'), 1200)
-    }
   }
 
   // ── AUTO-IMPROVE once, 1.5s after result — silent, no steering ──
@@ -685,31 +671,15 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, textAlign: 'center', lineHeight: 1.6 }}>
                 No further improvements needed.
               </div>
-              {/* Journey arc — narrative of what happened */}
-              {journeySteps.length > 0 && (
-                <div style={{
-                  marginBottom: 24, padding: '12px 16px', borderRadius: 12,
-                  background: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-                  border: `1px solid ${theme.border}`,
-                  width: 'min(340px, 88vw)',
-                }}>
-                  <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 8, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    Your creative journey
-                  </div>
-                  {journeySteps.map((s, i) => (
-                    <div key={i} style={{
-                      fontSize: 11, color: theme.textSecondary, padding: '3px 0',
-                      display: 'flex', alignItems: 'center', gap: 8,
-                    }}>
-                      <span style={{ color: theme.accent, fontSize: 9 }}>{'→'.repeat(i + 1)}</span>
-                      <span>{s}</span>
-                    </div>
-                  ))}
-                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 6, fontWeight: 600 }}>
-                    ✓ Optimized
-                  </div>
-                </div>
-              )}
+              {/* Single clean completion signal */}
+              <div style={{
+                fontSize: 12, color: '#4ade80', marginBottom: 32,
+                padding: '5px 16px', borderRadius: 20,
+                background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)',
+                fontWeight: 600,
+              }}>
+                {score ? `${score.score}/100 · Maximum CTR potential` : 'Maximum CTR potential reached'}
+              </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button onClick={() => { handleExport(); setPhase('result') }} style={{
                   padding: '16px 40px', borderRadius: 12, border: 'none',
@@ -781,8 +751,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
-          {/* ── Post-result direction card — shown 3s after result, dismissable ── */}
-          {phase === 'result' && showIntentCard && !viralRunning && !steeringChoice && !aiPersonality && (
+          {/* ── Post-result direction card — only shown when user requests it ── */}
+          {phase === 'result' && showIntentCard && !viralRunning && !steeringChoice && !aiPersonality && !wildJustRan && (
             <div style={{
               position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
               zIndex: 499,
@@ -978,7 +948,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                 🤖 Auto Fix Everything
                 <div style={{ fontSize: 10, opacity: 0.85, fontWeight: 400, marginTop: 2 }}>AI decides what to improve</div>
               </button>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <button onClick={handleQuickFixText} style={{
                   flex: 1, padding: '10px 8px', borderRadius: 8,
                   border: `1px solid ${theme.border}`, background: theme.bgTertiary,
@@ -995,6 +965,12 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                   color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
                 }}>🛠 Editor</button>
               </div>
+              {/* Try Different Direction — user-initiated, not auto-shown */}
+              <button onClick={() => { setShowQuickFix(false); setShowIntentCard(true) }} style={{
+                width: '100%', padding: '10px', borderRadius: 8,
+                border: `1px solid rgba(124,58,237,0.3)`, background: 'rgba(124,58,237,0.06)',
+                color: theme.accent, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              }}>🎯 Try Different Direction</button>
               <button onClick={() => setShowQuickFix(false)} style={{
                 marginTop: 8, width: '100%', background: 'none', border: 'none',
                 color: theme.textMuted, fontSize: 10, cursor: 'pointer',
