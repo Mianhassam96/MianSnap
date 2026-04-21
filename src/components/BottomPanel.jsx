@@ -50,16 +50,22 @@ export default function BottomPanel() {
       if (!isMountedRef.current) return
       setFrames(suggested)
       setIsExtracting(false)
+
       const best = suggested.find(f => f.isBest) || suggested[0]
-      if (best && fabricCanvas) applyFrame(best, 0)
       const bestIdx = suggested.findIndex(f => f.isBest)
-      if (bestIdx >= 0) {
-        setTimeout(() => { if (isMountedRef.current) setSnapFlash(bestIdx) }, 300)
-        setTimeout(() => { if (isMountedRef.current) setSnapFlash(null) }, 1700)
+
+      // Apply best frame — small delay so setFrames renders first
+      if (best) {
+        setTimeout(() => {
+          if (!isMountedRef.current) return
+          applyFrame(best, bestIdx >= 0 ? bestIdx : 0)
+          if (bestIdx >= 0) {
+            setTimeout(() => { if (isMountedRef.current) setSnapFlash(null) }, 1700)
+          }
+          setTimeout(() => { if (isMountedRef.current) setShowAiReason(true) }, 400)
+          setTimeout(() => { if (isMountedRef.current) setShowAiReason(false) }, 5600)
+        }, 100)
       }
-      // Show AI reason after smart pick
-      setTimeout(() => { if (isMountedRef.current) setShowAiReason(true) }, 1800)
-      setTimeout(() => { if (isMountedRef.current) setShowAiReason(false) }, 6000)
     } catch (err) {
       if (!isMountedRef.current) return
       setIsExtracting(false)
@@ -79,7 +85,6 @@ export default function BottomPanel() {
   }
 
   function applyFrame(frame, idx) {
-    setSelectedFrame(frame)
     // State gate — don't attempt if canvas or Fabric not ready
     if (!isCanvasReady(fabricCanvas)) {
       window.showToast?.('⏳ Canvas loading — try again in a moment', 'info', 2000)
@@ -89,7 +94,10 @@ export default function BottomPanel() {
       setSnapFlash(idx)
       setTimeout(() => setSnapFlash(null), 1200)
     }
+    // Apply directly — also update store so other components know which frame is active
     applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
+      // Mark as selected AFTER apply so CanvasEditor's useEffect skips it (already applied)
+      setSelectedFrame(frame)
       window.showToast?.('🖼 Frame applied', 'success', 1500)
       window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame, fitMode } }))
     })
@@ -124,15 +132,26 @@ export default function BottomPanel() {
 
   function captureCurrentFrame() {
     const video = videoRef.current
-    if (!video || !fabricCanvas) return
+    if (!video) return
+    if (!isCanvasReady(fabricCanvas)) {
+      window.showToast?.('⏳ Canvas loading — try again', 'info', 2000)
+      return
+    }
     const captured = {
       time: video.currentTime,
       dataUrl: captureFrame(video),
       width: video.videoWidth || 1280,
       height: video.videoHeight || 720,
     }
-    applyFrame(captured)
-    window.showToast?.('📸 Frame captured at ' + fmt(video.currentTime), 'success', 1500)
+    // Apply directly with visual feedback
+    applyImageAsBackground(fabricCanvas, captured.dataUrl, fitMode, () => {
+      setSelectedFrame(captured)
+      window.showToast?.(`📸 Frame captured at ${fmt(video.currentTime)}`, 'success', 2000)
+      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame: captured, fitMode } }))
+    })
+    // Flash all frames briefly to indicate capture happened
+    setSnapFlash(-1)
+    setTimeout(() => setSnapFlash(null), 800)
   }
 
   function togglePlay() {
