@@ -1,309 +1,522 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import useUIStore from '../store/useUIStore'
 import useCanvasStore from '../store/useCanvasStore'
 import useVideoStore from '../store/useVideoStore'
+import { makeItViral } from '../utils/makeItViral'
+import { calculateViralScore } from '../utils/viralScore'
+import { applyThumbnailStyle } from '../utils/thumbnailStyles'
+import { generateTitles } from '../utils/titleGenerator'
+import { getSuggestedFrames } from '../utils/frameSuggestions'
+import { applyImageAsBackground } from '../utils/imageUtils'
+import { fabric } from '../lib/fabric'
 
 /**
- * ZERO UI MODE — Forced entry flow
+ * ZERO UI MODE — Full outcome-first flow
  *
- * Phase 1 (no upload): Full-screen upload gate — nothing else visible
- * Phase 2 (has video, no result): Auto-generate prompt
- * Phase 3 (has result): Show result + Download + "Edit" to reveal full editor
+ * Phase 1 — upload:   Full-screen upload gate. Nothing else visible.
+ * Phase 2 — creating: Full-screen "AI is working" overlay with steps.
+ * Phase 3 — result:   Canvas visible, bottom bar: Make Viral · Export · Edit
  */
 export default function ZeroUIMode({ children, onExitZeroMode }) {
   const { theme } = useUIStore()
-  const { fabricCanvas } = useCanvasStore()
-  const { videoUrl, setVideoFile } = useVideoStore()
+  const { fabricCanvas, setViralScore } = useCanvasStore()
+  const { videoUrl, setVideoFile, frames, setFrames, setIsExtracting } = useVideoStore()
+
   const [zeroMode, setZeroMode] = useState(true)
-  const [hasContent, setHasContent] = useState(false)
+  const [phase, setPhase] = useState('upload') // 'upload' | 'creating' | 'result'
   const [dragging, setDragging] = useState(false)
-  const [phase, setPhase] = useState('upload') // 'upload' | 'ready'
-  const fileInputRef = useRef(null)
+  const [step, setStep] = useState('')
+  const [progress, setProgress] = useState(0)
+  const [viralDone, setViralDone] = useState(false)
+  const [score, setScore] = useState(null)
 
   // Restore preference
   useEffect(() => {
-    const saved = localStorage.getItem('miansnap_zero_mode')
-    if (saved === 'false') setZeroMode(false)
+    if (localStorage.getItem('miansnap_zero_mode') === 'false') setZeroMode(false)
   }, [])
 
   useEffect(() => {
     localStorage.setItem('miansnap_zero_mode', zeroMode)
   }, [zeroMode])
 
-  // Track canvas content
-  useEffect(() => {
-    if (!fabricCanvas) return
-    const check = () => {
-      const hasObjects = fabricCanvas.getObjects().length > 0
-      const hasBg = !!fabricCanvas.backgroundImage
-      setHasContent(hasObjects || hasBg)
-    }
-    fabricCanvas.on('object:added', check)
-    fabricCanvas.on('object:removed', check)
-    check()
-    return () => {
-      fabricCanvas.off('object:added', check)
-      fabricCanvas.off('object:removed', check)
-    }
-  }, [fabricCanvas])
-
-  // Move to ready phase when video uploaded
-  useEffect(() => {
-    if (videoUrl) setPhase('ready')
-  }, [videoUrl])
-
   function exitZeroMode() {
     setZeroMode(false)
     onExitZeroMode?.()
   }
 
+  // ── Auto-generate as soon as video is ready ──────────────────
+  useEffect(() => {
+    if (!videoUrl || !fabricCanvas || phase !== 'upload') return
+    setPhase('creating')
+    runAutoGenerate()
+  }, [videoUrl, fabricCanvas])
+
+  async function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms))
+  }
+
+  async function runAutoGenerate() {
+    try {
+      setProgress(5); setStep('🧠 Analyzing your video...')
+      await sleep(400)
+
+      // Extract frames
+      setProgress(20); setStep('🎬 Finding best moment...')
+      setIsExtracting(true)
+      const suggested = await getSuggestedFrames(videoUrl, 16)
+      setFrames(suggested)
+      setIsExtracting(false)
+      const best = suggested.find(f => f.isBest) || suggested[0]
+
+      // Apply best frame
+      setProgress(40); setStep('🖼 Loading best frame...')
+      await applyFrame(best)
+      await sleep(300)
+
+      // Apply style
+      setProgress(55); setStep('🎨 Designing thumbnail...')
+      const styles = ['dramatic', 'gaming', 'viral', 'mrbeast']
+      applyThumbnailStyle(fabricCanvas, styles[Math.floor(Math.random() * styles.length)])
+      await sleep(400)
+
+      // Add text
+      setProgress(68); setStep('✍️ Adding viral title...')
+      const title = generateTitles('reaction', 1)[0]
+      addText(title)
+      await sleep(300)
+
+      // Make viral
+      setProgress(82); setStep('⚡ Enhancing with AI...')
+      await makeItViral(fabricCanvas)
+      await sleep(300)
+
+      // Score
+      setProgress(95); setStep('📊 Calculating viral score...')
+      const s = calculateViralScore(fabricCanvas)
+      if (s) { setViralScore(s); setScore(s) }
+      await sleep(400)
+
+      setProgress(100); setStep('✨ Your thumbnail is ready!')
+      await sleep(600)
+
+      setPhase('result')
+      setViralDone(true)
+
+      const msg = (s?.score ?? 0) >= 75
+        ? '🔥 High CTR potential — ready to upload!'
+        : '⚡ Thumbnail created — hit Make Viral to boost it'
+      window.showToast?.(msg, 'success', 4000)
+
+    } catch (err) {
+      console.error('[ZeroUIMode] Auto-generate failed:', err)
+      setPhase('result') // still show result phase so user can use editor
+      window.showToast?.('⚠️ Auto-generate had an issue — use Make Viral manually', 'error', 4000)
+    }
+  }
+
+  function applyFrame(frame) {
+    return new Promise(resolve => {
+      if (!fabric || !fabricCanvas) { resolve(); return }
+      fabric.Image.fromURL(frame.dataUrl, (img) => {
+        if (!img) { resolve(); return }
+        const scale = Math.max(fabricCanvas.width / img.width, fabricCanvas.height / img.height)
+        img.set({
+          scaleX: scale, scaleY: scale,
+          left: (fabricCanvas.width - img.width * scale) / 2,
+          top: (fabricCanvas.height - img.height * scale) / 2,
+          selectable: false, evented: false,
+        })
+        fabricCanvas.setBackgroundImage(img, () => { fabricCanvas.renderAll(); resolve() })
+      })
+    })
+  }
+
+  function addText(title) {
+    if (!fabric || !fabricCanvas) return
+    // Remove old auto-text
+    fabricCanvas.getObjects().filter(o => o._autoText).forEach(o => fabricCanvas.remove(o))
+    const t = new fabric.IText(title, {
+      left: fabricCanvas.width / 2, top: fabricCanvas.height * 0.82,
+      originX: 'center', originY: 'center',
+      fontFamily: 'Impact', fontSize: 88,
+      fill: '#ffff00', stroke: '#000000', strokeWidth: 4,
+      shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 24, offsetX: 2, offsetY: 3 }),
+      _autoText: true,
+    })
+    fabricCanvas.add(t)
+    fabricCanvas.renderAll()
+  }
+
   function handleFileSelect(file) {
     if (!file) return
-    const type = file.type || ''
-    if (type.startsWith('video/') || type.startsWith('image/')) {
-      if (type.startsWith('video/')) {
-        window.dispatchEvent(new CustomEvent('miansnap:dropVideo', { detail: { file } }))
-      } else {
-        // image — dispatch to App handler
-        window.dispatchEvent(new CustomEvent('miansnap:dropImage', { detail: { file } }))
-      }
+    const type = String(file.type || '')
+    if (type.startsWith('video/')) {
+      if (file.size > 200 * 1024 * 1024) window.showToast?.('⚠️ Large file — may be slow', 'error', 4000)
+      setVideoFile(file)
+    } else if (type.startsWith('image/')) {
+      window.dispatchEvent(new CustomEvent('miansnap:dropImage', { detail: { file } }))
+      setPhase('result') // images don't need frame extraction
     } else {
-      window.showToast?.('❌ Use a video or image file', 'error', 3000)
+      window.showToast?.('❌ Use a video or image file (MP4, MOV, JPG, PNG)', 'error', 3000)
     }
   }
 
   function openPicker() {
     const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'video/*,image/*'
+    input.type = 'file'; input.accept = 'video/*,image/*'
     input.onchange = (e) => handleFileSelect(e.target.files[0])
     input.click()
   }
 
   function onDrop(e) {
-    e.preventDefault()
-    setDragging(false)
+    e.preventDefault(); setDragging(false)
     handleFileSelect(e.dataTransfer.files[0])
   }
 
-  // Not in zero mode — render children normally
+  function handleMakeViral() {
+    window.dispatchEvent(new CustomEvent('miansnap:makeViral'))
+  }
+
+  function handleExport() {
+    window.dispatchEvent(new CustomEvent('miansnap:export'))
+  }
+
+  function handleNewFile() {
+    // Reset everything
+    setPhase('upload')
+    setProgress(0)
+    setStep('')
+    setScore(null)
+    setViralDone(false)
+    window.dispatchEvent(new CustomEvent('miansnap:resetCanvas'))
+  }
+
+  // Not in zero mode — render full editor
   if (!zeroMode) return <>{children}</>
 
   const grad = 'linear-gradient(135deg,#7c3aed,#4f46e5)'
+  const scoreColor = score?.score >= 75 ? '#4ade80' : score?.score >= 50 ? '#facc15' : '#f87171'
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* Always hide sidebars/panels in zero mode */}
+      {/* Hide all editor chrome in zero mode */}
       <style>{`
         .ms-left-sidebar  { display: none !important; }
         .ms-right-sidebar { display: none !important; }
         .ms-bottom-panel  { display: none !important; }
         .ms-topbar-selects { display: none !important; }
-        .ms-fab { display: none !important; }
+        .ms-fab           { display: none !important; }
+        .ms-zoom-controls { display: none !important; }
       `}</style>
 
+      {/* Canvas always renders underneath */}
       {children}
 
-      {/* ── PHASE 1: Upload gate — full screen overlay ── */}
+      {/* ══════════════════════════════════════════════════════
+          PHASE 1 — UPLOAD GATE
+      ══════════════════════════════════════════════════════ */}
       {phase === 'upload' && (
         <div
           style={{
-            position: 'fixed', inset: 0, zIndex: 500,
+            position: 'fixed', inset: 0, zIndex: 600,
             background: theme.isDark
-              ? 'radial-gradient(ellipse at 50% 40%, rgba(124,58,237,0.18) 0%, #0a0a0f 60%)'
-              : 'radial-gradient(ellipse at 50% 40%, rgba(124,58,237,0.1) 0%, #f5f5ff 60%)',
+              ? 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(124,58,237,0.2) 0%, #0a0a0f 65%)'
+              : 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(124,58,237,0.12) 0%, #f5f5ff 65%)',
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
           }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false) }}
           onDrop={onDrop}
         >
-          {/* Logo */}
+          {/* Top bar */}
           <div style={{
-            position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)',
-            fontSize: 18, fontWeight: 800, letterSpacing: '-0.5px',
-            background: grad, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            fontFamily: "'Montserrat',sans-serif",
-          }}>MianSnap</div>
-
-          {/* Skip to editor */}
-          <button
-            onClick={exitZeroMode}
-            style={{
-              position: 'absolute', top: 16, right: 20,
+            position: 'absolute', top: 0, left: 0, right: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 20px',
+          }}>
+            <span style={{
+              fontSize: 18, fontWeight: 800, letterSpacing: '-0.5px',
+              background: grad, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              fontFamily: "'Montserrat',sans-serif",
+            }}>MianSnap</span>
+            <button onClick={exitZeroMode} style={{
               background: 'none', border: `1px solid ${theme.border}`,
-              color: theme.textMuted, fontSize: 11, padding: '5px 12px',
-              borderRadius: 6, cursor: 'pointer',
+              color: theme.textMuted, fontSize: 11, padding: '5px 14px',
+              borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s',
             }}
-          >Advanced Editor →</button>
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.color = '#7c3aed' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMuted }}
+            >Advanced Editor →</button>
+          </div>
 
-          {/* Main upload zone */}
+          {/* Upload card */}
           <div
             onClick={openPicker}
             style={{
-              width: 'min(520px, 90vw)',
-              padding: '52px 40px',
+              width: 'min(500px, 88vw)',
+              padding: 'clamp(32px,5vw,56px) clamp(24px,4vw,48px)',
               borderRadius: 24,
-              border: `2px dashed ${dragging ? '#7c3aed' : theme.isDark ? 'rgba(124,58,237,0.4)' : 'rgba(124,58,237,0.3)'}`,
+              border: `2px dashed ${dragging ? '#7c3aed' : 'rgba(124,58,237,0.35)'}`,
               background: dragging
-                ? (theme.isDark ? 'rgba(124,58,237,0.12)' : 'rgba(124,58,237,0.06)')
-                : (theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)'),
-              textAlign: 'center',
-              cursor: 'pointer',
+                ? (theme.isDark ? 'rgba(124,58,237,0.14)' : 'rgba(124,58,237,0.07)')
+                : (theme.isDark ? 'rgba(255,255,255,0.025)' : 'rgba(255,255,255,0.85)'),
+              textAlign: 'center', cursor: 'pointer',
               transition: 'all 0.2s',
               boxShadow: dragging
-                ? '0 0 0 4px rgba(124,58,237,0.2), 0 24px 60px rgba(124,58,237,0.2)'
-                : '0 8px 40px rgba(0,0,0,0.12)',
-              animation: 'uploadPulse 3s ease-in-out infinite',
+                ? '0 0 0 6px rgba(124,58,237,0.15), 0 24px 60px rgba(124,58,237,0.25)'
+                : '0 12px 48px rgba(0,0,0,0.1)',
+              animation: 'borderPulse 3s ease-in-out infinite',
             }}
           >
+            {/* Icon */}
             <div style={{
-              fontSize: 64, marginBottom: 16,
-              animation: dragging ? 'none' : 'iconBounce 2s ease-in-out infinite',
-              filter: dragging ? 'drop-shadow(0 0 20px #7c3aed)' : 'none',
+              fontSize: 72, marginBottom: 18, lineHeight: 1,
+              animation: dragging ? 'none' : 'bounce 2s ease-in-out infinite',
+              filter: dragging ? 'drop-shadow(0 0 24px #7c3aed)' : 'none',
               transition: 'filter 0.2s',
             }}>
               {dragging ? '📥' : '🎬'}
             </div>
 
             <div style={{
-              fontSize: 'clamp(22px,4vw,32px)', fontWeight: 900,
+              fontSize: 'clamp(20px,3.5vw,30px)', fontWeight: 900,
               color: dragging ? '#7c3aed' : theme.text,
-              marginBottom: 10, letterSpacing: '-1px',
-              fontFamily: "'Montserrat',sans-serif", lineHeight: 1.1,
+              marginBottom: 10, letterSpacing: '-0.8px',
+              fontFamily: "'Montserrat',sans-serif", lineHeight: 1.15,
             }}>
-              {dragging ? 'Drop to start!' : 'Drop your video here'}
+              {dragging ? 'Drop to create!' : 'Drop your video here'}
             </div>
 
             <div style={{
-              fontSize: 15, color: theme.textSecondary,
-              marginBottom: 28, lineHeight: 1.6, fontWeight: 500,
+              fontSize: 14, color: theme.textSecondary,
+              marginBottom: 28, lineHeight: 1.65, fontWeight: 500,
             }}>
-              AI picks best frame · makes it viral · ready in 10s
+              AI picks best frame · adds viral text · enhances it<br />
+              <span style={{ color: theme.textMuted, fontSize: 12 }}>Ready in ~10 seconds</span>
             </div>
 
+            {/* CTA button */}
             <button
               onClick={(e) => { e.stopPropagation(); openPicker() }}
               style={{
-                padding: '16px 48px', borderRadius: 14, border: 'none',
+                padding: '16px 52px', borderRadius: 14, border: 'none',
                 background: grad, color: '#fff',
                 fontSize: 16, fontWeight: 800, cursor: 'pointer',
-                boxShadow: '0 8px 32px rgba(124,58,237,0.5)',
+                boxShadow: '0 8px 32px rgba(124,58,237,0.55)',
+                letterSpacing: '-0.3px', display: 'block', width: '100%',
+                animation: 'ctaPulse 2.5s ease-in-out infinite',
                 transition: 'transform 0.15s, box-shadow 0.15s',
-                letterSpacing: '-0.3px',
-                animation: 'ctaPulse 2s ease-in-out infinite',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(124,58,237,0.65)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,58,237,0.5)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 14px 44px rgba(124,58,237,0.7)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(124,58,237,0.55)' }}
             >
               📥 Upload Video or Image
             </button>
 
-            <div style={{ marginTop: 16, fontSize: 11, color: theme.textMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <span>🔒</span>
-              <span>100% private · nothing uploaded to any server · free forever</span>
+            <div style={{ marginTop: 14, fontSize: 11, color: theme.textMuted }}>
+              🔒 100% private · nothing uploaded · free forever
             </div>
           </div>
 
-          {/* Supported formats */}
-          <div style={{ marginTop: 20, fontSize: 11, color: theme.textMuted, display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {['MP4', 'MOV', 'WebM', 'JPG', 'PNG', 'WebP'].map(f => (
+          {/* Format pills */}
+          <div style={{ marginTop: 18, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {['MP4', 'MOV', 'WebM', 'JPG', 'PNG'].map(f => (
               <span key={f} style={{
-                padding: '3px 10px', borderRadius: 20,
+                padding: '3px 11px', borderRadius: 20, fontSize: 11,
                 background: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-                border: `1px solid ${theme.border}`,
+                border: `1px solid ${theme.border}`, color: theme.textMuted,
               }}>{f}</span>
             ))}
           </div>
 
           <style>{`
-            @keyframes uploadPulse {
-              0%,100% { border-color: rgba(124,58,237,0.3); }
-              50% { border-color: rgba(124,58,237,0.6); }
+            @keyframes borderPulse {
+              0%,100% { border-color: rgba(124,58,237,0.35); }
+              50% { border-color: rgba(124,58,237,0.65); }
             }
             @keyframes ctaPulse {
-              0%,100% { box-shadow: 0 8px 32px rgba(124,58,237,0.5); }
-              50% { box-shadow: 0 8px 48px rgba(124,58,237,0.8), 0 0 0 6px rgba(124,58,237,0.1); }
+              0%,100% { box-shadow: 0 8px 32px rgba(124,58,237,0.55); }
+              50% { box-shadow: 0 8px 52px rgba(124,58,237,0.85), 0 0 0 8px rgba(124,58,237,0.1); }
             }
-            @keyframes iconBounce {
+            @keyframes bounce {
               0%,100% { transform: translateY(0); }
-              50% { transform: translateY(-8px); }
+              50% { transform: translateY(-10px); }
             }
           `}</style>
         </div>
       )}
 
-      {/* ── PHASE 2: Has video/image — show result + actions ── */}
-      {phase === 'ready' && (
+      {/* ══════════════════════════════════════════════════════
+          PHASE 2 — CREATING (full-screen AI overlay)
+      ══════════════════════════════════════════════════════ */}
+      {phase === 'creating' && (
         <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
-          padding: '12px 20px',
-          background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
-          borderTop: `1px solid ${theme.border}`,
-          backdropFilter: 'blur(16px)',
-          display: 'flex', alignItems: 'center', gap: 10,
-          flexWrap: 'wrap',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.15)',
+          position: 'fixed', inset: 0, zIndex: 600,
+          background: theme.isDark ? 'rgba(10,10,20,0.96)' : 'rgba(245,245,255,0.96)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+          animation: 'fadeIn 0.3s ease',
         }}>
-          {/* Make Viral — THE hero action */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('miansnap:makeViral'))}
-            style={{
-              flex: '2 1 180px', padding: '14px 20px', borderRadius: 12, border: 'none',
-              background: 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
-              color: '#fff', fontSize: 15, fontWeight: 900, cursor: 'pointer',
-              boxShadow: '0 6px 28px rgba(239,68,68,0.5)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-              animation: 'viralBarPulse 2s ease-in-out infinite',
-            }}
-          >
-            <span>⚡ Make Viral</span>
-            <span style={{ fontSize: 10, opacity: 0.9, fontWeight: 500 }}>1 click = better thumbnail</span>
-          </button>
+          {/* Pulsing icon */}
+          <div style={{
+            fontSize: 80, marginBottom: 28,
+            animation: 'spin 3s linear infinite',
+            filter: 'drop-shadow(0 0 20px rgba(124,58,237,0.6))',
+          }}>⚡</div>
 
-          {/* Export */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('miansnap:export'))}
-            style={{
-              flex: '1 1 100px', padding: '14px 16px', borderRadius: 12, border: 'none',
-              background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-              color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
-            }}
-          >⬇ Export</button>
+          <div style={{
+            fontSize: 'clamp(20px,3vw,28px)', fontWeight: 900,
+            color: theme.text, marginBottom: 8,
+            fontFamily: "'Montserrat',sans-serif", letterSpacing: '-0.5px',
+          }}>Creating your thumbnail...</div>
 
-          {/* Edit — reveals full editor */}
-          <button
-            onClick={exitZeroMode}
-            style={{
-              flex: '1 1 100px', padding: '14px 16px', borderRadius: 12,
-              border: `1px solid ${theme.border}`,
-              background: theme.bgTertiary,
-              color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            }}
-          >✏️ Edit</button>
+          <div style={{
+            fontSize: 14, color: theme.accent, fontWeight: 600,
+            marginBottom: 32, minHeight: 22,
+            animation: 'fadeIn 0.3s ease',
+          }}>{step}</div>
 
-          {/* New upload */}
-          <button
-            onClick={openPicker}
-            style={{
-              flex: '0 0 auto', padding: '14px 14px', borderRadius: 12,
-              border: `1px solid ${theme.border}`,
-              background: 'transparent',
-              color: theme.textMuted, fontSize: 12, cursor: 'pointer',
-            }}
-            title="Upload different file"
-          >🔄 New</button>
+          {/* Progress bar */}
+          <div style={{
+            width: 'min(360px, 80vw)', height: 6,
+            background: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            borderRadius: 3, overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', borderRadius: 3,
+              background: 'linear-gradient(90deg,#7c3aed,#ef4444,#f59e0b)',
+              width: `${progress}%`,
+              transition: 'width 0.4s ease',
+              boxShadow: '0 0 8px rgba(124,58,237,0.6)',
+            }} />
+          </div>
+
+          <div style={{ marginTop: 12, fontSize: 11, color: theme.textMuted }}>
+            {progress}% complete
+          </div>
 
           <style>{`
-            @keyframes viralBarPulse {
-              0%,100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
-              50% { box-shadow: 0 6px 40px rgba(239,68,68,0.8), 0 0 0 5px rgba(239,68,68,0.1); }
+            @keyframes spin {
+              0% { transform: scale(1) rotate(0deg); }
+              25% { transform: scale(1.1) rotate(5deg); }
+              75% { transform: scale(0.95) rotate(-5deg); }
+              100% { transform: scale(1) rotate(0deg); }
             }
           `}</style>
         </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          PHASE 3 — RESULT (canvas visible, action bar)
+      ══════════════════════════════════════════════════════ */}
+      {phase === 'result' && (
+        <>
+          {/* Top result bar */}
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 500,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 16px',
+            background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
+            borderBottom: `1px solid ${theme.border}`,
+            backdropFilter: 'blur(12px)',
+            gap: 10,
+          }}>
+            <span style={{
+              fontSize: 16, fontWeight: 800, letterSpacing: '-0.5px',
+              background: grad, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              fontFamily: "'Montserrat',sans-serif", flexShrink: 0,
+            }}>MianSnap</span>
+
+            {/* Score badge */}
+            {score && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '4px 12px', borderRadius: 20,
+                background: `${scoreColor}18`,
+                border: `1px solid ${scoreColor}44`,
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 12 }}>{score.score >= 75 ? '🔥' : score.score >= 50 ? '⚡' : '💡'}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor }}>{score.score}/100</span>
+                <span style={{ fontSize: 10, color: theme.textMuted }}>
+                  {score.score >= 75 ? 'Viral Ready' : score.score >= 50 ? 'Good CTR' : 'Needs boost'}
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button onClick={handleNewFile} style={{
+                padding: '6px 12px', borderRadius: 7,
+                border: `1px solid ${theme.border}`, background: 'transparent',
+                color: theme.textMuted, fontSize: 11, cursor: 'pointer',
+              }}>🔄 New</button>
+              <button onClick={exitZeroMode} style={{
+                padding: '6px 12px', borderRadius: 7,
+                border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                color: theme.text, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              }}>✏️ Edit</button>
+            </div>
+          </div>
+
+          {/* Bottom action bar — 3 actions only */}
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
+            display: 'flex', gap: 10, padding: '12px 16px',
+            background: theme.isDark ? 'rgba(10,10,20,0.97)' : 'rgba(255,255,255,0.97)',
+            borderTop: `1px solid ${theme.border}`,
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+          }}>
+            {/* Make Viral — THE dominant action */}
+            <button
+              onClick={handleMakeViral}
+              style={{
+                flex: 3, padding: '15px 20px', borderRadius: 12, border: 'none',
+                background: 'linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed)',
+                color: '#fff', fontSize: 16, fontWeight: 900, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                boxShadow: '0 6px 28px rgba(239,68,68,0.5)',
+                animation: 'viralPulse 2.5s ease-in-out infinite',
+                letterSpacing: '-0.3px',
+              }}
+            >
+              <span>⚡ Make Viral</span>
+              <span style={{ fontSize: 10, opacity: 0.9, fontWeight: 500 }}>1 click = better thumbnail</span>
+            </button>
+
+            {/* Export */}
+            <button
+              onClick={handleExport}
+              style={{
+                flex: 2, padding: '15px 16px', borderRadius: 12, border: 'none',
+                background: grad, color: '#fff',
+                fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+              }}
+            >⬇ Export</button>
+
+            {/* Edit */}
+            <button
+              onClick={exitZeroMode}
+              style={{
+                flex: 1, padding: '15px 12px', borderRadius: 12,
+                border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                color: theme.text, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              }}
+            >✏️ Edit</button>
+          </div>
+
+          <style>{`
+            @keyframes viralPulse {
+              0%,100% { box-shadow: 0 6px 28px rgba(239,68,68,0.5); }
+              50% { box-shadow: 0 6px 44px rgba(239,68,68,0.85), 0 0 0 6px rgba(239,68,68,0.1); }
+            }
+          `}</style>
+        </>
       )}
     </div>
   )
