@@ -39,6 +39,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const [inactivityTimer, setInactivityTimer] = useState(null)
   const [aiPersonality, setAiPersonality] = useState('')
   const [autoImproveRan, setAutoImproveRan] = useState(false)
+  const [steeringChoice, setSteeringChoice] = useState(null)
   const beforeSnapshotRef = useRef(null)
 
   // Restore preference
@@ -199,6 +200,48 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     "Maximum viral potential reached 🏆",
   ]
 
+  // Steering choices — shown after each AI action so user feels in control
+  const STEERING_CHOICES = [
+    {
+      question: "Keep this style?",
+      a: { label: "🔥 Push more extreme", desc: "Bolder colors, stronger contrast" },
+      b: { label: "✨ Keep it clean", desc: "Subtle, professional look" },
+    },
+    {
+      question: "How's the intensity?",
+      a: { label: "⚡ More aggressive", desc: "Max contrast, max impact" },
+      b: { label: "🎯 Lock this version", desc: "This looks great — save it" },
+    },
+    {
+      question: "What next?",
+      a: { label: "🚀 One more boost", desc: "Push the score higher" },
+      b: { label: "⬇ Download now", desc: "This is ready to upload" },
+    },
+  ]
+
+  function handleSteeringA(choice) {
+    setSteeringChoice(null)
+    if (choice.a.label.includes('extreme') || choice.a.label.includes('aggressive')) {
+      // Apply more aggressive style
+      const styles = ['dramatic', 'gaming', 'viral']
+      applyThumbnailStyle(fabricCanvas, styles[Math.floor(Math.random() * styles.length)])
+      runViralImprovement()
+    } else if (choice.a.label.includes('boost')) {
+      runViralImprovement()
+    }
+  }
+
+  function handleSteeringB(choice) {
+    setSteeringChoice(null)
+    if (choice.b.label.includes('clean')) {
+      // Apply cleaner style
+      applyThumbnailStyle(fabricCanvas, 'minimal')
+      runViralImprovement()
+    } else if (choice.b.label.includes('Lock') || choice.b.label.includes('Download')) {
+      handleExport()
+    }
+  }
+
   function getAiVoice(count) {
     return AI_VOICES[Math.min(count, AI_VOICES.length - 1)]
   }
@@ -206,6 +249,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   function runViralImprovement() {
     if (viralRunning || !fabricCanvas) return
     setViralRunning(true)
+    setSteeringChoice(null) // clear previous steering
     setPrevScore(s => s || score)
     window.dispatchEvent(new CustomEvent('miansnap:makeViral'))
     const done = () => {
@@ -214,10 +258,19 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       setViralCount(c => {
         const next = c + 1
         setAiPersonality(getAiVoice(next))
-        // System-declared completion at high score
-        if ((s?.score ?? 0) >= 88) {
-          setTimeout(() => setPhase('done'), 2000)
-        }
+        // Clear personality after 3s, then show steering choice
+        setTimeout(() => {
+          setAiPersonality('')
+          // Show steering moment — user nudges direction
+          const sc = s?.score ?? 0
+          if (sc < 88) {
+            const choices = STEERING_CHOICES[Math.min(next - 1, STEERING_CHOICES.length - 1)]
+            setSteeringChoice(choices)
+          } else {
+            // System declares completion
+            setTimeout(() => setPhase('done'), 1000)
+          }
+        }, 2800)
         return next
       })
       setViralRunning(false)
@@ -315,6 +368,10 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     setViralCount(0)
     setSuggestion(null)
     setShowReveal(false)
+    setAiPersonality('')
+    setAutoImproveRan(false)
+    setSteeringChoice(null)
+    setProactiveNudge(null)
     window.dispatchEvent(new CustomEvent('miansnap:resetCanvas'))
   }
 
@@ -688,8 +745,72 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
             </div>
           )}
 
+          {/* ── STEERING CARD — user nudges direction after AI acts ── */}
+          {phase === 'result' && steeringChoice && !viralRunning && !aiPersonality && (
+            <div style={{
+              position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 499,
+              background: theme.isDark ? 'rgba(13,13,24,0.97)' : 'rgba(255,255,255,0.97)',
+              border: `1px solid rgba(124,58,237,0.3)`,
+              borderRadius: 16, padding: '14px 16px',
+              boxShadow: '0 8px 32px rgba(124,58,237,0.2)',
+              backdropFilter: 'blur(16px)',
+              animation: 'fadeInDown 0.3s ease',
+              width: 'min(320px, 88vw)',
+            }}>
+              {/* Question */}
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: theme.accent,
+                marginBottom: 10, textAlign: 'center', letterSpacing: 0.3,
+              }}>
+                🤖 {steeringChoice.question}
+              </div>
+              {/* Two choices */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => handleSteeringA(steeringChoice)}
+                  style={{
+                    flex: 1, padding: '10px 10px', borderRadius: 10,
+                    border: `1px solid rgba(239,68,68,0.4)`,
+                    background: 'rgba(239,68,68,0.08)',
+                    color: theme.text, cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; e.currentTarget.style.borderColor = '#ef4444' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.4)' }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{steeringChoice.a.label}</div>
+                  <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{steeringChoice.a.desc}</div>
+                </button>
+                <button
+                  onClick={() => handleSteeringB(steeringChoice)}
+                  style={{
+                    flex: 1, padding: '10px 10px', borderRadius: 10,
+                    border: `1px solid rgba(124,58,237,0.4)`,
+                    background: 'rgba(124,58,237,0.08)',
+                    color: theme.text, cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(124,58,237,0.15)'; e.currentTarget.style.borderColor = '#7c3aed' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)' }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{steeringChoice.b.label}</div>
+                  <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{steeringChoice.b.desc}</div>
+                </button>
+              </div>
+              {/* Dismiss */}
+              <button
+                onClick={() => setSteeringChoice(null)}
+                style={{
+                  marginTop: 8, width: '100%', background: 'none', border: 'none',
+                  color: theme.textMuted, fontSize: 10, cursor: 'pointer', padding: '2px',
+                }}
+              >skip →</button>
+            </div>
+          )}
+
           {/* Proactive nudge — fires after inactivity */}
-          {phase === 'result' && proactiveNudge && !aiPersonality && (
+          {phase === 'result' && proactiveNudge && !aiPersonality && !steeringChoice && (
             <div style={{
               position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
               zIndex: 499,
