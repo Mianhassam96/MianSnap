@@ -29,7 +29,7 @@
 
 ---
 
-## 🚀 Core Features
+## 🚀 Core Features 
 
 ### 🎬 Video Frame Extraction
 - Upload any video — AI analyzes every frame automatically
