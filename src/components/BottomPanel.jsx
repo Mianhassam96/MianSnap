@@ -4,11 +4,11 @@ import useVideoStore from '../store/useVideoStore'
 import useCanvasStore from '../store/useCanvasStore'
 import { extractFrames, captureFrame, stepFrame } from '../utils/frameExtractor'
 import { getSuggestedFrames } from '../utils/frameSuggestions'
-import { applyImageAsBackground, isCanvasReady } from '../utils/imageUtils'
+import { isCanvasReady } from '../utils/imageUtils'
 import { fabric } from '../lib/fabric'
 
 export default function BottomPanel() {
-  const { theme, fitMode } = useUIStore()
+  const { theme } = useUIStore()
   const {
     videoUrl, frames, setFrames, selectedFrame, setSelectedFrame,
     isExtracting, setIsExtracting, currentTime, setCurrentTime,
@@ -54,17 +54,15 @@ export default function BottomPanel() {
       const best = suggested.find(f => f.isBest) || suggested[0]
       const bestIdx = suggested.findIndex(f => f.isBest)
 
-      // Apply best frame — small delay so setFrames renders first
       if (best) {
-        setTimeout(() => {
-          if (!isMountedRef.current) return
-          applyFrame(best, bestIdx >= 0 ? bestIdx : 0)
-          if (bestIdx >= 0) {
-            setTimeout(() => { if (isMountedRef.current) setSnapFlash(null) }, 1700)
-          }
-          setTimeout(() => { if (isMountedRef.current) setShowAiReason(true) }, 400)
-          setTimeout(() => { if (isMountedRef.current) setShowAiReason(false) }, 5600)
-        }, 100)
+        // Single authority: only update store — CanvasEditor renders it
+        setSelectedFrame(best)
+        if (bestIdx >= 0) {
+          setSnapFlash(bestIdx)
+          setTimeout(() => { if (isMountedRef.current) setSnapFlash(null) }, 1500)
+        }
+        setTimeout(() => { if (isMountedRef.current) setShowAiReason(true) }, 600)
+        setTimeout(() => { if (isMountedRef.current) setShowAiReason(false) }, 5600)
       }
     } catch (err) {
       if (!isMountedRef.current) return
@@ -85,7 +83,6 @@ export default function BottomPanel() {
   }
 
   function applyFrame(frame, idx) {
-    // State gate — don't attempt if canvas or Fabric not ready
     if (!isCanvasReady(fabricCanvas)) {
       window.showToast?.('⏳ Canvas loading — try again in a moment', 'info', 2000)
       return
@@ -94,13 +91,10 @@ export default function BottomPanel() {
       setSnapFlash(idx)
       setTimeout(() => setSnapFlash(null), 1200)
     }
-    // Apply directly — also update store so other components know which frame is active
-    applyImageAsBackground(fabricCanvas, frame.dataUrl, fitMode, () => {
-      // Mark as selected AFTER apply so CanvasEditor's useEffect skips it (already applied)
-      setSelectedFrame(frame)
-      window.showToast?.('🖼 Frame applied', 'success', 1500)
-      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame, fitMode } }))
-    })
+    // Single authority: only update store — CanvasEditor's useEffect renders it
+    setSelectedFrame(frame)
+    window.showToast?.('🖼 Frame applied', 'success', 1500)
+    window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame } }))
   }
 
   function snapAndAutoText(frame, idx) {
@@ -143,15 +137,9 @@ export default function BottomPanel() {
       width: video.videoWidth || 1280,
       height: video.videoHeight || 720,
     }
-    // Apply directly with visual feedback
-    applyImageAsBackground(fabricCanvas, captured.dataUrl, fitMode, () => {
-      setSelectedFrame(captured)
-      window.showToast?.(`📸 Frame captured at ${fmt(video.currentTime)}`, 'success', 2000)
-      window.dispatchEvent(new CustomEvent('miansnap:frameApplied', { detail: { frame: captured, fitMode } }))
-    })
-    // Flash all frames briefly to indicate capture happened
-    setSnapFlash(-1)
-    setTimeout(() => setSnapFlash(null), 800)
+    // Single authority: only update store
+    setSelectedFrame(captured)
+    window.showToast?.(`📸 Frame captured at ${fmt(video.currentTime)}`, 'success', 2000)
   }
 
   function togglePlay() {

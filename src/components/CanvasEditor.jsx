@@ -371,16 +371,12 @@ export default function CanvasEditor() {
     return () => fabricCanvas.off('object:added', onAdded)
   }, [fabricCanvas])
 
-  // ── Load video frame as background ────────────────────────────
-  // NOTE: BottomPanel calls applyImageAsBackground directly — this effect
-  // only handles external frame changes (e.g. from ZeroUIMode auto-generate)
-  // We use a ref to skip the first render and avoid double-apply
-  const prevFrameRef = useRef(null)
+  // ── Load video frame as background — SINGLE AUTHORITY ────────
+  // CanvasEditor is the ONLY place that calls applyImageAsBackground.
+  // All other components (BottomPanel, ZeroUIMode) only call setSelectedFrame.
+  // This eliminates the dual-control race condition entirely.
   useEffect(() => {
     if (!fabricCanvas || !selectedFrame) return
-    // Skip if this frame was already applied directly by BottomPanel
-    if (prevFrameRef.current === selectedFrame) return
-    prevFrameRef.current = selectedFrame
     applyImageAsBackground(fabricCanvas, selectedFrame.dataUrl, fitMode)
   }, [selectedFrame, fabricCanvas, fitMode])
 
