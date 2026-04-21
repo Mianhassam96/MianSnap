@@ -43,25 +43,39 @@ export function scaleImageToCanvas(img, canvasW, canvasH, mode = 'cover') {
  */
 export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', onDone) {
   if (!fabricCanvas || !dataUrl) return
-  if (!fabric) return
-  
-  // Don't use crossOrigin for data URLs — it causes CORS errors
-  const opts = dataUrl.startsWith('data:') ? {} : { crossOrigin: 'anonymous' }
-  
-  fabric.Image.fromURL(dataUrl, (img) => {
-    if (!img || !img.width) {
-      // Retry without crossOrigin if image failed to load
-      fabric.Image.fromURL(dataUrl, (img2) => {
-        if (!img2) {
-          console.warn('[imageUtils] Failed to load image:', dataUrl.substring(0, 50))
-          return
-        }
-        applyImageToCanvas(img2, fabricCanvas, mode, onDone)
-      })
+
+  // Wait for Fabric.js to be ready — poll up to 3s
+  function tryApply(attempts = 0) {
+    const F = window.fabric
+    if (!F?.Image?.fromURL) {
+      if (attempts > 30) {
+        console.warn('[imageUtils] Fabric not ready after 3s')
+        return
+      }
+      setTimeout(() => tryApply(attempts + 1), 100)
       return
     }
-    applyImageToCanvas(img, fabricCanvas, mode, onDone)
-  }, opts)
+
+    // Don't use crossOrigin for data URLs — it causes CORS errors
+    const opts = dataUrl.startsWith('data:') ? {} : { crossOrigin: 'anonymous' }
+
+    F.Image.fromURL(dataUrl, (img) => {
+      if (!img || !img.width) {
+        // Retry once without options
+        F.Image.fromURL(dataUrl, (img2) => {
+          if (!img2 || !img2.width) {
+            console.warn('[imageUtils] Failed to load image')
+            return
+          }
+          applyImageToCanvas(img2, fabricCanvas, mode, onDone)
+        })
+        return
+      }
+      applyImageToCanvas(img, fabricCanvas, mode, onDone)
+    }, opts)
+  }
+
+  tryApply()
 }
 
 function applyImageToCanvas(img, fabricCanvas, mode, onDone) {

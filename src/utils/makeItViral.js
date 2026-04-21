@@ -31,152 +31,199 @@ export async function makeItViral(fabricCanvas) {
   if (!fabricCanvas) return { steps: [] }
 
   const steps = []
-  window.__msHistory?.pauseSnapshot?.()
+  const F = window.fabric
+  if (!F) return { steps: [] }
 
-  // Snapshot before applying — makes action reversible
+  window.__msHistory?.pauseSnapshot?.()
   publishSnapshot(fabricCanvas)
 
-  // Analyze image to pick smart effects
   const bg = fabricCanvas.backgroundImage
-  const hasText = fabricCanvas.getObjects().some(o => o.type === 'i-text' || o.type === 'textbox')
+  const cw = fabricCanvas.width
+  const ch = fabricCanvas.height
 
-  // Detect image brightness to pick effect style
+  // ── Analyze image tone ──────────────────────────────────────
   let avgBrightness = 128
+  let avgSaturation = 0.5
   if (bg) {
     try {
       const off = document.createElement('canvas')
-      off.width = 40; off.height = 22
+      off.width = 80; off.height = 45
       const ctx = off.getContext('2d')
       bg.render(ctx)
-      const d = ctx.getImageData(0, 0, 40, 22).data
-      let sum = 0
-      for (let i = 0; i < d.length; i += 16) sum += d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114
-      avgBrightness = sum / (d.length / 16)
+      const d = ctx.getImageData(0, 0, 80, 45).data
+      let sumL = 0, sumS = 0, count = 0
+      for (let i = 0; i < d.length; i += 16) {
+        const r = d[i] / 255, g = d[i+1] / 255, b = d[i+2] / 255
+        const max = Math.max(r, g, b), min = Math.min(r, g, b)
+        sumL += (max + min) / 2
+        sumS += max > 0 ? (max - min) / max : 0
+        count++
+      }
+      avgBrightness = (sumL / count) * 255
+      avgSaturation = sumS / count
     } catch (_) {}
   }
 
-  const isDark = avgBrightness < 100
-  const isBright = avgBrightness > 160
+  const isDark   = avgBrightness < 90
+  const isBright = avgBrightness > 170
+  const isVibrant = avgSaturation > 0.4
 
-  // 1. Smart filters based on image tone
+  // ── 1. CINEMATIC COLOR GRADING ──────────────────────────────
   if (bg && bg.filters !== undefined) {
     bg.filters = []
     if (isDark) {
-      // Dark image: boost brightness + saturation for drama
       bg.filters = [
-        new fabric.Image.filters.Brightness({ brightness: 0.08 }),
-        new fabric.Image.filters.Contrast({ contrast: 0.3 }),
-        new fabric.Image.filters.Saturation({ saturation: 0.4 }),
+        new F.Image.filters.Brightness({ brightness: 0.12 }),
+        new F.Image.filters.Contrast({ contrast: 0.38 }),
+        new F.Image.filters.Saturation({ saturation: 0.55 }),
       ]
-      steps.push('✓ Dark image: contrast + saturation boosted')
+      steps.push('✓ Cinematic dark boost')
     } else if (isBright) {
-      // Bright image: add drama with contrast + slight desaturate
       bg.filters = [
-        new fabric.Image.filters.Contrast({ contrast: 0.35 }),
-        new fabric.Image.filters.Saturation({ saturation: -0.1 }),
-        new fabric.Image.filters.Brightness({ brightness: -0.05 }),
+        new F.Image.filters.Contrast({ contrast: 0.42 }),
+        new F.Image.filters.Saturation({ saturation: isVibrant ? 0.25 : 0.45 }),
+        new F.Image.filters.Brightness({ brightness: -0.06 }),
       ]
-      steps.push('✓ Bright image: dramatic contrast applied')
+      steps.push('✓ HDR drama applied')
     } else {
-      // Mid-tone: standard viral boost
       bg.filters = [
-        new fabric.Image.filters.Contrast({ contrast: 0.25 }),
-        new fabric.Image.filters.Brightness({ brightness: 0.05 }),
-        new fabric.Image.filters.Saturation({ saturation: 0.3 }),
+        new F.Image.filters.Contrast({ contrast: 0.32 }),
+        new F.Image.filters.Brightness({ brightness: 0.06 }),
+        new F.Image.filters.Saturation({ saturation: 0.42 }),
       ]
-      steps.push('✓ Contrast & saturation boosted')
+      steps.push('✓ Viral color grade applied')
     }
     bg.applyFilters()
   }
 
-  // 2. Face auto-focus
-  try {
-    faceAutoFocus(fabricCanvas)
-    steps.push('✓ Face auto-focused')
-  } catch (_) {}
+  // ── 2. FACE AUTO-FOCUS ──────────────────────────────────────
+  try { faceAutoFocus(fabricCanvas); steps.push('✓ Face centered') } catch (_) {}
 
-  // 3. Smart typography
+  // ── 3. POWER TEXT TREATMENT ─────────────────────────────────
   const textObjs = fabricCanvas.getObjects().filter(o => o.type === 'i-text' || o.type === 'textbox')
   textObjs.forEach((t) => {
     applySmartTypography(t, fabricCanvas)
-    if (t.fontSize < 56) { t.set('fontSize', 72); steps.push('✓ Text size boosted') }
-    t.set('shadow', new fabric.Shadow({ color: 'rgba(0,0,0,0.95)', blur: 24, offsetX: 2, offsetY: 3 }))
-    if (!t.stroke || t.stroke === 'transparent') t.set({ stroke: '#000000', strokeWidth: 2 })
+    if (t.fontSize < 64) t.set('fontSize', 80)
+    // Double stroke for maximum readability
+    t.set({
+      stroke: '#000000',
+      strokeWidth: Math.max(3, Math.round(t.fontSize * 0.04)),
+      shadow: new F.Shadow({ color: 'rgba(0,0,0,0.98)', blur: 28, offsetX: 3, offsetY: 4 }),
+      paintFirst: 'stroke',
+    })
   })
-  if (textObjs.length > 0) steps.push('✓ Text glow & readability enhanced')
+  if (textObjs.length > 0) steps.push('✓ Text impact maximized')
 
-  // 4. Remove old viral overlays
+  // ── 4. REMOVE OLD OVERLAYS ──────────────────────────────────
   fabricCanvas.getObjects()
-    .filter(o => o._viralGlow || o._viralVignette || o._viralEdge)
+    .filter(o => o._viralGlow || o._viralVignette || o._viralEdge || o._viralSpotlight || o._viralChrome)
     .forEach(o => fabricCanvas.remove(o))
 
-  // 5. Smart overlay based on image tone
+  // ── 5. CINEMATIC OVERLAYS ───────────────────────────────────
   if (isDark) {
-    // Dark image: add color edge glow (cinematic)
-    const edgeGlow = new fabric.Rect({
-      left: 0, top: 0, width: fabricCanvas.width, height: fabricCanvas.height,
-      fill: new fabric.Gradient({
+    // Dual-color edge glow — cinematic split-tone
+    const leftGlow = new F.Rect({
+      left: 0, top: 0, width: cw * 0.35, height: ch,
+      fill: new F.Gradient({
         type: 'linear',
-        coords: { x1: 0, y1: 0, x2: fabricCanvas.width, y2: 0 },
+        coords: { x1: 0, y1: 0, x2: cw * 0.35, y2: 0 },
         colorStops: [
-          { offset: 0, color: 'rgba(124,58,237,0.18)' },
-          { offset: 0.5, color: 'rgba(0,0,0,0)' },
-          { offset: 1, color: 'rgba(239,68,68,0.18)' },
+          { offset: 0, color: 'rgba(124,58,237,0.28)' },
+          { offset: 1, color: 'rgba(124,58,237,0)' },
         ],
       }),
       selectable: false, evented: false, _viralEdge: true,
     })
-    fabricCanvas.add(edgeGlow)
-    fabricCanvas.sendToBack(edgeGlow)
-    steps.push('✓ Cinematic edge glow added')
-  } else {
-    // Bright/mid: subject spotlight
-    const spotlight = new fabric.Ellipse({
-      left: fabricCanvas.width * 0.5, top: fabricCanvas.height * 0.42,
-      rx: fabricCanvas.width * 0.3, ry: fabricCanvas.height * 0.35,
-      originX: 'center', originY: 'center',
-      fill: new fabric.Gradient({
-        type: 'radial',
-        coords: { r1: 0, r2: fabricCanvas.width * 0.3, x1: fabricCanvas.width * 0.5, y1: fabricCanvas.height * 0.42, x2: fabricCanvas.width * 0.5, y2: fabricCanvas.height * 0.42 },
-        colorStops: [{ offset: 0, color: 'rgba(255,255,255,0.1)' }, { offset: 1, color: 'rgba(255,255,255,0)' }],
+    const rightGlow = new F.Rect({
+      left: cw * 0.65, top: 0, width: cw * 0.35, height: ch,
+      fill: new F.Gradient({
+        type: 'linear',
+        coords: { x1: 0, y1: 0, x2: cw * 0.35, y2: 0 },
+        colorStops: [
+          { offset: 0, color: 'rgba(239,68,68,0)' },
+          { offset: 1, color: 'rgba(239,68,68,0.28)' },
+        ],
       }),
-      selectable: false, evented: false, _viralGlow: true,
+      selectable: false, evented: false, _viralEdge: true,
     })
-    fabricCanvas.add(spotlight)
-    fabricCanvas.sendToBack(spotlight)
-    steps.push('✓ Subject spotlight added')
+    fabricCanvas.add(leftGlow); fabricCanvas.sendToBack(leftGlow)
+    fabricCanvas.add(rightGlow); fabricCanvas.sendToBack(rightGlow)
+    steps.push('✓ Cinematic split-tone glow')
+  } else {
+    // Warm subject spotlight — rule of thirds
+    const spotlight = new F.Ellipse({
+      left: cw * 0.5, top: ch * 0.38,
+      rx: cw * 0.38, ry: ch * 0.42,
+      originX: 'center', originY: 'center',
+      fill: new F.Gradient({
+        type: 'radial',
+        coords: { r1: 0, r2: cw * 0.38, x1: cw * 0.5, y1: ch * 0.38, x2: cw * 0.5, y2: ch * 0.38 },
+        colorStops: [
+          { offset: 0,   color: 'rgba(255,220,100,0.14)' },
+          { offset: 0.5, color: 'rgba(255,180,50,0.06)' },
+          { offset: 1,   color: 'rgba(255,255,255,0)' },
+        ],
+      }),
+      selectable: false, evented: false, _viralSpotlight: true,
+    })
+    fabricCanvas.add(spotlight); fabricCanvas.sendToBack(spotlight)
+    steps.push('✓ Subject spotlight')
   }
 
-  // 6. Vignette — always
-  const vignette = new fabric.Rect({
-    left: 0, top: 0, width: fabricCanvas.width, height: fabricCanvas.height,
-    fill: new fabric.Gradient({
+  // ── 6. CHROMATIC ABERRATION BARS (top + bottom) ─────────────
+  // Subtle color bars at top/bottom — cinematic letterbox feel
+  const topBar = new F.Rect({
+    left: 0, top: 0, width: cw, height: ch * 0.06,
+    fill: new F.Gradient({
+      type: 'linear',
+      coords: { x1: 0, y1: 0, x2: 0, y2: ch * 0.06 },
+      colorStops: [
+        { offset: 0, color: 'rgba(0,0,0,0.55)' },
+        { offset: 1, color: 'rgba(0,0,0,0)' },
+      ],
+    }),
+    selectable: false, evented: false, _viralChrome: true,
+  })
+  const bottomBar = new F.Rect({
+    left: 0, top: ch * 0.94, width: cw, height: ch * 0.06,
+    fill: new F.Gradient({
+      type: 'linear',
+      coords: { x1: 0, y1: 0, x2: 0, y2: ch * 0.06 },
+      colorStops: [
+        { offset: 0, color: 'rgba(0,0,0,0)' },
+        { offset: 1, color: 'rgba(0,0,0,0.6)' },
+      ],
+    }),
+    selectable: false, evented: false, _viralChrome: true,
+  })
+  fabricCanvas.add(topBar); fabricCanvas.sendToBack(topBar)
+  fabricCanvas.add(bottomBar); fabricCanvas.sendToBack(bottomBar)
+
+  // ── 7. DEEP VIGNETTE ────────────────────────────────────────
+  const vignette = new F.Rect({
+    left: 0, top: 0, width: cw, height: ch,
+    fill: new F.Gradient({
       type: 'radial',
-      coords: { r1: 0, r2: fabricCanvas.width * 0.7, x1: fabricCanvas.width / 2, y1: fabricCanvas.height / 2, x2: fabricCanvas.width / 2, y2: fabricCanvas.height / 2 },
-      colorStops: [{ offset: 0, color: 'rgba(0,0,0,0)' }, { offset: 0.6, color: 'rgba(0,0,0,0)' }, { offset: 1, color: 'rgba(0,0,0,0.55)' }],
+      coords: { r1: 0, r2: cw * 0.72, x1: cw / 2, y1: ch / 2, x2: cw / 2, y2: ch / 2 },
+      colorStops: [
+        { offset: 0,    color: 'rgba(0,0,0,0)' },
+        { offset: 0.55, color: 'rgba(0,0,0,0)' },
+        { offset: 0.78, color: 'rgba(0,0,0,0.22)' },
+        { offset: 1,    color: 'rgba(0,0,0,0.72)' },
+      ],
     }),
     selectable: false, evented: false, _viralVignette: true,
   })
-  fabricCanvas.add(vignette)
-  fabricCanvas.sendToBack(vignette)
-  steps.push('✓ Vignette applied')
+  fabricCanvas.add(vignette); fabricCanvas.sendToBack(vignette)
+  steps.push('✓ Deep vignette + cinematic bars')
 
   fabricCanvas.renderAll()
   window.__msHistory?.resumeSnapshot?.()
-  
-  // Dispatch enhanced feedback event
+
   window.dispatchEvent(new CustomEvent('miansnap:viralDone', {
-    detail: {
-      steps: [
-        '✨ Face enhanced',
-        '🔥 Contrast boosted',
-        '🎯 Focus optimized',
-        '💫 Glow applied',
-        '🌟 Ready to perform',
-      ]
-    }
+    detail: { steps: ['✨ Color graded', '🔥 Contrast maxed', '🎯 Face focused', '💫 Cinematic glow', '🌟 Ready to perform'] }
   }))
-  
+
   return { steps }
 }
 
@@ -185,7 +232,7 @@ export function removeViralEffects(fabricCanvas) {
   if (!fabricCanvas) return
   try {
     fabricCanvas.getObjects()
-      .filter(o => o._viralGlow || o._viralVignette || o._viralEdge)
+      .filter(o => o._viralGlow || o._viralVignette || o._viralEdge || o._viralSpotlight || o._viralChrome)
       .forEach(o => fabricCanvas.remove(o))
     const bg = fabricCanvas.backgroundImage
     if (bg && bg.filters !== undefined) {

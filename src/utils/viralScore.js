@@ -6,7 +6,7 @@ export function calculateViralScore(fabricCanvas) {
   if (!fabricCanvas) return null
 
   try {
-    const objects = (fabricCanvas.getObjects() || []).filter(o => !o._isGuide && !o._viralGlow && !o._viralVignette && !o._vignette && !o._bgRect && !o._depthGlow && !o._depthShadow && !o._viralEdge)
+    const objects = (fabricCanvas.getObjects() || []).filter(o => !o._isGuide && !o._viralGlow && !o._viralVignette && !o._vignette && !o._bgRect && !o._depthGlow && !o._depthShadow && !o._viralEdge && !o._viralSpotlight && !o._viralChrome)
   const canvasW = fabricCanvas.width
   const canvasH = fabricCanvas.height
   const totalPixels = canvasW * canvasH
