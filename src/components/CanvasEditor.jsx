@@ -130,11 +130,21 @@ export default function CanvasEditor() {
       obj.setCoords()
     }
 
+    // Track when user manually moves background — prevents auto-cover overwriting composition
+    const onMoved = (e) => {
+      const obj = e.target
+      if (obj && obj === fabricCanvas.backgroundImage) {
+        obj._userMoved = true
+      }
+    }
+
     fabricCanvas.on('object:added', onAdded)
     fabricCanvas.on('object:moving', onMoving)
+    fabricCanvas.on('object:moved', onMoved)
     return () => {
       fabricCanvas.off('object:added', onAdded)
       fabricCanvas.off('object:moving', onMoving)
+      fabricCanvas.off('object:moved', onMoved)
     }
   }, [fabricCanvas])
 

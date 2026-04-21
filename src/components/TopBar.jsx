@@ -85,8 +85,12 @@ export default function TopBar() {
       window.showToast?.('⚠️ Canvas is empty — add an image or text first', 'error', 3000)
       return
     }
+
+    // Save viewport — MUST restore even if export fails
+    const savedVpt = [...fabricCanvas.viewportTransform]
+    let wmObj = null
+
     try {
-      let wmObj = null
       if (watermark) {
         wmObj = new fabric.Text('Created with MianSnap', {
           left: fabricCanvas.width - 12,
@@ -103,18 +107,12 @@ export default function TopBar() {
         fabricCanvas.renderAll()
       }
 
-      // ── FIX: Reset viewport transform before export so zoom/pan doesn't affect output ──
-      const savedVpt = [...fabricCanvas.viewportTransform]
+      // Reset viewport — export always captures full canvas at 1:1
       fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0])
 
       const multiplier = exportQuality === '1080p' ? 1.5 : 1
       const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
       const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: fmt === 'jpeg' ? 0.95 : 1, multiplier })
-
-      // Restore viewport
-      fabricCanvas.setViewportTransform(savedVpt)
-
-      if (wmObj) { fabricCanvas.remove(wmObj); fabricCanvas.renderAll() }
 
       if (!dataUrl || dataUrl.length < 1000) {
         window.showToast?.('❌ Export failed — canvas may be empty', 'error', 3000)
@@ -133,6 +131,11 @@ export default function TopBar() {
     } catch (err) {
       window.showToast?.('❌ Export failed — try again', 'error', 3000)
       console.error('[MianSnap] Export error:', err)
+    } finally {
+      // ALWAYS restore viewport and remove watermark — even if export threw
+      fabricCanvas.setViewportTransform(savedVpt)
+      if (wmObj) { fabricCanvas.remove(wmObj) }
+      fabricCanvas.renderAll()
     }
   }
 

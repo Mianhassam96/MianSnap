@@ -36,19 +36,29 @@ export function resizeCanvas(fabricCanvas, newW, newH) {
     obj.setCoords()
   })
 
-  // Scale background image — then re-apply cover to fill new canvas
+  // Scale background image — re-apply cover only if user hasn't manually repositioned it
   const bg = fabricCanvas.backgroundImage
   if (bg) {
-    // Re-apply cover scaling to new canvas dimensions
     const nativeW = bg.width
     const nativeH = bg.height
-    const scale = Math.max(newW / nativeW, newH / nativeH)
-    bg.set({
-      scaleX: scale,
-      scaleY: scale,
-      left: (newW - nativeW * scale) / 2,
-      top:  (newH - nativeH * scale) / 2,
-    })
+    if (!bg._userMoved) {
+      // Auto cover — safe to reapply
+      const scale = Math.max(newW / nativeW, newH / nativeH)
+      bg.set({
+        scaleX: scale,
+        scaleY: scale,
+        left: (newW - nativeW * scale) / 2,
+        top:  (newH - nativeH * scale) / 2,
+      })
+    } else {
+      // User manually positioned — just scale proportionally, don't override composition
+      bg.set({
+        left:   (bg.left || 0) * scaleX,
+        top:    (bg.top  || 0) * scaleY,
+        scaleX: (bg.scaleX || 1) * scaleX,
+        scaleY: (bg.scaleY || 1) * scaleY,
+      })
+    }
   }
 
   fabricCanvas.setWidth(newW)

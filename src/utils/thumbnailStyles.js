@@ -138,63 +138,67 @@ export function applyThumbnailStyle(fabricCanvas, styleKey) {
   const style = STYLES[styleKey]
   if (!style || !fabricCanvas) return
 
-  // 1. Apply filters to background image
-  const bg = fabricCanvas.backgroundImage
-  if (bg && bg.filters !== undefined) {
-    bg.filters = style.filters.map((f) => {
-      if (f.type === 'Contrast') return new fabric.Image.filters.Contrast({ contrast: f.value })
-      if (f.type === 'Saturation') return new fabric.Image.filters.Saturation({ saturation: f.value })
-      if (f.type === 'Brightness') return new fabric.Image.filters.Brightness({ brightness: f.value })
-      return null
-    }).filter(Boolean)
-    bg.applyFilters()
-  }
+  try {
+    // 1. Apply filters to background image
+    const bg = fabricCanvas.backgroundImage
+    if (bg && bg.filters !== undefined) {
+      bg.filters = style.filters.map((f) => {
+        if (f.type === 'Contrast') return new fabric.Image.filters.Contrast({ contrast: f.value })
+        if (f.type === 'Saturation') return new fabric.Image.filters.Saturation({ saturation: f.value })
+        if (f.type === 'Brightness') return new fabric.Image.filters.Brightness({ brightness: f.value })
+        return null
+      }).filter(Boolean)
+      bg.applyFilters()
+    }
 
-  // 2. Remove previous style text
-  fabricCanvas.getObjects().filter((o) => o._styleText).forEach((o) => fabricCanvas.remove(o))
+    // 2. Remove previous style text
+    fabricCanvas.getObjects().filter((o) => o._styleText).forEach((o) => fabricCanvas.remove(o))
 
-  // 3. Add styled text
-  const t = style.text
-  const text = new fabric.IText(t.content, {
-    left: fabricCanvas.width * style.textPos.x,
-    top: fabricCanvas.height * style.textPos.y,
-    originX: 'center', originY: 'center',
-    fontFamily: t.font,
-    fontSize: t.size,
-    fill: t.fill,
-    stroke: t.stroke,
-    strokeWidth: t.strokeWidth,
-    shadow: new fabric.Shadow(t.shadow),
-    _styleText: true,
-  })
-  fabricCanvas.add(text)
-
-  // 4. Vignette overlay
-  fabricCanvas.getObjects().filter((o) => o._vignette).forEach((o) => fabricCanvas.remove(o))
-  if (style.vignette) {
-    const vignette = new fabric.Rect({
-      left: 0, top: 0,
-      width: fabricCanvas.width, height: fabricCanvas.height,
-      fill: new fabric.Gradient({
-        type: 'radial',
-        coords: {
-          r1: 0, r2: fabricCanvas.width * 0.75,
-          x1: fabricCanvas.width / 2, y1: fabricCanvas.height / 2,
-          x2: fabricCanvas.width / 2, y2: fabricCanvas.height / 2,
-        },
-        colorStops: [
-          { offset: 0, color: 'rgba(0,0,0,0)' },
-          { offset: 0.6, color: 'rgba(0,0,0,0)' },
-          { offset: 1, color: 'rgba(0,0,0,0.65)' },
-        ],
-      }),
-      selectable: false, evented: false, _vignette: true, opacity: 0.9,
+    // 3. Add styled text
+    const t = style.text
+    const text = new fabric.IText(t.content, {
+      left: fabricCanvas.width * style.textPos.x,
+      top: fabricCanvas.height * style.textPos.y,
+      originX: 'center', originY: 'center',
+      fontFamily: t.font,
+      fontSize: t.size,
+      fill: t.fill,
+      stroke: t.stroke,
+      strokeWidth: t.strokeWidth,
+      shadow: new fabric.Shadow(t.shadow),
+      _styleText: true,
     })
-    fabricCanvas.add(vignette)
-    fabricCanvas.sendToBack(vignette)
-  }
+    fabricCanvas.add(text)
 
-  fabricCanvas.renderAll()
+    // 4. Vignette overlay
+    fabricCanvas.getObjects().filter((o) => o._vignette).forEach((o) => fabricCanvas.remove(o))
+    if (style.vignette) {
+      const vignette = new fabric.Rect({
+        left: 0, top: 0,
+        width: fabricCanvas.width, height: fabricCanvas.height,
+        fill: new fabric.Gradient({
+          type: 'radial',
+          coords: {
+            r1: 0, r2: fabricCanvas.width * 0.75,
+            x1: fabricCanvas.width / 2, y1: fabricCanvas.height / 2,
+            x2: fabricCanvas.width / 2, y2: fabricCanvas.height / 2,
+          },
+          colorStops: [
+            { offset: 0, color: 'rgba(0,0,0,0)' },
+            { offset: 0.6, color: 'rgba(0,0,0,0)' },
+            { offset: 1, color: 'rgba(0,0,0,0.65)' },
+          ],
+        }),
+        selectable: false, evented: false, _vignette: true, opacity: 0.9,
+      })
+      fabricCanvas.add(vignette)
+      fabricCanvas.sendToBack(vignette)
+    }
+
+    fabricCanvas.renderAll()
+  } catch (err) {
+    console.warn('[thumbnailStyles] applyThumbnailStyle failed:', err)
+  }
 }
 
 export { STYLES }

@@ -2,16 +2,39 @@
  * "Make it Viral" — one-click autonomous thumbnail enhancement
  * Applies: contrast boost, saturation, face zoom hint, glow text,
  * smart typography, subject spotlight, vignette
+ *
+ * State invariance: snapshots canvas before applying so action is reversible.
  */
 import { fabric } from '../lib/fabric'
 import { faceAutoFocus } from './faceDetect'
 import { applySmartTypography } from './smartTypography'
+
+/** Take a lightweight snapshot of bg filters + overlay objects for undo */
+function snapshotViralState(fabricCanvas) {
+  try {
+    const bg = fabricCanvas.backgroundImage
+    return {
+      bgFilters: bg?.filters ? [...(Array.isArray(bg.filters) ? bg.filters : [])] : [],
+      overlayIds: fabricCanvas.getObjects()
+        .filter(o => o._viralGlow || o._viralVignette || o._viralEdge)
+        .map(o => o.__uid),
+    }
+  } catch { return null }
+}
+
+/** Expose last snapshot globally so undo can call removeViralEffects */
+function publishSnapshot(fabricCanvas) {
+  window.__msLastViralSnapshot = snapshotViralState(fabricCanvas)
+}
 
 export async function makeItViral(fabricCanvas) {
   if (!fabricCanvas) return { steps: [] }
 
   const steps = []
   window.__msHistory?.pauseSnapshot?.()
+
+  // Snapshot before applying — makes action reversible
+  publishSnapshot(fabricCanvas)
 
   // Analyze image to pick smart effects
   const bg = fabricCanvas.backgroundImage
@@ -157,19 +180,21 @@ export async function makeItViral(fabricCanvas) {
   return { steps }
 }
 
-// Remove all viral effects (filters + overlays)
+// Remove all viral effects (filters + overlays) — always safe to call
 export function removeViralEffects(fabricCanvas) {
   if (!fabricCanvas) return
-  // Remove overlays
-  fabricCanvas.getObjects()
-    .filter(o => o._viralGlow || o._viralVignette || o._viralEdge)
-    .forEach(o => fabricCanvas.remove(o))
-  // Reset bg filters
-  const bg = fabricCanvas.backgroundImage
-  if (bg && bg.filters !== undefined) {
-    bg.filters = []
-    bg.applyFilters()
+  try {
+    fabricCanvas.getObjects()
+      .filter(o => o._viralGlow || o._viralVignette || o._viralEdge)
+      .forEach(o => fabricCanvas.remove(o))
+    const bg = fabricCanvas.backgroundImage
+    if (bg && bg.filters !== undefined) {
+      bg.filters = []
+      bg.applyFilters()
+    }
+    fabricCanvas.renderAll()
+    window.showToast?.('✓ Effects removed', 'info', 1500)
+  } catch (err) {
+    console.warn('[makeItViral] removeViralEffects failed:', err)
   }
-  fabricCanvas.renderAll()
-  window.showToast?.('✓ Effects removed', 'info', 1500)
 }

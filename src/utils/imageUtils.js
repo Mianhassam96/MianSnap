@@ -65,17 +65,13 @@ export function applyImageAsBackground(fabricCanvas, dataUrl, mode = 'cover', on
 }
 
 function applyImageToCanvas(img, fabricCanvas, mode, onDone) {
-  // Calculate proper scaling based on mode
   const props = scaleImageToCanvas(img, fabricCanvas.width, fabricCanvas.height, mode)
-  
-  // Apply properties
   img.set({
     ...props,
     selectable: false,
     evented: false,
+    _userMoved: false, // reset — fresh image has no user composition intent
   })
-  
-  // Set as background
   fabricCanvas.setBackgroundImage(img, () => {
     fabricCanvas.renderAll()
     onDone?.()
