@@ -40,9 +40,11 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
   const [aiPersonality, setAiPersonality] = useState('')
   const [autoImproveRan, setAutoImproveRan] = useState(false)
   const [steeringChoice, setSteeringChoice] = useState(null)
-  const [intent, setIntent] = useState(null) // 'viral' | 'clean' | 'gaming'
-  const [calmMode, setCalmMode] = useState(false) // silence after steering
-  const [showIntentCard, setShowIntentCard] = useState(false) // post-result direction card
+  const [intent, setIntent] = useState(null)
+  const [calmMode, setCalmMode] = useState(false)
+  const [showIntentCard, setShowIntentCard] = useState(false)
+  const [wildJustRan, setWildJustRan] = useState(false)
+  const [journeySteps, setJourneySteps] = useState([]) // narrative arc
   const beforeSnapshotRef = useRef(null)
 
   // Restore preference
@@ -127,8 +129,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       setPhase('result')
       setViralDone(true)
 
-      // Show intent card 3s after result — user has seen output first
-      setTimeout(() => setShowIntentCard(true), 3000)
+      // Show intent card at 0.8s — before emotional judgment solidifies
+      setTimeout(() => setShowIntentCard(true), 800)
 
     } catch (err) {
       console.error('[ZeroUIMode] Auto-generate failed:', err)
@@ -257,7 +259,7 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     return AI_VOICES[Math.min(count, AI_VOICES.length - 1)]
   }
 
-  function runViralImprovement(isManual = true) {
+  function runViralImprovement(isManual = true, isWild = false) {
     if (viralRunning || !fabricCanvas) return
     setViralRunning(true)
     setSteeringChoice(null)
@@ -269,21 +271,31 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
       if (s) { setViralScore(s); setScore(s) }
       setViralCount(c => {
         const next = c + 1
-        // Only show personality + steering on manual clicks, not auto-improve
+        // Track journey narrative
+        const stepLabel = isWild ? '🎲 Wild version' : `⚡ Enhancement #${next}`
+        setJourneySteps(prev => [...prev.slice(-4), stepLabel]) // keep last 5
+
         if (isManual) {
-          setAiPersonality(getAiVoice(next))
-          setTimeout(() => {
-            setAiPersonality('')
-            if ((s?.score ?? 0) >= 88) {
-              setTimeout(() => setPhase('done'), 800)
-            } else {
-              // Show steering card — then enter calm state after dismiss
-              const choices = STEERING_CHOICES[Math.min(next - 1, STEERING_CHOICES.length - 1)]
-              setSteeringChoice(choices)
-            }
-          }, 2500)
+          if (isWild) {
+            // Wild: show keep/back card instead of normal steering
+            setAiPersonality('🎲 Wild version applied!')
+            setTimeout(() => {
+              setAiPersonality('')
+              setWildJustRan(true)
+            }, 2000)
+          } else {
+            setAiPersonality(getAiVoice(next))
+            setTimeout(() => {
+              setAiPersonality('')
+              if ((s?.score ?? 0) >= 88) {
+                setTimeout(() => setPhase('done'), 800)
+              } else {
+                const choices = STEERING_CHOICES[Math.min(next - 1, STEERING_CHOICES.length - 1)]
+                setSteeringChoice(choices)
+              }
+            }, 2500)
+          }
         } else {
-          // Auto-improve: just update score silently, enter calm state
           setCalmMode(true)
         }
         return next
@@ -299,6 +311,10 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
 
   function handleExport() {
     window.dispatchEvent(new CustomEvent('miansnap:export'))
+    // After export, show done state as arc completion if journey has steps
+    if (journeySteps.length >= 2 || (score?.score ?? 0) >= 70) {
+      setTimeout(() => setPhase('done'), 1200)
+    }
   }
 
   // ── AUTO-IMPROVE once, 1.5s after result — silent, no steering ──
@@ -320,21 +336,17 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     return () => clearTimeout(timer)
   }, [calmMode])
 
-  // ── Wild Version — surprise variant, restores exploration ──
+  // ── Wild Version — integrated into loop, shows keep/back card ──
   function handleWildVersion() {
     setShowIntentCard(false)
     setSteeringChoice(null)
-    // Pick a completely random unexpected style
     const wildStyles = ['horror', 'gaming', 'news', 'sports', 'viral', 'mrbeast', 'dramatic']
     const randomStyle = wildStyles[Math.floor(Math.random() * wildStyles.length)]
     applyThumbnailStyle(fabricCanvas, randomStyle)
-    // Also randomize the title
-    const styles = ['gaming', 'drama', 'news', 'motivational', 'curiosity']
-    const randomTitleStyle = styles[Math.floor(Math.random() * styles.length)]
-    const titles = generateTitles(randomTitleStyle, 1)
+    const titleStyles = ['gaming', 'drama', 'news', 'motivational', 'curiosity']
+    const titles = generateTitles(titleStyles[Math.floor(Math.random() * titleStyles.length)], 1)
     addText(titles[0])
-    runViralImprovement(true)
-    window.showToast?.('🎲 Wild version applied!', 'success', 2000)
+    runViralImprovement(true, true) // isManual=true, isWild=true
   }
 
   // ── Auto Fix Everything — 1 smart button, AI decides ──
@@ -393,7 +405,8 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
     setAiPersonality(''); setAutoImproveRan(false)
     setSteeringChoice(null); setProactiveNudge(null)
     setIntent(null); setCalmMode(false)
-    setShowIntentCard(false)
+    setShowIntentCard(false); setWildJustRan(false)
+    setJourneySteps([])
     window.dispatchEvent(new CustomEvent('miansnap:resetCanvas'))
   }
 
@@ -672,14 +685,31 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
               <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 8, textAlign: 'center', lineHeight: 1.6 }}>
                 No further improvements needed.
               </div>
-              <div style={{
-                fontSize: 12, color: '#4ade80', marginBottom: 32,
-                padding: '5px 14px', borderRadius: 20,
-                background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)',
-                fontWeight: 600,
-              }}>
-                {score ? `${score.score}/100 · Maximum CTR potential` : 'Maximum CTR potential reached'}
-              </div>
+              {/* Journey arc — narrative of what happened */}
+              {journeySteps.length > 0 && (
+                <div style={{
+                  marginBottom: 24, padding: '12px 16px', borderRadius: 12,
+                  background: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                  border: `1px solid ${theme.border}`,
+                  width: 'min(340px, 88vw)',
+                }}>
+                  <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 8, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+                    Your creative journey
+                  </div>
+                  {journeySteps.map((s, i) => (
+                    <div key={i} style={{
+                      fontSize: 11, color: theme.textSecondary, padding: '3px 0',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                      <span style={{ color: theme.accent, fontSize: 9 }}>{'→'.repeat(i + 1)}</span>
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 11, color: '#4ade80', marginTop: 6, fontWeight: 600 }}>
+                    ✓ Optimized
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button onClick={() => { handleExport(); setPhase('result') }} style={{
                   padding: '16px 40px', borderRadius: 12, border: 'none',
@@ -877,6 +907,50 @@ export default function ZeroUIMode({ children, onExitZeroMode }) {
                   color: theme.textMuted, fontSize: 10, cursor: 'pointer', padding: '2px',
                 }}
               >skip →</button>
+            </div>
+          )}
+
+          {/* ── WILD KEEP/BACK CARD — integrated into loop ── */}
+          {phase === 'result' && wildJustRan && !viralRunning && !aiPersonality && !steeringChoice && (
+            <div style={{
+              position: 'fixed', top: 54, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 499,
+              background: theme.isDark ? 'rgba(13,13,24,0.97)' : 'rgba(255,255,255,0.97)',
+              border: '1px solid rgba(250,204,21,0.4)',
+              borderRadius: 16, padding: '14px 16px',
+              boxShadow: '0 8px 32px rgba(250,204,21,0.15)',
+              backdropFilter: 'blur(16px)',
+              animation: 'fadeInDown 0.3s ease',
+              width: 'min(300px, 88vw)',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#facc15', marginBottom: 10, textAlign: 'center' }}>
+                🎲 Wild version applied — keep it?
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => { setWildJustRan(false); setCalmMode(true) }}
+                  style={{
+                    flex: 1, padding: '10px', borderRadius: 8,
+                    border: '1px solid rgba(74,222,128,0.4)', background: 'rgba(74,222,128,0.08)',
+                    color: theme.text, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >✓ Keep it</button>
+                <button
+                  onClick={() => {
+                    setWildJustRan(false)
+                    // Undo wild — re-apply intent style
+                    const intentStyles = { viral: ['dramatic','viral'], clean: ['minimal'], gaming: ['gaming'] }
+                    const pool = intentStyles[intent || 'viral']
+                    applyThumbnailStyle(fabricCanvas, pool[Math.floor(Math.random() * pool.length)])
+                    runViralImprovement(false)
+                  }}
+                  style={{
+                    flex: 1, padding: '10px', borderRadius: 8,
+                    border: `1px solid ${theme.border}`, background: theme.bgTertiary,
+                    color: theme.text, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >↩ Go back</button>
+              </div>
             </div>
           )}
 
