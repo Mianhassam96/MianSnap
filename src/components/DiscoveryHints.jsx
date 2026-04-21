@@ -13,11 +13,23 @@ const HINTS = [
 const SEEN_KEY = 'miansnap_hints_seen'
 
 function getSeenHints() {
-  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]') } catch { return [] }
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}')
+    // Handle both legacy array format and current object format
+    if (Array.isArray(raw)) {
+      const obj = {}
+      raw.forEach(id => { obj[id] = 1 })
+      return obj
+    }
+    return raw && typeof raw === 'object' ? raw : {}
+  } catch { return {} }
 }
 function markSeen(id) {
-  const seen = getSeenHints()
-  if (!seen.includes(id)) localStorage.setItem(SEEN_KEY, JSON.stringify([...seen, id]))
+  try {
+    const seen = getSeenHints()
+    seen[id] = 1
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen))
+  } catch {}
 }
 
 export default function DiscoveryHints() {
@@ -29,7 +41,7 @@ export default function DiscoveryHints() {
     // Only show hints after user has loaded a video (engaged)
     if (!videoUrl) return
     const seen = getSeenHints()
-    const unseen = HINTS.filter(h => !seen.includes(h.id))
+    const unseen = HINTS.filter(h => !seen[h.id])
     if (!unseen.length) return
 
     const timers = unseen.map(hint =>
