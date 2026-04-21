@@ -269,7 +269,12 @@ export default function App() {
         <StagedReveal />
         {showLanding && (
         <LandingLayer
-          onEnter={() => { setShowLanding(false); if (shouldShowOnboarding()) setShowOnboarding(true) }}
+          onEnter={() => {
+            // Always reset zero mode so user enters upload gate, not full editor
+            localStorage.setItem('miansnap_zero_mode', 'true')
+            setShowLanding(false)
+            if (shouldShowOnboarding()) setShowOnboarding(true)
+          }}
           onDemo={handleDemo}
         />
       )}

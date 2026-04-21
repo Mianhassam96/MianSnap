@@ -49,14 +49,16 @@ export default function TopBar() {
         if (o.top < ch * 0.05) o.set('top', ch * 0.08)
         if (o.top > ch * 0.85) o.set('top', ch * 0.82)
       })
-    // Ensure background fills canvas
+    // Ensure background fills canvas — use native dimensions, not scaled
     const bg = fabricCanvas.backgroundImage
     if (bg) {
-      const scale = Math.max(cw / bg.width, ch / bg.height)
+      const nativeW = bg.width  // native pixel width
+      const nativeH = bg.height // native pixel height
+      const scale = Math.max(cw / nativeW, ch / nativeH)
       bg.set({
         scaleX: scale, scaleY: scale,
-        left: (cw - bg.width * scale) / 2,
-        top: (ch - bg.height * scale) / 2,
+        left: (cw - nativeW * scale) / 2,
+        top:  (ch - nativeH * scale) / 2,
       })
     }
     fabricCanvas.renderAll()
@@ -68,8 +70,9 @@ export default function TopBar() {
     const bg = fabricCanvas.backgroundImage
     if (bg) {
       const cw = fabricCanvas.width, ch = fabricCanvas.height
-      const scale = Math.max(cw / bg.width, ch / bg.height)
-      bg.set({ scaleX: scale, scaleY: scale, left: (cw - bg.width * scale) / 2, top: (ch - bg.height * scale) / 2 })
+      const nativeW = bg.width, nativeH = bg.height
+      const scale = Math.max(cw / nativeW, ch / nativeH)
+      bg.set({ scaleX: scale, scaleY: scale, left: (cw - nativeW * scale) / 2, top: (ch - nativeH * scale) / 2 })
     }
     fabricCanvas.renderAll()
     window.showToast?.('🔄 Layout reset', 'info', 1500)
@@ -77,7 +80,6 @@ export default function TopBar() {
 
   function handleExport() {
     if (!fabricCanvas) return
-    // Guard: warn if canvas appears blank
     const hasContent = fabricCanvas.backgroundImage || fabricCanvas.getObjects().length > 0
     if (!hasContent) {
       window.showToast?.('⚠️ Canvas is empty — add an image or text first', 'error', 3000)
@@ -101,13 +103,19 @@ export default function TopBar() {
         fabricCanvas.renderAll()
       }
 
+      // ── FIX: Reset viewport transform before export so zoom/pan doesn't affect output ──
+      const savedVpt = [...fabricCanvas.viewportTransform]
+      fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0])
+
       const multiplier = exportQuality === '1080p' ? 1.5 : 1
       const fmt = exportFormat === 'png' ? 'png' : 'jpeg'
       const dataUrl = fabricCanvas.toDataURL({ format: fmt, quality: fmt === 'jpeg' ? 0.95 : 1, multiplier })
 
+      // Restore viewport
+      fabricCanvas.setViewportTransform(savedVpt)
+
       if (wmObj) { fabricCanvas.remove(wmObj); fabricCanvas.renderAll() }
 
-      // Validate output isn't blank
       if (!dataUrl || dataUrl.length < 1000) {
         window.showToast?.('❌ Export failed — canvas may be empty', 'error', 3000)
         return
