@@ -179,6 +179,21 @@ export default function App() {
     return () => window.removeEventListener('miansnap:dropVideo', handler)
   }, [])
 
+  // Handle image drop from ZeroUIMode
+  useEffect(() => {
+    const handler = (e) => {
+      const file = e.detail?.file
+      if (!file || !fabricCanvas) return
+      if (file.size > 50 * 1024 * 1024) { window.showToast?.('⚠️ Image too large (max 50MB)', 'error', 4000); return }
+      window.showToast?.('🖼 Loading image...', 'info', 1500)
+      applyImageAsBackground(fabricCanvas, URL.createObjectURL(file), 'cover', () => {
+        window.showToast?.('✓ Image loaded — hit ⚡ Make Viral!', 'success', 2000)
+      })
+    }
+    window.addEventListener('miansnap:dropImage', handler)
+    return () => window.removeEventListener('miansnap:dropImage', handler)
+  }, [fabricCanvas])
+
   async function handleMakeViral() {
     if (!fabricCanvas || viralRunning) return
     setViralRunning(true)
