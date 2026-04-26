@@ -1,4 +1,4 @@
-# 🎬 MianSnap — AI Thumbnail Creator
+# 🎬 MianSnap 
 
 <div align="center">
 
@@ -186,22 +186,6 @@ npm run build
 6. **Check your score** — live 0–100 viral potential score with fix-it tips
 7. **Export** — 720p or 1080p, JPG or PNG, with optional watermark
 
----
-
-## 📁 Project Structure
-
-```
-src/
-├── components/       # 43 React components
-│   ├── CanvasEditor  # Fabric.js canvas with zoom/pan/drag
-│   ├── BottomPanel   # Video player + frame extraction
-│   ├── LeftSidebar   # Text, Shapes, Filters, BG, Styles, Assets
-│   ├── RightSidebar  # Layers, Properties, Score, Preview, Compare
-│   └── ...
-├── store/            # Zustand state (canvas, video, UI, layers, project)
-├── utils/            # 19 utilities (AI, export, history, alignment...)
-└── theme/            # Light/dark theme tokens
-```
 
 ---
 
