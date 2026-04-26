@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect width="64" height="64" rx="14" fill="url(#shine)"/>
+  <!-- Film frame lines -->
+  <rect x="6" y="10" width="6" height="8" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+  <rect x="6" y="24" width="6" height="8" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+  <rect x="6" y="38" width="6" height="8" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+  <rect x="52" y="10" width="6" height="8" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+  <rect x="52" y="24" width="6" height="8" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+  <rect x="52" y="38" width="6" height="8" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+  <!-- Play button triangle -->
+  <polygon points="24,18 24,46 46,32" fill="white" opacity="0.95"/>
+  <!-- Lightning bolt accent -->
+  <polygon points="36,8 30,28 36,26 30,56 42,30 35,32" fill="#facc15" opacity="0.9"/>
+</svg>

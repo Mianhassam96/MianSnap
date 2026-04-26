@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MianSnap — Free AI YouTube thumbnail maker. Upload a video, AI picks the best frame, one-click Make Viral enhancement. No upload, 100% browser-based. Free forever." />
+    <meta name="keywords" content="YouTube thumbnail maker, free thumbnail creator, AI thumbnail generator, TikTok thumbnail, thumbnail editor online, viral thumbnail, YouTube thumbnail tool, free YouTube thumbnail maker, AI thumbnail maker" />
+    <meta name="author" content="MultiMian" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#7c3aed" />
+    <link rel="canonical" href="https://mianhassam96.github.io/MianSnap/" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="MianSnap — Free AI YouTube Thumbnail Maker" />
+    <meta property="og:description" content="Upload video → AI picks best frame → one click makes it viral. Free, no account, no uploads. Used by 10,000+ creators." />
+    <meta property="og:image" content="https://mianhassam96.github.io/MianSnap/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:url" content="https://mianhassam96.github.io/MianSnap/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MianSnap" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@mianhassam96" />
+    <meta name="twitter:title" content="MianSnap — Free AI YouTube Thumbnail Maker" />
+    <meta name="twitter:description" content="Upload video → AI picks best frame → one click makes it viral. Free, no account, no uploads." />
+    <meta name="twitter:image" content="https://mianhassam96.github.io/MianSnap/og-image.svg" />
+
+    <title>MianSnap — Free AI YouTube Thumbnail Maker | No Upload Required</title>
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "MianSnap",
+      "url": "https://mianhassam96.github.io/MianSnap/",
+      "description": "Free AI-powered YouTube thumbnail maker. Upload a video, AI picks the best frame, one-click viral enhancement. No account, no uploads, 100% browser-based.",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": ["AI frame detection", "One-click enhancement", "Background removal", "No uploads required", "Free forever"]
+    }
+    </script>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;700;900&family=Raleway:wght@400;700;900&family=Playfair+Display:wght@400;700;900&family=Merriweather:wght@400;700;900&family=Roboto+Condensed:wght@400;700&family=Anton&family=Black+Han+Sans&family=Bangers&family=Permanent+Marker&family=Pacifico&family=Righteous&family=Russo+One&family=Teko:wght@400;600;700&family=Barlow+Condensed:wght@400;700;900&family=Exo+2:wght@400;700;900&family=Nunito:wght@400;700;900&family=Poppins:wght@400;600;700;900&family=Lato:wght@400;700;900&family=Source+Sans+3:wght@400;700;900&family=Cinzel:wght@400;700;900&family=Abril+Fatface&family=Fredoka+One&family=Boogaloo&display=swap" rel="stylesheet" />
+    <!-- Arabic & Urdu Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Kufi+Arabic:wght@400;700;900&family=Noto+Nastaliq+Urdu:wght@400;700&family=Amiri:ital,wght@0,400;0,700;1,400&family=Scheherazade+New:wght@400;700&family=Lateef&family=Reem+Kufi:wght@400;700&family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;900&family=Almarai:wght@400;700;800&display=swap" rel="stylesheet" />
+    <!-- Fabric.js from CDN (externalized from bundle to fix CI build) -->
+    <!-- Primary CDN with fallback to jsDelivr -->
+    <script>
+      (function() {
+        function loadFabric(src, onSuccess, onFail) {
+          var s = document.createElement('script');
+          s.src = src;
+          s.onload = onSuccess;
+          s.onerror = onFail;
+          document.head.appendChild(s);
+        }
+        loadFabric(
+          'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js',
+          function() { window.dispatchEvent(new Event('fabricReady')); },
+          function() {
+            loadFabric(
+              'https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js',
+              function() { window.dispatchEvent(new Event('fabricReady')); },
+              function() { console.error('[MianSnap] Fabric.js failed to load from both CDNs'); }
+            );
+          }
+        );
+      })();
+    </script>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body, #root { height: 100%; }
+      body {
+        background: #f5f5ff;
+        color: #0a0a1a;
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      /* Scrollbars */
+      ::-webkit-scrollbar { width: 5px; height: 5px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+      /* Animations */
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes fadeInDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+      @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+      @keyframes progressBar { from { width: 0%; } to { width: 100%; } }
+      .fade-in { animation: fadeIn 0.25s ease both; }
+      .slide-in { animation: slideIn 0.2s ease both; }
+      .scale-in { animation: scaleIn 0.2s ease both; }
+      button { font-family: inherit; }
+      input, select, textarea { font-family: inherit; }
+      /* Micro-interactions */
+      button:active { transform: scale(0.97) !important; }
+      .ms-fab:active { transform: scale(0.95) translateY(0) !important; }
+      /* Hover glow consistency */
+      button { transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+      canvas, img, video { transition: none !important; }
+      input, select { transition: border-color 0.15s ease !important; }
+
+      /* ── RESPONSIVE ── */
+      /* Mobile: hide sidebars, show bottom tab bar */
+      @media (max-width: 768px) {
+        .ms-left-sidebar  { display: none !important; }
+        .ms-right-sidebar { display: none !important; }
+        .ms-bottom-panel  { display: none !important; }
+        .ms-mobile-tabs   { display: flex !important; }
+        .ms-canvas-area   { padding: 4px 4px 76px 4px !important; }
+        .ms-topbar-name   { display: none !important; }
+        .ms-topbar-selects { display: none !important; }
+        .ms-fab { bottom: 76px !important; right: 10px !important; padding: 10px 16px !important; font-size: 12px !important; }
+        .ms-score-badge { top: 6px !important; font-size: 10px !important; padding: 3px 10px !important; }
+        /* Canvas fills full width on mobile — no wasted space */
+        .ms-canvas-area > div { max-width: 100% !important; width: 100% !important; }
+        /* TopBar compact */
+        .ms-topbar { height: 40px !important; padding: 0 6px !important; gap: 3px !important; }
+        /* Zoom controls smaller on mobile */
+        .ms-zoom-controls { display: none !important; }
+      }
+      @media (max-width: 480px) {
+        .ms-topbar-save { display: none !important; }
+        .ms-topbar-projects { display: none !important; }
+      }
+      /* Small phones */
+      @media (max-width: 390px) {
+        .ms-canvas-area { padding: 2px 2px 76px 2px !important; }
+        .ms-fab { padding: 8px 12px !important; font-size: 11px !important; right: 6px !important; }
+        .ms-topbar { gap: 2px !important; padding: 0 4px !important; }
+      }
+      /* Tablet: compact layout */
+      @media (min-width: 769px) and (max-width: 1024px) {
+        .ms-left-sidebar  { width: 200px !important; }
+        .ms-right-sidebar { width: 180px !important; }
+      }
+      /* Laptop tight: shrink sidebars further */
+      @media (min-width: 769px) and (max-width: 1280px) {
+        .ms-left-sidebar  { width: 210px !important; }
+        .ms-right-sidebar { width: 190px !important; }
+      }
+      /* Tablet portrait: stack vertically */
+      @media (max-width: 900px) and (min-width: 769px) {
+        .ms-main-layout { flex-direction: column !important; overflow-y: auto !important; }
+        .ms-left-sidebar { width: 100% !important; height: auto !important; flex-direction: row !important; overflow-x: auto !important; border-right: none !important; border-bottom: 1px solid var(--border) !important; }
+        .ms-right-sidebar { width: 100% !important; height: 200px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+        .ms-canvas-area { padding: 8px !important; }
+      }
+      /* Mobile tabs — hidden by default, shown on mobile */
+      .ms-mobile-tabs { display: none; }
+      /* Mobile: larger touch targets */
+      @media (max-width: 768px) {
+        .canvas-container { touch-action: none; }
+        .canvas-container .upper-canvas { touch-action: none; }
+        /* Bigger slider thumbs on mobile */
+        input[type=range] { height: 28px !important; }
+        input[type=range]::-webkit-slider-thumb { width: 22px !important; height: 22px !important; }
+        input[type=range]::-moz-range-thumb { width: 22px !important; height: 22px !important; }
+        /* Bigger buttons on mobile */
+        button { min-height: 36px; }
+      }
+      /* Touch-action fix — prevent page scroll when interacting with canvas */
+      canvas { touch-action: none !important; }
+      .canvas-container { touch-action: none !important; }
+      .canvas-container canvas { touch-action: none !important; }
+    </style>
+    <script type="module" crossorigin src="/MianSnap/assets/index-B-shbazm.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
