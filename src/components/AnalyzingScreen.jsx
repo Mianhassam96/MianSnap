@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react'
 
 const STEPS = [
-  { icon: '🔍', text: 'Extracting main claim…',         duration: 600  },
-  { icon: '🌐', text: 'Checking source signals…',       duration: 700  },
-  { icon: '🧠', text: 'Running AI risk analysis…',      duration: 700  },
-  { icon: '📊', text: 'Calculating trust score…',       duration: 500  },
-  { icon: '✅', text: 'Generating Trust Card…',         duration: 400  },
+  { icon: '🔍', text: 'Extracting main claim…',              duration: 500 },
+  { icon: '🌐', text: 'Analyzing source credibility…',       duration: 550 },
+  { icon: '🧠', text: 'Scanning manipulation patterns…',     duration: 600 },
+  { icon: '🤖', text: 'Detecting AI writing style…',         duration: 500 },
+  { icon: '💢', text: 'Measuring emotional intensity…',      duration: 450 },
+  { icon: '🔥', text: 'Simulating viral spread risk…',       duration: 400 },
+  { icon: '📊', text: 'Building risk heatmap…',              duration: 350 },
+  { icon: '✅', text: 'Generating Trust Card…',              duration: 300 },
 ]
 
 export default function AnalyzingScreen({ content }) {
