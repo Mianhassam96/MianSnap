@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.15)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+  <rect width="100" height="100" rx="22" fill="url(#shine)"/>
+  <!-- Shield body -->
+  <path d="M50 14 L76 24 L76 50 C76 64 64 74 50 80 C36 74 24 64 24 50 L24 24 Z"
+        fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Checkmark inside shield -->
+  <polyline points="38,50 46,58 62,42"
+            fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
