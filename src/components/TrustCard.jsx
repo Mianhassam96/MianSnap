@@ -1,3 +1,4 @@
+import CommunityVerdict from './CommunityVerdict.jsx'
 ﻿import React, { useState, useEffect } from "react"
 
 // Animated counter
@@ -215,6 +216,9 @@ export default function TrustCard({ result, onAnalyzeAnother }) {
             }
           </div>
         </Sec>
+
+        {/* COMMUNITY VERDICT */}
+        <CommunityVerdict claim={claim} trustScore={trust_score} />
 
         {/* AI DETECTOR */}
         <Sec title="🤖 AI Writing Style Detector">

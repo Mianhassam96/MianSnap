@@ -1,4 +1,6 @@
 ﻿import React, { useState, useRef, useEffect } from 'react'
+import TrendingFeed from './TrendingFeed.jsx'
+import { getSessionStats } from '../utils/feedStore.js'
 
 const EXAMPLES = [
   'BREAKING: Scientists confirm drinking coffee cures cancer 100% — share before deleted!',
@@ -242,7 +244,7 @@ export default function InputScreen({ onAnalyze, initialValue = '', error }) {
 
       {/* Example pills */}
       <div style={{
-        marginTop: '32px', width: '100%', maxWidth: '680px',
+        marginTop: '24px', width: '100%', maxWidth: '720px',
         animation: 'fadeUp .6s .2s ease both', opacity: 0, animationFillMode: 'forwards',
       }}>
         <p style={{ fontSize: '12px', color: '#475569', marginBottom: '10px', textAlign: 'center' }}>

@@ -3,6 +3,7 @@ import InputScreen from './components/InputScreen.jsx'
 import AnalyzingScreen from './components/AnalyzingScreen.jsx'
 import TrustCard from './components/TrustCard.jsx'
 import { analyzeContent } from './utils/trustEngine.js'
+import { addToFeed, incrementSessionStats } from './utils/feedStore.js'
 
 // App states: 'input' | 'analyzing' | 'result'
 export default function App() {
@@ -18,6 +19,9 @@ export default function App() {
     setScreen('analyzing')
     try {
       const data = await analyzeContent(content)
+      // Add to trending feed + increment session counter
+      addToFeed(content, data.trust_score)
+      incrementSessionStats()
       setResult(data)
       setScreen('result')
     } catch (err) {
