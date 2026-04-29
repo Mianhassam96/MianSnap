@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+﻿import React, { useState, useRef, useEffect } from 'react'
 
 const EXAMPLES = [
   'BREAKING: Scientists confirm drinking coffee cures cancer 100% — share before deleted!',
@@ -72,7 +72,7 @@ export default function InputScreen({ onAnalyze, initialValue = '', error }) {
             background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '22px', boxShadow: '0 0 20px rgba(99,102,241,0.4)',
-          }}>🛡️</div>
+          }}><svg width="22" height="22" viewBox="0 0 100 100" fill="none"><path d="M50 10L78 22V50C78 66 65 76 50 83C35 76 22 66 22 50V22Z" stroke="white" strokeWidth="8" strokeLinejoin="round"/><polyline points="36,50 46,60 64,40" stroke="white" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
           <span style={{
             fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px',
             background: 'linear-gradient(135deg, #a5b4fc, #c4b5fd)',
@@ -88,11 +88,11 @@ export default function InputScreen({ onAnalyze, initialValue = '', error }) {
           marginBottom: '16px',
           color: '#f0f0ff',
         }}>
-          Is this content{' '}
+          Before you believe or share —
           <span style={{
             background: 'linear-gradient(135deg, #6366f1, #a78bfa)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>trustworthy?</span>
+          }}>check its reality signals.</span>
         </h1>
 
         <p style={{
@@ -102,7 +102,7 @@ export default function InputScreen({ onAnalyze, initialValue = '', error }) {
           lineHeight: 1.6,
           margin: '0 auto',
         }}>
-          Paste any text, claim, or link. Get an instant evidence-based trust score — not just "fake or real."
+          Paste any text, claim, or link. Get an instant decision: trust it, verify it, or don't share it.
         </p>
       </div>
 
@@ -218,7 +218,7 @@ export default function InputScreen({ onAnalyze, initialValue = '', error }) {
               onMouseEnter={e => canSubmit && (e.currentTarget.style.transform = 'translateY(-1px)')}
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              🔍 Analyze Trust
+              🔍 Check Reality Signals
             </button>
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function InputScreen({ onAnalyze, initialValue = '', error }) {
           style={{ color: '#6366f1', textDecoration: 'none' }}>
           MultiMian
         </a>
-        {' '}· MianSnap Trust Layer · Free forever
+        {' '}· Content Credibility Decision Assistant · Free forever
       </div>
     </div>
   )

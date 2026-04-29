@@ -293,6 +293,124 @@ function buildHeatmap(manipScore, emotionalScore, sourceScore, factualScore) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ANALYSIS CONFIDENCE SCORE
+// How confident is the engine in its own result?
+// Based on: signal count, content length, ambiguity
+// ─────────────────────────────────────────────────────────────────────────────
+function calcConfidence(wordCount, manipCount, credCount, urlFound, urlTier) {
+  let conf = 40 // base
+
+  // More signals = more confident
+  conf += Math.min(manipCount * 6, 24)
+  conf += Math.min(credCount * 5, 20)
+
+  // Content length
+  if (wordCount >= 30) conf += 10
+  if (wordCount >= 80) conf += 8
+
+  // Source found
+  if (urlFound) {
+    if (urlTier === 'high')   conf += 14
+    if (urlTier === 'medium') conf += 6
+    if (urlTier === 'suspicious') conf += 4 // at least we know something
+  }
+
+  // Ambiguity penalty — very short content is hard to judge
+  if (wordCount < 10) conf -= 20
+  if (wordCount < 5)  conf -= 15
+
+  // No signals at all = low confidence
+  if (manipCount === 0 && credCount === 0) conf -= 12
+
+  conf = Math.max(18, Math.min(94, Math.round(conf)))
+
+  const label = conf >= 75 ? 'High Confidence'
+    : conf >= 50 ? 'Moderate Confidence'
+    : 'Low Confidence'
+
+  const note = conf >= 75
+    ? 'Strong signal coverage — result is well-supported.'
+    : conf >= 50
+    ? 'Moderate signals detected. Additional context would improve accuracy.'
+    : 'Limited signals available. Treat this result as indicative only.'
+
+  return { score: conf, label, note }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DECISION OUTPUT LAYER
+// The "so what should I do?" answer
+// ─────────────────────────────────────────────────────────────────────────────
+export function buildDecisionLayer(trustScore, viralPotential, aiScore) {
+  if (trustScore >= 70) {
+    return {
+      verdict: 'Safe to Trust & Share',
+      color: '#22c55e',
+      bg: 'rgba(34,197,94,0.08)',
+      border: 'rgba(34,197,94,0.25)',
+      icon: '✅',
+      action: 'This content signals likely reliability. You can share it with reasonable confidence.',
+      steps: [
+        'Verify the source directly if it matters to you',
+        'Check the publication date — context changes over time',
+        'Share with your own commentary for added credibility',
+      ],
+      shareConsequence: null,
+    }
+  }
+  if (trustScore >= 55) {
+    return {
+      verdict: 'Verify Before Sharing',
+      color: '#f59e0b',
+      bg: 'rgba(245,158,11,0.08)',
+      border: 'rgba(245,158,11,0.25)',
+      icon: '⚠️',
+      action: 'Mixed signals detected. This content may be partially accurate but lacks full verification.',
+      steps: [
+        'Search for this claim on Reuters, AP News, or BBC',
+        'Look for the original source — not just a repost',
+        'Wait 24 hours before sharing breaking news claims',
+      ],
+      shareConsequence: viralPotential >= 45
+        ? 'Sharing this could spread unverified information to your network.'
+        : 'Low viral risk, but verification is still recommended.',
+    }
+  }
+  if (trustScore >= 35) {
+    return {
+      verdict: 'Do Not Share Without Verification',
+      color: '#f97316',
+      bg: 'rgba(249,115,22,0.08)',
+      border: 'rgba(249,115,22,0.25)',
+      icon: '🚨',
+      action: 'Multiple low-trust signals detected. Sharing this risks spreading misleading content.',
+      steps: [
+        'Do not share until you find a verified source',
+        'Check Snopes, FactCheck.org, or PolitiFact',
+        'Consider why this content triggers emotional reactions',
+        aiScore >= 50 ? 'AI-generated content detected — extra caution advised' : 'Look for the original author or publication',
+      ].filter(Boolean),
+      shareConsequence: 'Sharing this content could flag you as a source of misinformation.',
+    }
+  }
+  return {
+    verdict: 'Do NOT Share — High Risk',
+    color: '#ef4444',
+    bg: 'rgba(239,68,68,0.08)',
+    border: 'rgba(239,68,68,0.3)',
+    icon: '☠️',
+    action: 'Severe manipulation signals detected. This content shows patterns consistent with deliberate misinformation.',
+    steps: [
+      'Do not share this content',
+      'Report it on the platform where you found it',
+      'Warn others who may have seen it',
+      'Check trusted fact-checkers before believing any claim in it',
+    ],
+    shareConsequence: 'Sharing this would likely damage your credibility and spread harmful misinformation.',
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN ANALYZE FUNCTION
 // ─────────────────────────────────────────────────────────────────────────────
 export async function analyzeContent(input) {
@@ -350,6 +468,8 @@ export async function analyzeContent(input) {
   const viralData = simulateViralSpread(text, manipScore, emotional.score)
   const credImpact = calcCredibilityImpact(score)
   const heatmap = buildHeatmap(manipScore, emotional.score, sourceScore, factualScore)
+  const confidence = calcConfidence(structure.wordCount, triggeredManip.length, triggeredCred.length, urlInfo.found, urlInfo.tier)
+  const decision = buildDecisionLayer(score, viralData.viralPotential, aiAnalysis.aiScore)
 
   // 9. Risk classification
   const riskLabel = score >= 72 ? 'Likely Reliable'
@@ -413,6 +533,8 @@ export async function analyzeContent(input) {
     viral: viralData,
     cred_impact: credImpact,
     heatmap,
+    confidence,
+    decision,
     manipulation_count: triggeredManip.length,
     credibility_count: triggeredCred.length,
     analyzed_at: new Date().toISOString(),
